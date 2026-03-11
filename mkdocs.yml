@@ -1,0 +1,162 @@
+site_name: Gnosis Analytics Docs
+site_url: https://docs.analytics.gnosis.io
+site_description: Documentation hub for the Gnosis Analytics platform
+repo_name: gnosischain/cerebro-docs
+repo_url: https://github.com/gnosischain/cerebro-docs
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  favicon: assets/favicon.png
+  logo: assets/gnosis-logo.svg
+  palette:
+    - scheme: default
+      primary: teal
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.path
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+plugins:
+  - search
+  - minify:
+      minify_html: true
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - getting-started/index.md
+    - Quick Start: getting-started/quickstart.md
+    - Platform Overview: getting-started/platform-overview.md
+    - Architecture: getting-started/architecture.md
+  - Data Pipeline:
+    - data-pipeline/index.md
+    - Pipeline Overview: data-pipeline/overview.md
+    - Data Ingestion:
+      - data-pipeline/ingestion/index.md
+      - Execution Layer (cryo-indexer): data-pipeline/ingestion/cryo-indexer.md
+      - Consensus Layer (beacon-indexer): data-pipeline/ingestion/beacon-indexer.md
+      - Era File Parser: data-pipeline/ingestion/era-parser.md
+      - Cryo Base Image: data-pipeline/ingestion/cryo-base.md
+      - Click Runner: data-pipeline/ingestion/click-runner.md
+    - Network Crawlers:
+      - data-pipeline/crawlers/index.md
+      - DHT Crawler (Nebula): data-pipeline/crawlers/nebula.md
+      - IP Geolocation (ip_crawler): data-pipeline/crawlers/ip-crawler.md
+    - Data Transformation:
+      - data-pipeline/transformation/index.md
+      - dbt-cerebro: data-pipeline/transformation/dbt-cerebro.md
+      - Model Layers: data-pipeline/transformation/model-layers.md
+      - Modules Reference: data-pipeline/transformation/modules.md
+      - Contract ABI Decoding: data-pipeline/transformation/abi-decoding.md
+      - Schema Generator: data-pipeline/transformation/dbt-schema-gen.md
+  - API Reference:
+    - api/index.md
+    - Authentication: api/authentication.md
+    - Endpoints: api/endpoints.md
+    - Filtering & Pagination: api/filtering.md
+    - Rate Limits: api/rate-limits.md
+    - Interactive Docs (Swagger): api/swagger.md
+    - Error Handling: api/errors.md
+  - dbt Model Catalog:
+    - models/index.md
+    - Execution: models/execution.md
+    - Consensus: models/consensus.md
+    - Bridges: models/bridges.md
+    - P2P Network: models/p2p.md
+    - Contracts: models/contracts.md
+    - ESG: models/esg.md
+    - Crawlers: models/crawlers.md
+    - ProbeLab: models/probelab.md
+  - MCP Server:
+    - mcp/index.md
+    - Available Tools: mcp/tools.md
+    - Report Generation: mcp/reports.md
+    - Setup: mcp/setup.md
+  - Dashboard:
+    - dashboard/index.md
+    - Sectors: dashboard/sectors.md
+    - Configuration: dashboard/configuration.md
+  - ESG Reporting:
+    - esg-reporting/index.md
+    - Node Population: esg-reporting/node-population.md
+    - Node Classification: esg-reporting/node-classification.md
+    - Power Model: esg-reporting/power-model.md
+    - Carbon Intensity: esg-reporting/carbon-intensity.md
+    - Carbon Footprint: esg-reporting/carbon-footprint.md
+    - Data Pipeline: esg-reporting/data-pipeline.md
+    - Dashboard & API: esg-reporting/dashboard-api.md
+  - Developer Guide:
+    - developer/index.md
+    - Adding API Endpoints: developer/add-endpoint.md
+    - Adding dbt Models: developer/add-model.md
+    - Adding Scrapers: developer/add-scraper.md
+    - meta.api Contract: developer/meta-api-contract.md
+    - Conventions: developer/conventions.md
+  - Operations:
+    - operations/index.md
+    - Infrastructure: operations/infrastructure.md
+    - Deployment: operations/deployment.md
+    - Monitoring: operations/monitoring.md
+    - Troubleshooting: operations/troubleshooting.md
+  - Reference:
+    - reference/index.md
+    - Environment Variables: reference/env-vars.md
+    - Glossary: reference/glossary.md
+    - Data Dictionary: reference/data-dictionary.md
+    - Dune Queries: reference/dune-queries.md
