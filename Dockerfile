@@ -11,9 +11,9 @@ COPY docs/ docs/
 
 RUN mkdocs build --strict
 
-# Stage 2: Serve with Nginx
-FROM nginx:alpine
+# Stage 2: Serve with rootless Nginx on an unprivileged port
+FROM nginxinc/nginx-unprivileged:alpine
 
 COPY --from=builder /docs/site /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 8080
