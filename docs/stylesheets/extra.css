@@ -8,3 +8,76 @@
   --md-primary-fg-color: #3D7E7E;
   --md-accent-fg-color: #04795B;
 }
+
+/* Homepage-only data-flow diagram styling */
+.home-data-flow {
+  margin: 1.5rem 0 2rem;
+  padding: 1.2rem 1.2rem 1.45rem;
+  border: 1px solid #bed0d7;
+  border-radius: 14px;
+  background: #f8fbfc;
+  overflow: hidden;
+}
+
+.home-data-flow-diagram--dark {
+  display: none;
+}
+
+.home-data-flow .mermaid {
+  margin: 0.6rem 0 0;
+  text-align: center;
+  width: 100%;
+}
+
+.home-data-flow .mermaid > svg {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto;
+  margin: 0 auto;
+}
+
+.home-data-flow-title {
+  margin: 0 0 0.55rem;
+  color: #0f2d3d;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  text-align: center;
+}
+
+[data-md-color-scheme="slate"] .home-data-flow {
+  border-color: #334155;
+  background: #0f172a;
+}
+
+[data-md-color-scheme="slate"] .home-data-flow-title {
+  color: #e2e8f0;
+}
+
+[data-md-color-scheme="slate"] .home-data-flow-diagram--light {
+  display: none;
+}
+
+[data-md-color-scheme="slate"] .home-data-flow-diagram--dark {
+  display: block;
+}
+
+@media (max-width: 860px) {
+  .home-data-flow {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .home-data-flow .mermaid > svg {
+    min-width: 820px;
+    width: auto !important;
+    max-width: none !important;
+  }
+
+  .home-data-flow-title {
+    font-size: 1.7rem;
+  }
+}

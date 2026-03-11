@@ -76,7 +76,7 @@ jobs:
             ghcr.io/${{ steps.org_name.outputs.org_name }}/gc-cerebro-docs:latest
             ghcr.io/${{ steps.org_name.outputs.org_name }}/gc-cerebro-docs:${{ steps.commit.outputs.short }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
 
       - name: Image Summary
         run: |

@@ -1,8 +1,12 @@
-# Gnosis Analytics Documentation
+# Cerebro Docs
+
+![Cerebro Docs](img/header-banner.png)
 
 Documentation site for the Gnosis Analytics platform, built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/).
 
 **Live site:** [docs.analytics.gnosis.io](https://docs.analytics.gnosis.io)
+
+---
 
 ## Quick Start
 
