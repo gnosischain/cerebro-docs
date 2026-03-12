@@ -1,4 +1,11 @@
-# Data Transformation
+# Data Modeling
+
+This section covers everything that turns raw blockchain data into analytics-ready datasets:
+
+- **[Data Transformation](#components)** -- The dbt projects that build ~400 SQL models from raw ClickHouse tables
+- **[dbt Model Catalog](../../models/index.md)** -- Reference for all models across execution, consensus, bridges, P2P, contracts, ESG, crawlers, and ProbeLab
+
+## Data Transformation
 
 The transformation layer converts raw blockchain data in ClickHouse into analytics-ready datasets using [dbt](https://www.getdbt.com/) (data build tool). Two projects handle this:
 

@@ -1,9 +1,19 @@
 ---
-title: API Reference
-description: REST API documentation for Gnosis Analytics
+title: Platform Tools
+description: APIs, MCP server, and dashboards for accessing Gnosis Analytics data
 ---
 
-# API Reference
+# Platform Tools
+
+The Gnosis Analytics platform provides three ways to access and explore blockchain data:
+
+- **REST API** -- Programmatic access to 400+ analytics endpoints with tiered authentication
+- **[MCP Server](../mcp/index.md)** -- 30+ tools for AI assistants to query ClickHouse, explore dbt models, and generate visualizations
+- **[Dashboard](../dashboard/index.md)** -- Interactive metrics dashboard at [metrics.gnosischain.com](https://metrics.gnosischain.com)
+
+---
+
+## API Reference
 
 The Gnosis Analytics API provides programmatic access to blockchain analytics data for Gnosis Chain. It is built with **FastAPI** and backed by **ClickHouse**, with endpoints auto-generated from the dbt manifest.
 

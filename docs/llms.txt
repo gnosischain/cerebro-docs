@@ -1,0 +1,35 @@
+# Gnosis Analytics
+
+> Gnosis Analytics is a blockchain data platform for Gnosis Chain. It provides a ClickHouse-based data warehouse, ~400 dbt models, a REST API, an MCP server for AI assistants, and dashboards. All on-chain data (execution layer, consensus layer, P2P network) is indexed and decoded.
+
+## Docs
+
+- [Platform Overview](https://docs.analytics.gnosis.io/getting-started/platform-overview/): Architecture, data flow, and the 13-repo ecosystem
+- [Quick Start](https://docs.analytics.gnosis.io/getting-started/quickstart/): Make your first API call in under a minute
+- [API Reference](https://docs.analytics.gnosis.io/api/): REST API endpoints, authentication, filtering
+- [MCP Server](https://docs.analytics.gnosis.io/mcp/): 30+ tools for querying ClickHouse, exploring dbt models, visualization
+- [Data Ingestion](https://docs.analytics.gnosis.io/data-pipeline/ingestion/): cryo-indexer, beacon-indexer, era-parser, crawlers
+- [Data Transformation](https://docs.analytics.gnosis.io/data-pipeline/transformation/): dbt-cerebro, model layers, ABI decoding macros
+- [dbt Model Catalog](https://docs.analytics.gnosis.io/models/): 400+ models across execution, consensus, contracts, bridges, P2P, ESG
+- [Contract ABI Decoding](https://docs.analytics.gnosis.io/data-pipeline/transformation/abi-decoding/): How decode_logs/decode_calls work, on-the-fly raw SQL decoding
+
+## Research
+
+- [Protocol Analytics Overview](https://docs.analytics.gnosis.io/protocols/): DeFi protocol deep dives with decoded event schemas and SQL examples
+- [Lending Overview](https://docs.analytics.gnosis.io/protocols/lending/): Health factor, interest rate model, key events (Deposit/Supply/Borrow/Repay/Liquidation)
+- [Agave](https://docs.analytics.gnosis.io/protocols/lending/agave/): Aave V2 fork — contracts, decoded_params keys, example queries
+- [Aave V3](https://docs.analytics.gnosis.io/protocols/lending/aave-v3/): E-Mode, Isolation Mode, Siloed Borrowing
+- [Spark](https://docs.analytics.gnosis.io/protocols/lending/spark/): MakerDAO's Aave V3 fork
+- [DEX Overview](https://docs.analytics.gnosis.io/protocols/dexes/): AMM mechanics, concentrated liquidity, sqrtPriceX96, Balancer weighted pools
+- [Uniswap V3](https://docs.analytics.gnosis.io/protocols/dexes/uniswap-v3/): Pool events, price derivation, swap volume queries
+- [Balancer](https://docs.analytics.gnosis.io/protocols/dexes/balancer/): V2/V3 Vault architecture, pool types
+- [CoW Protocol](https://docs.analytics.gnosis.io/protocols/dexes/cowswap/): Intent-based batch auctions, raw Trade event decoding
+- [Swapr](https://docs.analytics.gnosis.io/protocols/dexes/swapr/): Algebra V3 fork, naming differences from UniV3
+- [ESG Reporting](https://docs.analytics.gnosis.io/esg-reporting/): Carbon footprint and energy consumption estimation methodology
+
+## Optional
+
+- [Dashboard](https://docs.analytics.gnosis.io/dashboard/): Metrics dashboard at metrics.gnosischain.com
+- [Operations](https://docs.analytics.gnosis.io/operations/): Infrastructure, deployment, monitoring
+- [Reference](https://docs.analytics.gnosis.io/reference/): Environment variables, glossary, data dictionary
+- [Developer Guide](https://docs.analytics.gnosis.io/developer/): Adding endpoints, models, scrapers, conventions

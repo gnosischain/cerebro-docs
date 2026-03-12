@@ -2,6 +2,64 @@
 
 The data ingestion layer is responsible for extracting raw blockchain data from various sources and loading it into ClickHouse. Each indexer is purpose-built for a specific data source and runs as an independent containerized service.
 
+This section covers all ingestion components: the execution-layer and consensus-layer indexers, the era file parser for historical backfills, the click-runner for external data sources, and the network crawlers that capture P2P topology.
+
+## Pipeline Architecture
+
+```mermaid
+graph LR
+    subgraph Sources
+        EL[Execution Layer<br/>RPC Node]
+        CL[Consensus Layer<br/>Beacon Node]
+        P2P[P2P Network<br/>DHT Peers]
+        EXT[External<br/>Ember, ProbeLab]
+    end
+
+    subgraph Indexers
+        CRYO[cryo-indexer]
+        BEACON[beacon-indexer]
+        ERA[era-parser]
+        CR[click-runner]
+        NEB[nebula]
+        IPC[ip-crawler]
+    end
+
+    subgraph Storage
+        CH[(ClickHouse Cloud)]
+    end
+
+    subgraph Transformation
+        DBT[dbt-cerebro<br/>~400 models]
+    end
+
+    subgraph Serving
+        API[REST API]
+        MCP[MCP / AI Tools]
+        DASH[Dashboards]
+    end
+
+    EL --> CRYO
+    CL --> BEACON
+    CL --> ERA
+    EXT --> CR
+    P2P --> NEB
+    NEB --> IPC
+
+    CRYO --> CH
+    BEACON --> CH
+    ERA --> CH
+    CR --> CH
+    NEB --> CH
+    IPC --> CH
+
+    CH --> DBT
+    DBT --> CH
+
+    CH --> API
+    API --> MCP
+    API --> DASH
+```
+
 ## Indexer Overview
 
 | Indexer | Source | Target Database | Language | Key Capability |

@@ -137,13 +137,13 @@ flowchart TD
 
     [:octicons-arrow-right-24: API Reference](api/index.md)
 
--   **Data Pipeline**
+-   **Data Ingestion**
 
     ---
 
-    Architecture overview, data acquisition, storage, and transformation layers.
+    Architecture overview, indexers, and crawlers that feed raw blockchain data into ClickHouse.
 
-    [:octicons-arrow-right-24: Data Pipeline](data-pipeline/index.md)
+    [:octicons-arrow-right-24: Data Ingestion](data-pipeline/ingestion/index.md)
 
 -   **Model Catalog**
 
