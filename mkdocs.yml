@@ -103,6 +103,7 @@ nav:
       - data-pipeline/crawlers/index.md
       - DHT Crawler (Nebula): data-pipeline/crawlers/nebula.md
       - IP Geolocation (ip_crawler): data-pipeline/crawlers/ip-crawler.md
+      - Circles Avatar IPFS Metadata: data-pipeline/crawlers/circles-avatar-ipfs.md
   - Data Modeling:
     - data-pipeline/transformation/index.md
     - dbt-cerebro: data-pipeline/transformation/dbt-cerebro.md
@@ -135,6 +136,9 @@ nav:
         - Balancer: protocols/dexes/balancer.md
         - CoW Protocol: protocols/dexes/cowswap.md
         - Swapr: protocols/dexes/swapr.md
+      - Circles:
+        - protocols/circles/index.md
+        - Data Models: protocols/circles/data-models.md
     - ESG Reporting:
       - esg-reporting/index.md
       - Node Population: esg-reporting/node-population.md

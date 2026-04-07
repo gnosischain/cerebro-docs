@@ -28,6 +28,12 @@ decoded_params['liquidityRate'] -- interest rate in RAY (divide by 1e27)
 | [CoW Protocol](dexes/cowswap.md) | `0x9008D19f58AAbD9eD0D60971565AA8510560ab41` | *(no model yet)* | — |
 | [Swapr](dexes/swapr.md) | Dynamic (whitelist) | `contracts_Swapr_v3_AlgebraPool_events` | 2022-03-01 |
 
+## Circles Protocol
+
+| Protocol | Contract Address | dbt Model | Live Since |
+|----------|-----------------|-----------|------------|
+| [Circles V2](circles/index.md) | `0xc12C1E50ABB450d6205Ea2C3Fa861b3B834d13e8` | `contracts_circles_v2_Hub_events` | 2024-10-15 |
+
 ## See Also
 
 - [Contract ABI Decoding](../data-pipeline/transformation/abi-decoding.md) — how the decoding pipeline works
