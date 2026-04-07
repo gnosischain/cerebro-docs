@@ -146,31 +146,283 @@ dbt run --select your_contract_events your_contract_calls
 dbt run --select contracts
 ```
 
+## Decoding Patterns
+
+dbt-cerebro supports four decoding patterns, in order of complexity. Choosing the right one depends on **how many contracts** you need to decode and **whether they share an ABI**:
+
+| Pattern | When to use | Example |
+|---|---|---|
+| **Single static address** | One immutable contract, no proxy | Circles V1 Hub |
+| **Multiple static addresses** | Small fixed set sharing one ABI | A handful of aTokens |
+| **Whitelist seed** (`contract_address_ref`) | Many contracts of the same type that all share one ABI per pool | UniswapV3 / Swapr V3 pools |
+| **Proxy / factory registry** (`contract_address_ref` with `abi_source_address`) | Proxy contracts (ABI lives at a different implementation address) **and** factory-discovered children | Circles V2 Groups, PaymentGateways, ERC20 wrappers |
+
+The same two macros (`decode_logs`, `decode_calls`) handle all four patterns. Which path runs is decided by which arguments you pass.
+
+### Pattern 1 + 2 — Static address(es)
+
+Pass a single hex string or an array. The macro normalizes them and builds a `WHERE address IN (…)` filter.
+
+```sql
+{{ decode_logs(
+    source_table     = source('execution', 'logs'),
+    contract_address = '0x29b9a7fbb8995b2423a71cc17cf9810798f6c543',
+    output_json_type = true,
+    incremental_column = 'block_timestamp',
+    start_blocktime  = '2020-10-01'
+) }}
+```
+
+For multiple addresses:
+
+```sql
+{{ decode_logs(
+    source_table     = source('execution', 'logs'),
+    contract_address = ['0xfa…', '0x4d…', '0x83…'],
+    ...
+) }}
+```
+
+### Pattern 3 — Whitelist seed (`contracts_whitelist`)
+
+When you have many contracts of the same type — for example, every Swapr V3 / UniswapV3 pool tracked for a list of whitelisted tokens — list them in a flat seed and reference it via `contract_address_ref`. Each pool has its own contract address but shares the same ABI shape, so they all hit the same `event_signatures` rows once an ABI for one pool has been generated.
+
+`seeds/contracts_whitelist.csv`:
+
+```csv
+address,contract_type
+0xe29f8626abf208db55c5d6f0c49e5089bdb2baa8,UniswapV3Pool
+0x7440d14fac56ea9e6d0c9621dd807b9d96933666,UniswapV3Pool
+0x01343cf42c7f1f71b230126dda3b7b2c108e9f2e,SwaprPool
+…
+```
+
+The model file:
+
+```sql
+{{ decode_logs(
+    source_table         = source('execution','logs'),
+    contract_address_ref = ref('contracts_whitelist'),
+    contract_type_filter = 'UniswapV3Pool',
+    output_json_type     = true,
+    incremental_column   = 'block_timestamp',
+    start_blocktime      = '2022-04-22'
+) }}
+```
+
+The macro emits a JOIN like this and uses `cw.address` directly as the `abi_join_address`:
+
+```sql
+ANY LEFT JOIN dbt.contracts_whitelist cw
+    ON lower(replaceAll(l.address, '0x', '')) = lower(replaceAll(cw.address, '0x', ''))
+   AND cw.contract_type = 'UniswapV3Pool'
+```
+
+Every pool resolves to its own `event_signatures` rows via its own contract address — no proxy logic involved.
+
+### Pattern 4 — Proxy / factory registry
+
+Many protocols deploy **proxy contracts**: the bytecode at address `A` is a thin proxy that delegates to an implementation at address `B`. The on-chain events are emitted from `A`, but the ABI is published under `B`. To decode events on `A`, you need to look up signatures by `B`'s address, not `A`'s.
+
+This is what the `abi_source_address` column on a registry seed enables. The decoder uses
+
+```sql
+coalesce(nullIf(cw.abi_source_address, ''), cw.address)
+```
+
+as the `abi_join_address`. So:
+
+- If `abi_source_address` is set on a row → ABI lookup uses **that** address (the implementation)
+- If it's empty/null → ABI lookup falls back to the contract's own address (no proxy)
+
+A single registry can hold both proxies and non-proxies in one table.
+
+`seeds/contracts_circles_registry_static.csv`:
+
+```csv
+address,contract_type,abi_source_address,is_dynamic,start_blocktime,discovery_source
+0x29b9a7fbb8995b2423a71cc17cf9810798f6c543,HubV1,0x29b9a7fbb8995b2423a71cc17cf9810798f6c543,0,2020-10-01,static
+0xc12c1e50abb450d6205ea2c3fa861b3b834d13e8,HubV2,0xc12c1e50abb450d6205ea2c3fa861b3b834d13e8,0,2024-10-01,static
+0xfeca40eb02fb1f4f5f795fc7a03c1a27819b1ded,CMGroupDeployer,0xfeca40eb02fb1f4f5f795fc7a03c1a27819b1ded,0,2025-02-01,static
+…
+```
+
+A child decode model that targets all rows where `contract_type = 'BaseGroupRuntime'`:
+
+```sql
+{{ decode_logs(
+    source_table         = source('execution', 'logs'),
+    contract_address_ref = ref('contracts_circles_registry'),
+    contract_type_filter = 'BaseGroupRuntime',
+    output_json_type     = true,
+    incremental_column   = 'block_timestamp',
+    start_blocktime      = '2025-04-01'
+) }}
+```
+
+### Compile-time seed introspection (`has_abi_source_col`)
+
+Both `decode_logs` and `decode_calls` work transparently with **either** a flat whitelist seed (no `abi_source_address` column) **or** a rich registry (with the column). They detect which case they're in at compile time, via dbt's adapter API:
+
+```jinja
+{% set has_abi_source_col = false %}
+{% if execute %}
+  {% set _cw_columns = adapter.get_columns_in_relation(contract_address_ref) %}
+  {% set _cw_column_names = _cw_columns | map(attribute='name') | map('lower') | list %}
+  {% if 'abi_source_address' in _cw_column_names %}
+    {% set has_abi_source_col = true %}
+  {% endif %}
+{% endif %}
+```
+
+When the flag is `true`, the macro emits the proxy-aware `coalesce(nullIf(cw.abi_source_address, ''), cw.address)` expression. When `false`, it emits a bare `cw.address` reference. A model authored against `contracts_whitelist` (no proxies) and a model authored against `contracts_circles_registry` (with proxies) both work with no caller-side branching.
+
+If you ever see a `Code: 47. DB::Exception: Identifier 'cw.abi_source_address' cannot be resolved` error, it means your registry seed is missing the column it claims to have, or the macro was compiled before the introspection was added. Pull the latest decoding macros from `dbt-cerebro/macros/decoding/`.
+
+## Factory Discovery
+
+Some protocols deploy contracts dynamically via factory contracts. Circles V2 is a heavy user — every Group, every PaymentGateway, every ERC20 wrapper is created on demand. Listing all of them in a static seed isn't viable because new ones land every day.
+
+The factory pattern works like this:
+
+### 1. Declare factories in a seed
+
+`seeds/contracts_factory_registry.csv`:
+
+```csv
+factory_address,factory_events_model,creation_event_name,child_address_param,child_contract_type,child_abi_source_address,protocol,start_blocktime
+0xd0b5bd9962197beac4cba24244ec3587f19bd06d,contracts_circles_v2_BaseGroupFactory_events,BaseGroupCreated,group,BaseGroupRuntime,0x6fa6b486b2206ec91f9bf36ef139ebd8e4477fac,circles_v2,2025-04-01
+0xfeca40eb02fb1f4f5f795fc7a03c1a27819b1ded,contracts_circles_v2_CMGroupDeployer_events,CMGroupCreated,proxy,BaseGroupRuntime,0x6fa6b486b2206ec91f9bf36ef139ebd8e4477fac,circles_v2,2025-02-01
+0x5f99a795dd2743c36d63511f0d4bc667e6d3cdb5,contracts_circles_v2_ERC20Lift_events,ERC20WrapperDeployed,erc20Wrapper,ERC20Wrapper,,circles_v2,2024-10-01
+```
+
+Each row says: "the factory at `factory_address` emits `creation_event_name` events from which the child contract address can be extracted from the `child_address_param` decoded parameter; that child should be tagged with `child_contract_type` and decoded using the ABI from `child_abi_source_address`."
+
+### 2. Decode the factory itself first
+
+Before children can be discovered, the factory's own events have to be decoded. This is a normal decode-logs model targeting the factory address — for example `models/contracts/Circles/contracts_circles_v2_BaseGroupFactory_events.sql`:
+
+```sql
+{{ decode_logs(
+    source_table     = source('execution', 'logs'),
+    contract_address = '0xd0b5bd9962197beac4cba24244ec3587f19bd06d',
+    output_json_type = true,
+    incremental_column = 'block_timestamp',
+    start_blocktime  = '2025-04-01'
+) }}
+```
+
+This produces a table of every `BaseGroupCreated` event with its `decoded_params['group']` payload.
+
+### 3. The `resolve_factory_children` macro
+
+`macros/contracts/resolve_factory_children.sql` reads `contracts_factory_registry` at compile time and generates a `UNION ALL` query. For each factory row it emits:
+
+```sql
+SELECT
+  lower(decoded_params['{{ child_address_param }}']) AS address,
+  '{{ child_contract_type }}'                         AS contract_type,
+  lower('{{ child_abi_source_address }}')             AS abi_source_address,
+  toUInt8(1)                                          AS is_dynamic,
+  '{{ start_blocktime }}'                             AS start_blocktime,
+  '{{ creation_event_name }}'                         AS discovery_source
+FROM {{ ref(factory_events_model) }}
+WHERE event_name = '{{ creation_event_name }}'
+GROUP BY 1
+```
+
+It accepts a `protocol=` filter so you can scope the discovery to one protocol family (e.g. `circles_v2`).
+
+### 4. Per-protocol registry view
+
+The protocol's registry view UNIONs the static seed with the dynamic discoveries. From `models/contracts/Circles/contracts_circles_registry.sql`:
+
+```sql
+{{ config(materialized='view', tags=['production', 'contracts', 'circles_v2', 'registry']) }}
+
+-- depends_on: {{ ref('contracts_factory_registry') }}
+-- depends_on: {{ ref('contracts_circles_v2_BaseGroupFactory_events') }}
+-- depends_on: {{ ref('contracts_circles_v2_CMGroupDeployer_events') }}
+-- depends_on: {{ ref('contracts_circles_v2_ERC20Lift_events') }}
+-- … one per factory_events_model …
+
+WITH static_registry AS (
+    SELECT
+        lower(address)            AS address,
+        contract_type,
+        lower(abi_source_address) AS abi_source_address,
+        toUInt8(is_dynamic)       AS is_dynamic,
+        start_blocktime,
+        discovery_source
+    FROM {{ ref('contracts_circles_registry_static') }}
+)
+
+SELECT * FROM static_registry
+UNION ALL
+{{ resolve_factory_children(protocol='circles_v2') }}
+```
+
+The `-- depends_on:` comments are **load-bearing**. Because `resolve_factory_children` loops at compile time over the seed's contents, dbt cannot statically infer which factory event models the view depends on. Adding explicit `-- depends_on: {{ ref(...) }}` comments tells dbt to materialize those models first. Forgetting them causes "model not found" errors when dbt compiles the registry view in isolation.
+
+### 5. Child decode models
+
+Now the child decode models point at the registry view, scoped by `contract_type_filter`:
+
+```sql
+{{ decode_logs(
+    source_table         = source('execution', 'logs'),
+    contract_address_ref = ref('contracts_circles_registry'),
+    contract_type_filter = 'BaseGroupRuntime',
+    output_json_type     = true,
+    incremental_column   = 'block_timestamp',
+    start_blocktime      = '2025-04-01'
+) }}
+```
+
+Every `BaseGroupRuntime` row in the registry — both the statically declared ones and the factory-discovered ones — is decoded by this single model. New groups appear automatically on the next nightly run.
+
+### Build order for factory-driven decoding
+
+```mermaid
+graph TD
+    A[contracts_factory_registry seed] --> B
+    B[contracts_circles_v2_BaseGroupFactory_events] --> E
+    C[contracts_circles_v2_CMGroupDeployer_events] --> E
+    D[contracts_circles_v2_ERC20Lift_events] --> E
+    E[contracts_circles_registry view<br/>= static seed UNION resolve_factory_children]
+    E --> F[contracts_circles_v2_BaseGroup_events]
+    E --> G[contracts_circles_v2_PaymentGateway_events]
+    E --> H[contracts_circles_v2_ERC20TokenOffer_events]
+```
+
+The `-- depends_on:` comments in the registry view enforce this order automatically.
+
 ## How the Macros Work
 
 ### `decode_logs` Macro
 
-1. Filters the source `logs` table for the specified contract address
-2. Extracts `topic0` (the event signature hash) from each log entry
-3. Joins against the `event_signatures` seed table to find matching event definitions
-4. Parses the remaining topics and `data` field according to the ABI parameter types
-5. Outputs decoded event name and typed parameters
+1. Filters the source `logs` table for the specified contract address(es) — either via `contract_address` (static) or via a subquery against `contract_address_ref` (whitelist/registry)
+2. Deduplicates source rows via `ROW_NUMBER OVER (PARTITION BY block_number, transaction_index, log_index ORDER BY insert_version DESC)` (replaces the older `FROM source FINAL` pattern, which was forcing whole-table merges on every incremental run)
+3. JOINs to the whitelist/registry seed (when used) to compute an `abi_join_address` per row — the contract's own address for flat whitelists, or `coalesce(nullIf(cw.abi_source_address, ''), cw.address)` for proxy registries
+4. Extracts `topic0` (the event signature hash) from each log entry
+5. Joins against the `event_signatures` seed table on `(abi_join_address, topic0)` to find matching event definitions
+6. Parses the remaining topics and `data` field according to the ABI parameter types
+7. Outputs decoded event name and typed parameters as a `Map(String, String)` (when `output_json_type=true`) or a JSON string
 
 ### `decode_calls` Macro
 
-1. Filters the source `transactions` table for transactions sent to the specified contract address
-2. Extracts the first 4 bytes of `input` data (the function selector)
-3. Joins against the `function_signatures` seed table to find matching function definitions
-4. Parses the remaining input data according to the ABI parameter types
-5. Outputs decoded function name and typed parameters
+Same shape as `decode_logs` but reads `execution.transactions` instead of `execution.logs`, uses the first 4 bytes of `input` as the function selector, and joins to `function_signatures` instead of `event_signatures`. Uses `to_address` as the default `selector_column` (vs `address` for logs).
 
 ## Seed Files
 
-| Seed File | Contents | Key Columns |
-|-----------|----------|-------------|
-| `contracts_abi.csv` | Raw ABI JSON per contract | `contract_address`, `abi_json` |
-| `event_signatures.csv` | Event topic-to-name mappings | `signature_hash`, `event_name`, `contract_address`, `inputs` |
-| `function_signatures.csv` | Selector-to-name mappings | `selector`, `function_name`, `contract_address`, `inputs` |
+| Seed | What it stores | Who writes it | Consumed by |
+|---|---|---|---|
+| `contracts_abi` | Raw ABI JSON per contract address (and per implementation address for proxies). One row per contract or proxy/impl pair. | `dbt run-operation fetch_and_insert_abi` (calls Blockscout) → manually re-exported via `scripts/abi/export_contracts_abi.py` to keep the seed CSV in sync | `signature_generator.py` (only) |
+| `event_signatures` | Pre-computed `(contract_address, topic0_hash, event_name, params, indexed/non_indexed split)` rows. One row per event per ABI. | `scripts/signatures/signature_generator.py` (parses contracts_abi.csv, computes keccak hashes, canonicalizes types) | `decode_logs` macro (JOIN target) |
+| `function_signatures` | Same idea but for function selectors. One row per function per ABI. | Same script | `decode_calls` macro (JOIN target) |
+| `contracts_whitelist` | Flat list of `(address, contract_type)`. No proxy support. | Manual edits to the CSV | `decode_logs` / `decode_calls` via `contract_address_ref` |
+| `contracts_circles_registry_static` | Curated `(address, contract_type, abi_source_address, is_dynamic=0, start_blocktime, discovery_source='static')` for the Circles V2 protocol. The `abi_source_address` column lets it support proxies. | Manual edits to the CSV | `contracts_circles_registry` view (which UNIONs it with factory discoveries) |
+| `contracts_factory_registry` | Per-factory metadata: which factory address, which event signals child creation, which decoded param holds the child address, what `contract_type` to assign, what `abi_source_address` to use for the children, and which protocol family it belongs to. | Manual edits to the CSV | `resolve_factory_children` macro |
 
 ## Safe Workflow Summary
 
@@ -187,19 +439,80 @@ python scripts/abi/export_contracts_abi.py
 python scripts/signatures/signature_generator.py
 
 # 4. Load seeds (safe now because CSVs are up to date)
-dbt seed
+dbt seed --select contracts_abi event_signatures function_signatures
 
-# 5. Run decoding models
-dbt run --select contracts
+# 5. Create the decode model file under models/contracts/<Protocol>/, e.g.
+#    contracts_<protocol>_<contract>_events.sql with a decode_logs(...) call.
+#    Add a matching schema.yml entry.
+
+# 6. Run the new model
+dbt run --select contracts_<protocol>_<contract>_events
 ```
+
+### Adding a new factory
+
+When the contract you want to decode is a factory whose children should also be decoded automatically, the workflow is the same as above for the factory's own ABI, plus a few extra steps to wire up child discovery:
+
+```bash
+# Steps 1-4 above for the factory's own ABI. Then also fetch the
+# child implementation ABI:
+dbt run-operation fetch_and_insert_abi --args '{"address": "0xChildImplementationAddress"}'
+python scripts/abi/export_contracts_abi.py
+python scripts/signatures/signature_generator.py
+dbt seed --select contracts_abi event_signatures function_signatures
+
+# 5. Create the factory's own events model so its creation events get decoded:
+#    models/contracts/<Protocol>/contracts_<protocol>_<Factory>_events.sql
+#    using decode_logs(contract_address='0xFactoryAddress', ...)
+
+# 6. Append a row to seeds/contracts_factory_registry.csv:
+#    factory_address,factory_events_model,creation_event_name,child_address_param,
+#    child_contract_type,child_abi_source_address,protocol,start_blocktime
+#
+#    - child_address_param is the parameter name in the creation event
+#      that holds the new child's address (e.g. 'group' for BaseGroupCreated)
+#    - child_abi_source_address is the implementation address whose ABI was
+#      fetched in the step above
+
+# 7. Reload the seed:
+dbt seed --select contracts_factory_registry
+
+# 8. Add a `-- depends_on: {{ ref('contracts_<protocol>_<Factory>_events') }}`
+#    line to the per-protocol registry view
+#    (e.g. contracts_circles_registry.sql) so dbt builds the factory model
+#    BEFORE the registry view. This is required because resolve_factory_children
+#    uses dynamic ref() calls that dbt cannot infer statically.
+
+# 9. Create the per-child-type decode model:
+#    models/contracts/<Protocol>/contracts_<protocol>_<ChildType>_events.sql
+#    using decode_logs(
+#      contract_address_ref = ref('contracts_<protocol>_registry'),
+#      contract_type_filter = '<ChildType>'
+#    )
+
+# 10. Run the chain:
+dbt run --select contracts_<protocol>_<Factory>_events \
+                 contracts_<protocol>_registry \
+                 contracts_<protocol>_<ChildType>_events
+```
+
+After this is wired up, every nightly run automatically picks up new children created by the factory — no further manual work needed.
 
 ## Troubleshooting
 
-**Empty decoded tables** -- Verify that the contract address matches exactly (case-sensitive hex), signatures were generated and seeded, and raw data exists for the target time period.
+**Empty decoded tables** — Verify that the contract address matches exactly (case-sensitive hex), signatures were generated and seeded, and raw data exists for the target time period.
 
-**Missing ABI after seed** -- You ran `dbt seed` without first exporting. Re-fetch the ABI and follow the safe workflow above.
+**Missing ABI after seed** — You ran `dbt seed` without first exporting. Re-fetch the ABI and follow the safe workflow above.
 
-**Signature generation fails** -- Check that ABIs exist in ClickHouse (`SELECT COUNT(*) FROM contracts_abi`) and that the JSON is valid (`SELECT contract_address FROM contracts_abi WHERE NOT isValidJSON(abi_json)`).
+**Signature generation fails** — Check that ABIs exist in ClickHouse (`SELECT COUNT(*) FROM contracts_abi`) and that the JSON is valid (`SELECT contract_address FROM contracts_abi WHERE NOT isValidJSON(abi_json)`).
+
+**`Code: 47. DB::Exception: Identifier 'cw.abi_source_address' cannot be resolved`** — The decoder is trying to reference `abi_source_address` on a seed that doesn't have that column. Either upgrade the seed to include `abi_source_address` (recommended for proxy registries), or rely on the macro's compile-time introspection to fall back to `cw.address` automatically. If the introspection isn't kicking in, your `decode_logs.sql` / `decode_calls.sql` may be older than the fix that introduced the `has_abi_source_col` flag — pull the latest macros from `dbt-cerebro/macros/decoding/`.
+
+**Decoded events have empty `decoded_params`** — The contract address has no matching row in `event_signatures` for the topic0. Check that (a) you ran `signature_generator.py` after fetching the ABI, (b) the ABI in `contracts_abi.csv` has the event you expect, and (c) the address you're joining on matches the one in `event_signatures` — for proxies, the ABI is keyed on the implementation address, not the proxy address.
+
+**A factory-discovered child doesn't show up in the registry view** — Check the factory events model has actually run and contains rows with `event_name = '<creation_event_name>'`. Then confirm that `decoded_params` contains the `child_address_param` key referenced in `contracts_factory_registry.csv`. The macro does `decoded_params['<child_address_param>']` — a typo in the seed will silently produce empty addresses.
+
+**`model not found` when building `contracts_<protocol>_registry`** — Add the missing factory events model to the `-- depends_on:` comments at the top of the registry view. dbt cannot infer dynamic `ref(...)` calls inside `resolve_factory_children`'s loop, so the registry view's dependencies must be declared explicitly via comments.
 
 ---
 

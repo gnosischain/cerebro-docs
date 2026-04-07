@@ -16,20 +16,20 @@ The implementation lives in [`dbt-cerebro`](https://github.com/gnosischain/dbt-c
 flowchart LR
   A["contracts_circles_v2_NameRegistry_events<br/>(UpdateMetadataDigest)"]
     --> B["dbt view:<br/>int_execution_circles_v2_avatar_metadata_targets<br/>(avatar, digest, CIDv0, gateway URL)"]
-  B -- one-time backfill --> C["scripts/circles/<br/>backfill_avatar_metadata.py<br/>(threadpool, gateway fallback,<br/>retries, batched inserts)"]
-  B -- nightly delta --> D["dbt run-operation<br/>fetch_and_insert_circles_metadata<br/>(ClickHouse url() + INSERT)"]
+  B -- backfill + nightly delta --> C["scripts/circles/<br/>backfill_avatar_metadata.py<br/>(threadpool, gateway fallback,<br/>retries, batched inserts,<br/>per-row error handling)"]
   C --> E["raw table:<br/>circles_avatar_metadata_raw<br/>(ReplacingMergeTree)"]
-  D --> E
   E --> F["dbt view:<br/>int_execution_circles_v2_avatar_metadata<br/>(typed name/description/imageUrl/...)"]
   F --> G["downstream Circles models / marts / MCP"]
 ```
 
-Two write paths land in the same raw table; downstream dbt models do not care which produced the row. Both paths use a `LEFT ANTI JOIN` against `circles_avatar_metadata_raw` so re-runs only fetch what is missing.
+The Python script handles **both** the historical backfill and the nightly delta. It uses a `LEFT ANTI JOIN` against `circles_avatar_metadata_raw` so re-runs only fetch what is missing, and persists every result (success OR failure) so dead CIDs are recorded once and excluded from future runs forever.
 
-The split exists for **scale and reliability**:
+Why a single Python path instead of dbt run-operation for the daily delta:
 
-- **Python backfill** (one-time): the historical sink is ~40k unique digests. Doing 40k synchronous HTTP calls inside a single ClickHouse `url()` query would be fragile and provide no retry semantics. The Python script handles concurrency, gateway fallback, exponential backoff, and batched inserts.
-- **dbt run-operation** (nightly): steady-state volume is ~hundreds of new digests per day, which fits comfortably inside a per-row `url()` call sequence inside a single dbt invocation. No external infrastructure required.
+- **Concurrency**: 30 worker threads vs sequential row-by-row.
+- **Per-row error handling**: try/except in Python catches one bad fetch without aborting the others. dbt-cerebro's Jinja macros can't `try/except` around `run_query`, so a single failed CID would abort the entire run-operation.
+- **Bounded per-fetch wall time**: the script uses `--request-timeout` to hard-cap each HTTP call. ClickHouse's `url()` table function retries internally on 5xx (default `http_max_tries ≈ 10`) and can spend 5-10 minutes per dead CID before throwing.
+- **Failure persistence**: failed fetches are inserted into `circles_avatar_metadata_raw` with `http_status != 200` and an `error` message, so the `LEFT ANTI JOIN` excludes them on subsequent runs. dbt run-operations never wrote failure rows, so dead CIDs would clog the queue forever.
 
 ## Components
 
@@ -37,11 +37,10 @@ The split exists for **scale and reliability**:
 |---|---|---|
 | `circles_metadata_digest_hex`, `circles_metadata_digest_to_cid_v0`, `circles_metadata_gateway_url` | Jinja macros (CID helpers) | `macros/circles/circles_utils.sql` |
 | `create_circles_avatar_metadata_table` | DDL run-operation | `macros/circles/create_circles_avatar_metadata_table.sql` |
-| `fetch_and_insert_circles_metadata` | Nightly run-operation | `macros/circles/fetch_and_insert_circles_metadata.sql` |
 | `int_execution_circles_v2_avatar_metadata_targets` | dbt view | `models/execution/Circles/intermediate/` |
 | `int_execution_circles_v2_avatar_metadata` | dbt view (typed) | `models/execution/Circles/intermediate/` |
 | `circles_avatar_metadata_raw` | ClickHouse table (registered as `source('auxiliary', ...)`) | created by the DDL macro |
-| `backfill_avatar_metadata.py` | One-time Python script | `scripts/circles/backfill_avatar_metadata.py` |
+| `backfill_avatar_metadata.py` | Python script (backfill + nightly delta) | `scripts/circles/backfill_avatar_metadata.py` |
 
 The orchestration is wired into `scripts/run_dbt_observability.sh` (the daily cron entry point) between source freshness and the main `tag:production` batch run.
 
@@ -176,17 +175,28 @@ The daily cron orchestrator (`scripts/run_dbt_observability.sh` in `dbt-cerebro`
 # 1. Refresh the queue view so today's new digests are visible
 dbt run --select int_execution_circles_v2_avatar_metadata_targets
 
-# 2. Fetch up to 500 unresolved digests via ClickHouse url() + INSERT
-dbt run-operation fetch_and_insert_circles_metadata --args '{"batch_size": 500}'
+# 2. Fetch every unresolved (avatar, metadata_digest) pair, concurrently,
+#    with per-row error handling and gateway fallback. Failures are
+#    persisted into circles_avatar_metadata_raw with http_status != 200
+#    so they are excluded from future runs by the LEFT ANTI JOIN.
+python scripts/circles/backfill_avatar_metadata.py \
+  --concurrency 30 \
+  --max-retries 1 \
+  --request-timeout 15
 ```
 
-The macro:
+The script:
 
 1. `LEFT ANTI JOIN`s the targets view against `circles_avatar_metadata_raw` to find unresolved pairs.
-2. For each row in the batch, runs an `INSERT INTO circles_avatar_metadata_raw … SELECT … FROM url(gateway_url, 'Raw', 'body String')`.
-3. Records **successful** fetches only — a failed `url()` call surfaces as a run-operation error and the offending row is automatically retried on the next nightly invocation (because the LEFT ANTI JOIN keeps it in the queue).
+2. Spawns 30 worker threads. Each worker fetches one CID at a time, falling through `ipfs.io → w3s.link → nftstorage.link → 4everland → pinata → dweb.link` until one succeeds or all six 504/timeout. Per-request timeout is hard-capped at 15 seconds.
+3. Inserts **every** result — success and failure — into `circles_avatar_metadata_raw` with `http_status`, `content_type`, `body`, `error`, and `fetched_at` populated. CIDs that the public IPFS network cannot resolve (no providers in the DHT) are recorded as failure rows once and never retried.
+4. Logs progress every ~50 fetches and emits a final `Backfill complete: X ok, Y failed` summary.
+
+Typical nightly runtime: under a minute for a clean steady-state day, ~3-5 minutes if the queue contains a backlog of new dead CIDs that need to be marked.
 
 When the main `tag:production` batch run executes immediately after, the dependency graph rebuilds `int_execution_circles_v2_avatar_metadata` so the parsed view reflects the day's new payloads in the same nightly cycle.
+
+> **Why a Python script and not a dbt run-operation?** An earlier version of this pipeline used a `dbt run-operation fetch_and_insert_circles_metadata` macro that called ClickHouse's `url()` table function row by row. That approach was structurally broken: Jinja can't catch `run_query` exceptions, ClickHouse `url()` retries internally for 5–10 minutes per dead CID before throwing, the macro aborted on the first failure, and failures were never persisted — so the queue would clog with permanently-unreachable CIDs forever. The Python script fixes all four problems and is now the canonical fetcher for both backfill and nightly delta.
 
 ## One-time backfill (manual)
 
