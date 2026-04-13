@@ -13,35 +13,82 @@ The decoding system works in two phases:
 
 ## Decoding Workflow
 
+Two paths are supported to get an ABI into the seed layer. Both end in the same state (CSV is the source of truth, ClickHouse and `event_signatures.csv` are in sync); pick whichever suits your environment.
+
+```mermaid
+graph TD
+    A[Contract address] --> B1["fetch_abi_to_csv.py<br/>(preferred:<br/>direct HTTP to Blockscout,<br/>writes straight to CSV)"]
+    A --> B2["fetch_and_insert_abi macro<br/>(legacy:<br/>via ClickHouse url(),<br/>writes to CH table)"]
+    B1 --> CSV[contracts_abi.csv seed]
+    B2 --> CH[contracts_abi table in CH]
+    CH -- "export_contracts_abi.py<br/>(required or the row is lost)" --> CSV
+    CSV -- "dbt seed contracts_abi" --> CH
+    CH --> SG[signature_generator.py<br/>keccak + canonicalize]
+    SG --> E1[event_signatures.csv seed]
+    SG --> E2[function_signatures.csv seed]
+    E1 -- "dbt seed" --> F1[event_signatures table]
+    E2 -- "dbt seed" --> F2[function_signatures table]
+    F1 --> DL[decode_logs / decode_calls macros]
+    F2 --> DL
+    LOGS[execution.logs<br/>execution.transactions] --> DL
+    DL --> OUT[Decoded events/calls models]
 ```
-Step 1: Fetch ABI
-    Blockscout API --> contracts_abi table in ClickHouse
 
-Step 2: Export & Generate Signatures
-    contracts_abi table --> contracts_abi.csv (seed)
-    contracts_abi.csv --> signature_generator.py
-    signature_generator.py --> event_signatures.csv (seed)
-    signature_generator.py --> function_signatures.csv (seed)
+!!! warning "Silent-data-loss footgun in the legacy path"
+    `dbt run-operation fetch_and_insert_abi` writes directly to the ClickHouse `contracts_abi` table without touching the CSV. The next time anyone runs `dbt seed --select contracts_abi`, dbt replaces the table with the CSV's contents — silently wiping any row the macro inserted. You **must** immediately run `scripts/abi/export_contracts_abi.py` to dump the CH state back to the CSV, or the new row is lost.
 
-Step 3: Load Seeds
-    dbt seed --> function_signatures table
-    dbt seed --> event_signatures table
-
-Step 4: Create Decoding Models
-    raw transactions + function_signatures --> decode_calls macro --> decoded calls
-    raw logs + event_signatures --> decode_logs macro --> decoded events
-```
+    `fetch_abi_to_csv.py` is immune to this because the CSV is the only place it writes.
 
 ## Step-by-Step Guide
 
 ### Step 1: Fetch Contract ABI
 
-Use the `fetch_and_insert_abi` dbt operation to retrieve a contract's ABI from the Blockscout API and store it in the `contracts_abi` table:
+#### Preferred: CSV-first one-shot (`fetch_abi_to_csv.py`)
+
+`scripts/signatures/fetch_abi_to_csv.py` fetches the ABI directly from Blockscout over HTTP (no ClickHouse round-trip), writes it straight into `seeds/contracts_abi.csv`, and — with `--regen` — chains through `dbt seed contracts_abi` → `signature_generator.py` → `dbt seed event_signatures function_signatures` in a single command:
 
 ```bash
 docker exec -it dbt /bin/bash
 
-# Fetch ABI for a single contract
+# One-shot: fetch Blockscout ABI, append to CSV, regenerate sigs, reseed.
+# Leaves the warehouse fully in sync.
+python scripts/signatures/fetch_abi_to_csv.py \
+  0xe91d153e0b41518a2ce8dd3d7944fa863463a97d --regen
+```
+
+Flags:
+
+| Flag | Purpose |
+|---|---|
+| `--regen` | Chain `dbt seed contracts_abi` → `signature_generator.py` → `dbt seed event_signatures function_signatures` after the CSV write. |
+| `--force` | Overwrite the existing row for `(contract_address, implementation_address)` instead of skipping. Use when a contract is reverified with a new name or a corrected ABI. |
+| `--name <NAME>` | Override the `contract_name` field when Blockscout returns something ugly or ambiguous. |
+| `--from-ch` | **Egress-less fallback**: read the ABI from the ClickHouse `contracts_abi` table via `dbt show` instead of hitting Blockscout. Requires that `dbt run-operation fetch_and_insert_abi` has already run for the same address. Useful in containers with no outbound HTTP or when Blockscout rate-limits. |
+
+The script uses a browser-like `User-Agent` header because Blockscout's public API `403`s the default `Python-urllib/3.x` UA.
+
+**Typical invocations:**
+
+```bash
+# Adding a fresh contract
+python scripts/signatures/fetch_abi_to_csv.py 0xADDRESS --regen
+
+# Refresh an existing row (e.g. contract reverified with a new name)
+python scripts/signatures/fetch_abi_to_csv.py 0xADDRESS --force --regen
+
+# Egress-less fallback — route through the warehouse
+dbt run-operation fetch_and_insert_abi --args '{"address": "0xADDRESS"}'
+python scripts/signatures/fetch_abi_to_csv.py 0xADDRESS --from-ch --regen
+```
+
+#### Legacy: dbt macro + export script
+
+The older `fetch_and_insert_abi` macro writes the ABI directly to the ClickHouse `contracts_abi` table (via the ClickHouse `url()` table function). It still works and is documented here for anyone who prefers it or is running a workflow that depends on it:
+
+```bash
+docker exec -it dbt /bin/bash
+
+# Fetch ABI into ClickHouse
 dbt run-operation fetch_and_insert_abi \
   --args '{"address": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d"}'
 
@@ -50,25 +97,27 @@ dbt run-operation fetch_and_insert_abi \
   --args '{"address": "0xAnotherContractAddress"}'
 ```
 
-The operation queries the Blockscout API for the contract's verified ABI JSON and inserts it into ClickHouse.
+!!! warning "You MUST run `export_contracts_abi.py` next — see Step 2"
+    The macro writes only to the CH table. The next `dbt seed --select contracts_abi` replaces that table with whatever is in `seeds/contracts_abi.csv`, silently wiping the new row. Running `export_contracts_abi.py` is **not optional** — if you skip it, the new row is gone the next time anyone seeds.
 
-### Step 2: Export ABIs and Generate Signatures
+### Step 2: Generate Signatures (and export ABIs if you used the legacy path)
 
-!!! warning
-    Always export ABIs before running `dbt seed`. The seed command overwrites the `contracts_abi` table with the contents of the CSV file. If you skip the export step, newly fetched ABIs will be lost.
+!!! info "Skip straight to `signature_generator.py` if you used `fetch_abi_to_csv.py`"
+    The `--regen` flag on `fetch_abi_to_csv.py` already runs `signature_generator.py` for you. This step is only needed if you used the legacy `fetch_and_insert_abi` macro, OR if you added a row to `seeds/contracts_abi.csv` by hand.
 
 ```bash
-# Export current ABIs from ClickHouse to CSV
+# LEGACY PATH ONLY: export current ABIs from ClickHouse back to CSV.
+# Critical for the dbt macro path; NOT needed when using fetch_abi_to_csv.py.
 python scripts/abi/export_contracts_abi.py
 
-# Generate signature files from the exported ABIs
+# Regenerate signature files from contracts_abi.csv
 python scripts/signatures/signature_generator.py
 ```
 
 The signature generator parses each ABI and produces:
 
-- **`seeds/function_signatures.csv`** -- Maps 4-byte function selectors to function names and parameter types
-- **`seeds/event_signatures.csv`** -- Maps 32-byte event topic hashes to event names and parameter types
+- **`seeds/event_signatures.csv`** — Maps 32-byte event topic hashes to event names and parameter types
+- **`seeds/function_signatures.csv`** — Maps 4-byte function selectors to function names and parameter types
 
 ### Step 3: Load Seeds into ClickHouse
 
@@ -413,11 +462,31 @@ The `-- depends_on:` comments in the registry view enforce this order automatica
 
 Same shape as `decode_logs` but reads `execution.transactions` instead of `execution.logs`, uses the first 4 bytes of `input` as the function selector, and joins to `function_signatures` instead of `event_signatures`. Uses `to_address` as the default `selector_column` (vs `address` for logs).
 
+### Boolean type handling
+
+Both `decode_logs` and `decode_calls` emit boolean values as `'0'` (false) or `'1'` (true) — decimal strings matching the `uint*` convention. This applies to:
+
+- **Static `bool` params:** `decoded_params['flag']` → `'0'` or `'1'`
+- **`bool[]` array params:** `decoded_params['flags']` → `'["1","0","1"]'` (JSON array of decimal strings)
+
+Consuming pattern in downstream models:
+
+```sql
+-- For static bool:
+toUInt8OrNull(decoded_params['useATokens'])  -- returns 0 or 1
+
+-- For bool[] element extraction (via ARRAY JOIN):
+toUInt8OrNull(JSONExtractString(decoded_params['memberOf'], idx))  -- returns 0 or 1
+```
+
+!!! warning "Do not compare to `'true'`/`'false'`"
+    An older version of `decode_calls` emitted `'true'`/`'false'` for static bools; `decode_logs` emitted `NULL` for static bools and 64-char hex strings for `bool[]` elements. Both macros were unified in April 2025. If you encounter legacy code like `decoded_params['flag'] = 'true'`, change it to `= '1'`.
+
 ## Seed Files
 
 | Seed | What it stores | Who writes it | Consumed by |
 |---|---|---|---|
-| `contracts_abi` | Raw ABI JSON per contract address (and per implementation address for proxies). One row per contract or proxy/impl pair. | `dbt run-operation fetch_and_insert_abi` (calls Blockscout) → manually re-exported via `scripts/abi/export_contracts_abi.py` to keep the seed CSV in sync | `signature_generator.py` (only) |
+| `contracts_abi` | Raw ABI JSON per contract address (and per implementation address for proxies). One row per contract or proxy/impl pair. | **Preferred:** `scripts/signatures/fetch_abi_to_csv.py 0xADDRESS [--regen]` — fetches from Blockscout and writes directly to the CSV. **Legacy:** `dbt run-operation fetch_and_insert_abi` (writes directly to CH) + `scripts/abi/export_contracts_abi.py` (dumps CH back to CSV); **skipping the export step is a silent-data-loss footgun** because the next `dbt seed contracts_abi` wipes the new row. | `signature_generator.py` (only) |
 | `event_signatures` | Pre-computed `(contract_address, topic0_hash, event_name, params, indexed/non_indexed split)` rows. One row per event per ABI. | `scripts/signatures/signature_generator.py` (parses contracts_abi.csv, computes keccak hashes, canonicalizes types) | `decode_logs` macro (JOIN target) |
 | `function_signatures` | Same idea but for function selectors. One row per function per ABI. | Same script | `decode_calls` macro (JOIN target) |
 | `contracts_whitelist` | Flat list of `(address, contract_type)`. No proxy support. | Manual edits to the CSV | `decode_logs` / `decode_calls` via `contract_address_ref` |
@@ -426,19 +495,40 @@ Same shape as `decode_logs` but reads `execution.transactions` instead of `execu
 
 ## Safe Workflow Summary
 
-The correct order of operations when adding new contracts:
+Two equivalent paths. Pick one.
+
+### Preferred: CSV-first one-shot
+
+One command per contract. The `--regen` flag chains every follow-up so the warehouse is fully in sync when the script returns.
 
 ```bash
-# 1. Fetch ABI from Blockscout
+# 1. Fetch from Blockscout, append to CSV, seed, regenerate sigs, re-seed.
+python scripts/signatures/fetch_abi_to_csv.py 0xADDRESS --regen
+
+# 2. Create the decode model file under models/contracts/<Protocol>/, e.g.
+#    contracts_<protocol>_<contract>_events.sql with a decode_logs(...) call.
+#    Add a matching schema.yml entry.
+
+# 3. Run the new model
+dbt run --select contracts_<protocol>_<contract>_events
+```
+
+### Legacy: dbt macro + export script
+
+Four manual steps in a precise order. Skipping step 2 is the silent-data-loss footgun described above.
+
+```bash
+# 1. Fetch ABI from Blockscout into the ClickHouse contracts_abi table
 dbt run-operation fetch_and_insert_abi --args '{"address": "0x..."}'
 
-# 2. Export ABIs to CSV (prevents data loss from dbt seed)
+# 2. Export CH contracts_abi back to the CSV seed (REQUIRED — prevents
+#    data loss when dbt seed replaces the table with CSV contents)
 python scripts/abi/export_contracts_abi.py
 
-# 3. Generate signature CSVs
+# 3. Generate signature CSVs from contracts_abi.csv
 python scripts/signatures/signature_generator.py
 
-# 4. Load seeds (safe now because CSVs are up to date)
+# 4. Load all three seeds
 dbt seed --select contracts_abi event_signatures function_signatures
 
 # 5. Create the decode model file under models/contracts/<Protocol>/, e.g.
@@ -454,12 +544,18 @@ dbt run --select contracts_<protocol>_<contract>_events
 When the contract you want to decode is a factory whose children should also be decoded automatically, the workflow is the same as above for the factory's own ABI, plus a few extra steps to wire up child discovery:
 
 ```bash
-# Steps 1-4 above for the factory's own ABI. Then also fetch the
-# child implementation ABI:
-dbt run-operation fetch_and_insert_abi --args '{"address": "0xChildImplementationAddress"}'
-python scripts/abi/export_contracts_abi.py
-python scripts/signatures/signature_generator.py
-dbt seed --select contracts_abi event_signatures function_signatures
+# 1. Fetch BOTH the factory ABI AND the child implementation ABI.
+#    Using the CSV-first shortcut: one --regen at the end is enough
+#    because both writes land in the same CSV before the regen runs.
+python scripts/signatures/fetch_abi_to_csv.py 0xFactoryAddress
+python scripts/signatures/fetch_abi_to_csv.py 0xChildImplementationAddress --regen
+
+# Or with the legacy two-step path:
+#   dbt run-operation fetch_and_insert_abi --args '{"address": "0xFactoryAddress"}'
+#   dbt run-operation fetch_and_insert_abi --args '{"address": "0xChildImplementationAddress"}'
+#   python scripts/abi/export_contracts_abi.py
+#   python scripts/signatures/signature_generator.py
+#   dbt seed --select contracts_abi event_signatures function_signatures
 
 # 5. Create the factory's own events model so its creation events get decoded:
 #    models/contracts/<Protocol>/contracts_<protocol>_<Factory>_events.sql
@@ -513,6 +609,57 @@ After this is wired up, every nightly run automatically picks up new children cr
 **A factory-discovered child doesn't show up in the registry view** — Check the factory events model has actually run and contains rows with `event_name = '<creation_event_name>'`. Then confirm that `decoded_params` contains the `child_address_param` key referenced in `contracts_factory_registry.csv`. The macro does `decoded_params['<child_address_param>']` — a typo in the seed will silently produce empty addresses.
 
 **`model not found` when building `contracts_<protocol>_registry`** — Add the missing factory events model to the `-- depends_on:` comments at the top of the registry view. dbt cannot infer dynamic `ref(...)` calls inside `resolve_factory_children`'s loop, so the registry view's dependencies must be declared explicitly via comments.
+
+### Indexed-flag mismatch (decoded param is NULL but raw data exists)
+
+If `decoded_params['field']` is NULL for all rows but the raw log `data` is non-empty, the `indexed` flag in `contracts_abi.csv` might not match reality. This causes `decode_logs` to read the parameter from the wrong location (topic slot vs data slot).
+
+**Verification query:**
+
+```sql
+SELECT
+    lower(replaceAll(topic0, '0x', '')) AS topic0_hex,
+    count()                             AS log_count,
+    countIf(topic1 IS NULL)             AS null_topic1,
+    countIf(topic1 IS NOT NULL)         AS has_topic1
+FROM execution.logs
+WHERE lower(replaceAll(topic0, '0x', '')) = '<topic0_hash>'
+  AND block_timestamp >= toDateTime('2024-01-01')
+  AND block_timestamp < toDateTime('2024-02-01')
+GROUP BY topic0_hex
+```
+
+If the ABI says N indexed params but `null_topicN / log_count ≈ 100%`, the ABI is wrong. Cross-check against the deployed contract's Solidity source (GitHub release tag or Blockscout verified source). The `keccak256(canonical_type_signature)` does **not** depend on `indexed` — the topic0 hash is the same regardless. Only the decoder's behavior changes.
+
+**Fix:** Edit `seeds/contracts_abi.csv`, flip the `"indexed"` flag in the JSON for the affected param, re-seed, regenerate signatures, re-seed event_signatures, and full-refresh the downstream models. Use `scripts/signatures/flip_indexed_flags.py` as a reference for safe CSV-with-JSON editing.
+
+**Known instances:** See [Safe ABI drift table](../../protocols/safe/index.md#abi-indexed-flag-drift-across-versions) and [Gnosis Pay RolesMod fix](../../protocols/gnosis-pay/index.md#zodiac-roles-v2-module).
+
+### ClickHouse alias-shadowing in CTE WHERE clauses
+
+ClickHouse `SELECT` aliases shadow source columns in `WHERE` clauses. If you write:
+
+```sql
+SELECT 'SetAllowance' AS event_name
+FROM decoded
+WHERE event_name = 'SetAllowance'
+```
+
+the `WHERE` evaluates the alias literal (`'SetAllowance' = 'SetAllowance'` → always TRUE), and every row passes through. This is particularly dangerous in UNION-ALL CTE patterns where each branch assigns a different literal event_name — the last branch's literal wins via `ReplacingMergeTree` merge.
+
+**Fix:** Wrap the `FROM` in a pre-filter subquery so the WHERE runs in a scope where nothing shadows `event_name`:
+
+```sql
+FROM (SELECT * FROM decoded WHERE event_name = 'SetAllowance') d
+```
+
+**Reproduction:**
+
+```sql
+WITH src AS (SELECT arrayJoin(['A','B','C','D']) AS event_name)
+SELECT 'Literal' AS event_name, count() FROM src WHERE event_name = 'A'
+-- Returns count=0 (not 1!) because WHERE evaluates 'Literal'='A' → FALSE
+```
 
 ---
 

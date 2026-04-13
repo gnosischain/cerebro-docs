@@ -34,7 +34,22 @@ decoded_params['liquidityRate'] -- interest rate in RAY (divide by 1e27)
 |----------|-----------------|-----------|------------|
 | [Circles V2](circles/index.md) | `0xc12C1E50ABB450d6205Ea2C3Fa861b3B834d13e8` | `contracts_circles_v2_Hub_events` | 2024-10-15 |
 
+## Smart Account Protocols
+
+| Protocol | Discovery | Coverage | What it tracks |
+|----------|-----------|----------|----------------|
+| [Safe (Gnosis Safe)](safe/index.md) | `execution.traces` (delegatecall + setup selectors) | All Safe versions 0.1.0 → 1.4.1 | Every Safe ever deployed on Gnosis Chain, with full owner mutation history (`SafeSetup` / `AddedOwner` / `RemovedOwner` / `ChangedThreshold`) and module-state events (`EnabledModule` / `DisabledModule` / `ChangedGuard`). The foundation for the GP and Gnosis App stacks. |
+| [Gnosis Pay](gnosis-pay/index.md) | `stg_gpay__wallets` (Dune labels) + module discovery | All GP cardholder Safes | Per-Safe module topology (Delay + Roles + Spender), spender delegate assignments, daily-limit allowance state, and Delay-module activity (`TransactionAdded`). Includes a [Mixpanel cardholder bridge](gnosis-pay/mixpanel-bridge.md) using a union of three identity roles (initial owner, delegate, Safe self). |
+
+## Sectors (heuristic-derived)
+
+| Sector | Membership source | Mixpanel role | What it tracks |
+|--------|-------------------|----------------|----------------|
+| [Gnosis App](gnosis-app/index.md) | Six on-chain heuristic rules over Cometh-relayed ERC-4337 transactions (Safe + Circles V2 actions) | **Check**, not source of truth | Authoritative on-chain user list for the [app.gnosis.io](https://app.gnosis.io) consumer wallet. Mixpanel coverage is reported as a diagnostic, not used as a join filter. |
+
 ## See Also
 
 - [Contract ABI Decoding](../data-pipeline/transformation/abi-decoding.md) — how the decoding pipeline works
+- [Registry Pattern (Proxies)](../data-pipeline/transformation/safe-module-registry-pattern.md) — how Safe and Zodiac proxies plug into `decode_logs`
+- [Privacy & Pseudonyms](../data-pipeline/transformation/privacy-pseudonyms.md) — keyed-hash pattern used by every Mixpanel ↔ on-chain bridge
 - [dbt Model Catalog — Contracts](../models/contracts.md) — full list of decoded contract models

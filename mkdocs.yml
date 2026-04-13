@@ -110,6 +110,8 @@ nav:
     - Model Layers: data-pipeline/transformation/model-layers.md
     - Modules Reference: data-pipeline/transformation/modules.md
     - Contract ABI Decoding: data-pipeline/transformation/abi-decoding.md
+    - Registry Pattern (Proxies): data-pipeline/transformation/safe-module-registry-pattern.md
+    - Privacy & Pseudonyms: data-pipeline/transformation/privacy-pseudonyms.md
     - Schema Generator: data-pipeline/transformation/dbt-schema-gen.md
     - dbt Model Catalog:
       - models/index.md
@@ -139,6 +141,13 @@ nav:
       - Circles:
         - protocols/circles/index.md
         - Data Models: protocols/circles/data-models.md
+      - Safe (Gnosis Safe):
+        - protocols/safe/index.md
+      - Gnosis Pay:
+        - protocols/gnosis-pay/index.md
+        - Mixpanel Bridge: protocols/gnosis-pay/mixpanel-bridge.md
+      - Gnosis App (heuristic):
+        - protocols/gnosis-app/index.md
     - ESG Reporting:
       - esg-reporting/index.md
       - Node Population: esg-reporting/node-population.md
@@ -161,6 +170,8 @@ nav:
       - mcp/index.md
       - Available Tools: mcp/tools.md
       - Report Generation: mcp/reports.md
+      - Security & Audit: mcp/security.md
+      - Observability: mcp/observability.md
       - Setup: mcp/setup.md
     - Dashboard:
       - dashboard/index.md
