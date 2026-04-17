@@ -1,6 +1,10 @@
 # Lending Protocols
 
-All three lending protocols on Gnosis Chain (Agave, Aave V3, Spark) share the same core mechanics derived from the Aave codebase. This page covers the shared concepts; individual protocol pages detail contract addresses, dbt models, and specific features.
+All three lending protocols on Gnosis Chain (Agave, Aave V3, SparkLend) share the same core mechanics derived from the Aave codebase. This page covers the shared concepts; individual protocol pages detail contract addresses, dbt models, and specific features.
+
+## Protocol-aware lending stack
+
+The intermediate / mart layer was widened so every `int_execution_lending_aave_*` model is **protocol-aware**: raw Pool events from Aave V3 and SparkLend are combined via `UNION ALL` with a `protocol` literal, and reserves are resolved through [`seeds/lending_market_mapping.csv`](https://github.com/gnosischain/dbt-cerebro/blob/main/seeds/lending_market_mapping.csv) (15 `(protocol, reserve)` rows). Unique keys and window `PARTITION BY` clauses always include `protocol`, so Aave V3 and SparkLend can be sliced independently or unioned at the mart layer. See [Aave V3](aave-v3.md) and [SparkLend](spark.md) for the protocol-specific details.
 
 ## How Lending Pools Work
 
@@ -75,7 +79,8 @@ All three lending protocols emit these core events (Agave uses `Deposit`, Aave V
 
 - [Agave](agave.md) — Aave V2 fork by 1Hive
 - [Aave V3](aave-v3.md) — Aave V3 with E-Mode, Isolation Mode, Siloed Borrowing
-- [Spark](spark.md) — Aave V3 fork by MakerDAO/Sky
+- [SparkLend](spark.md) — Aave V3 fork by MakerDAO/Sky
+- [Savings xDAI](../savings/index.md) — ERC-4626 vault whose `SXDAI` token is listed as a SparkLend reserve
 
 ## See Also
 

@@ -89,6 +89,7 @@ nav:
     - Adding API Endpoints: developer/add-endpoint.md
     - Adding dbt Models: developer/add-model.md
     - Adding Scrapers: developer/add-scraper.md
+    - Adding a New Protocol: developer/add-protocol.md
     - meta.api Contract: developer/meta-api-contract.md
     - Conventions: developer/conventions.md
   - Data Ingestion:
@@ -131,7 +132,9 @@ nav:
         - protocols/lending/index.md
         - Agave: protocols/lending/agave.md
         - Aave V3: protocols/lending/aave-v3.md
-        - Spark: protocols/lending/spark.md
+        - SparkLend: protocols/lending/spark.md
+      - Savings:
+        - protocols/savings/index.md
       - DEX Protocols:
         - protocols/dexes/index.md
         - Uniswap V3: protocols/dexes/uniswap-v3.md
