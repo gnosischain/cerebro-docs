@@ -70,12 +70,39 @@ plugins:
   - minify:
       minify_html: true
 
+hooks:
+  - hooks/llms_txt.py
+
 extra_css:
   - stylesheets/extra.css
 
 extra_javascript:
   - javascripts/mathjax.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+extra:
+  llms:
+    title: Gnosis Analytics
+    summary: Gnosis Analytics is a blockchain data platform for Gnosis Chain.
+    intro: This file lists the public documentation and research pages available as Markdown mirrors for LLM consumption. Use `llms-ctx.txt` for the core corpus and `llms-ctx-full.txt` for the full public docs set.
+    fallback_section: Optional
+    sections:
+      Docs:
+        - index.md
+        - getting-started/
+        - api/
+        - data-pipeline/
+        - models/
+        - mcp/
+      Research:
+        - research/
+        - protocols/
+        - esg-reporting/
+      Optional:
+        - dashboard/
+        - operations/
+        - reference/
+        - developer/
 
 nav:
   - Home: index.md
@@ -126,6 +153,8 @@ nav:
       - ProbeLab: models/probelab.md
   - Research:
     - research/index.md
+    - Marketing Mix Modeling (MMM):
+      - research/mmm/index.md
     - Protocol Analytics:
       - protocols/index.md
       - Lending Protocols:
@@ -172,6 +201,10 @@ nav:
     - MCP Server:
       - mcp/index.md
       - Available Tools: mcp/tools.md
+      - Agent Fleet: mcp/agents.md
+      - Cerebro Dispatcher: mcp/dispatcher.md
+      - Marketing Mix Modeling (MMM): mcp/mmm.md
+      - MMM User Guide: mcp/mmm-user-guide.md
       - Report Generation: mcp/reports.md
       - Security & Audit: mcp/security.md
       - Observability: mcp/observability.md

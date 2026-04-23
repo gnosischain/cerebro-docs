@@ -1,6 +1,8 @@
 # Research
 
-This section contains in-depth analytical work built on top of the Gnosis Analytics platform's decoded on-chain data. It covers two areas:
+This section contains in-depth analytical work built on top of the Gnosis Analytics platform's decoded on-chain data. It covers three areas:
+
+- **[Marketing Mix Modeling (MMM)](mmm/index.md)** -- Long-form reference on MMM as a method: context, data selection, response curves, adstock, Bayesian estimation, validation checkpoints, and the Chapter 3 structural considerations that distinguish working models from misleading ones. Based on the Hakuhodo DY *Marketing Mix Modeling Guidebook* (2023), with a concrete adaptation to on-chain incentive attribution on Gnosis Chain.
 
 - **[Protocol Analytics](../protocols/index.md)** -- Deep dives into DeFi protocols on Gnosis Chain (lending and DEXes), including how each protocol works, what the decoded event data means, and ready-to-use SQL query examples. Covers Agave, Aave V3, Spark, Uniswap V3, Balancer, CoW Protocol, and Swapr.
 

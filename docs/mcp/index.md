@@ -74,6 +74,12 @@ The hosted team instance is available at `mcp.analytics.gnosis.io` with Bearer t
 
 ## Key Capabilities
 
+### Agent Fleet
+
+- **23 agent personas** organised in three tiers — top-level dispatcher, workflow leads, domain specialists
+- Gated handoffs between personas (e.g. MMM `generate_report` blocked until `mmm_causal_reviewer` returns PASS)
+- See [Agent Fleet](agents.md), [Cerebro Dispatcher](dispatcher.md), and [Marketing Mix Modeling](mmm.md)
+
 ### Data Exploration
 
 - Query 6 ClickHouse databases containing Gnosis Chain data
@@ -105,6 +111,10 @@ The hosted team instance is available at `mcp.analytics.gnosis.io` with Bearer t
 ## Next Steps
 
 - [Available Tools](tools.md) -- Complete reference of all 30+ tools
+- [Agent Fleet](agents.md) -- 23 personas loadable via `get_agent_persona(role)`
+- [Cerebro Dispatcher](dispatcher.md) -- Top-level intent triage + gated routing
+- [Marketing Mix Modeling (MMM)](mmm.md) -- Sector contribution / ROI attribution with causal-DAG gate
+- [MMM User Guide](mmm-user-guide.md) -- Practical playbook for day-to-day MMM usage (prompt recipes, Sector Readiness Matrix, coefficient interpretation, FAQ)
 - [Report Generation](reports.md) -- How to build interactive reports
 - [Setup Guide](setup.md) -- Connect Cerebro MCP to your AI assistant
 - [Model Catalog](../models/index.md) -- Explore the dbt model library

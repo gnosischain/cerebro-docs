@@ -23,6 +23,15 @@ mkdocs build --strict          # static site → site/
 docker build -t cerebro-docs . # Docker image (Nginx)
 ```
 
+Builds now also generate LLM-facing artifacts in `site/`:
+
+- `llms.txt` -- curated public index
+- `llms-ctx.txt` -- core docs and research corpus
+- `llms-ctx-full.txt` -- full public corpus
+- `*.html.md` mirrors for each page in MkDocs navigation
+
+These files are generated from `mkdocs.yml` navigation and page metadata. Do not maintain them manually under `docs/`.
+
 ## Auto-Update Scripts
 
 Model catalogs, API endpoints, and dashboard metrics are auto-generated from live data sources. Sections between `<!-- BEGIN/END AUTO-GENERATED -->` markers are overwritten by these scripts.
