@@ -1,6 +1,6 @@
 # Dashboard Sectors
 
-The metrics dashboard is organized into **8 active sectors**, each covering a distinct area of Gnosis Chain analytics. Sectors are defined in `public/dashboard.yml` and rendered as top-level navigation items in the dashboard sidebar.
+The metrics dashboard is organized into **9 active sectors**, each covering a distinct area of Gnosis Chain analytics. Sectors are defined in `public/dashboard.yml` and rendered as top-level navigation items in the dashboard sidebar.
 
 ## Sector Overview
 
@@ -14,6 +14,7 @@ The metrics dashboard is organized into **8 active sectors**, each covering a di
 | 6 | [Bridges](#bridges) | Bridge volume, netflow, token flow breakdowns, sankey visualizations |
 | 7 | [Tokens](#tokens) | Token transfers, supply metrics, price trends for major Gnosis Chain tokens |
 | 8 | [ESG](#esg) | Carbon emissions, power consumption, energy mix, node infrastructure |
+| 9 | [Yields](#yields) | DeFi yield analytics: lending APY, LP fee APR, savings rates, user portfolio |
 
 ## Sector Details
 
@@ -235,6 +236,73 @@ The metrics dashboard is organized into **8 active sectors**, each covering a di
 | `api_esg_info_category_daily` | bar | Daily emissions and energy estimates by node-category segment. Category filter shows which node g... |
 | `esg_methodology` | text | Environmental, Social, and Governance methodology overview |
 | `text_esg_methodology` | text | How we calculate and analyze the Gnosis network carbon emissions |
+
+### Yields
+
+The Yields sector provides a unified view of DeFi yield opportunities on Gnosis Chain across lending protocols, DEX liquidity pools, and the Savings xDAI vault. It is organized into five tabs.
+
+**Overview tab** — headline KPIs and a cross-asset comparison table.
+
+| Metric | Chart Type | Description |
+|--------|-----------|-------------|
+| `api_execution_yields_overview_lending_tvl` | numberDisplay | -- |
+| `api_execution_yields_overview_lending_lenders` | numberDisplay | Current |
+| `api_execution_yields_overview_lp_tvl` | numberDisplay | -- |
+| `api_execution_yields_overview_lending_best_apy` | numberDisplay | -- |
+| `api_execution_yields_overview_lp_best_apr` | numberDisplay | Last 7 days |
+| `api_execution_yields_opportunities_latest` | table | Pools & lending ranked by yield |
+
+**Savings xDAI tab** — Savings vault APY and supply tracking.
+
+| Metric | Chart Type | Description |
+|--------|-----------|-------------|
+| `api_execution_yields_overview_sdai_apy` | numberDisplay | Current |
+| `api_execution_yields_overview_sdai_supply` | numberDisplay | -- |
+| `historical_yield_sdai` | line | APY for Savings xDAI (formerly sDAI) on rolling Moving Median (MM) |
+
+**Lending tab** — per-token and per-protocol lending analytics with token/protocol filters and time range controls.
+
+| Metric | Chart Type | Description |
+|--------|-----------|-------------|
+| `api_execution_yields_lending_lenders_count_7d` | numberDisplay | Current |
+| `api_execution_yields_lending_borrowers_count_7d` | numberDisplay | Last 7 days |
+| `api_execution_yields_lending_tvl_by_token_latest` | pie | Current distribution |
+| `api_execution_yields_lending_balance_cohorts_holders_daily` | bar | Lender count by balance cohort |
+| `api_execution_yields_lending_balance_cohorts_value_daily` | bar | Total value by balance cohort |
+| `api_execution_yields_lending_daily` | line | Daily rates by token, split by lending protocol |
+| `api_execution_yields_lending_activity_counts_weekly` | bar | Weekly unique count |
+| `api_execution_yields_lending_activity_volumes_weekly` | bar | Weekly in USD |
+
+**Pools tab** — DEX pool performance with token/pool filters and time range controls.
+
+| Metric | Chart Type | Description |
+|--------|-----------|-------------|
+| `api_execution_yields_pools_tvl_latest` | numberDisplay | -- |
+| `api_execution_yields_pools_volume_7d` | numberDisplay | Last 7 days |
+| `api_execution_yields_pools_fees_7d` | numberDisplay | Last 7 days |
+| `api_execution_yields_pools_lps_count_7d` | numberDisplay | Last 7 days |
+| `api_execution_yields_pools_tvl_by_pool_latest` | pie | Current distribution |
+| `api_execution_yields_pools_tvl_token_daily` | area | Daily by token |
+| `api_execution_yields_pools_net_apr_daily` | line | 7-day trailing by pool |
+| `api_execution_yields_pools_lp_activity_daily` | bar | Daily by pool |
+| `api_execution_yields_pools_fees_usd_daily` | bar | Daily by pool |
+| `api_execution_yields_pools_swap_count_daily` | bar | Daily by pool |
+| `api_execution_yields_pools_volume_daily` | bar | Daily by pool |
+
+**User Portfolio tab** — per-wallet yield analytics with wallet search. Requires explicit wallet address input.
+
+| Metric | Chart Type | Description |
+|--------|-----------|-------------|
+| `api_execution_yields_user_top_wallets` | table | Top wallets by LP and lending activity for the User Portfolio dropdown. |
+| `api_execution_yields_user_kpi_total_lp_fees` | numberDisplay | Lifetime (USD) |
+| `api_execution_yields_user_kpi_lending_balance` | numberDisplay | Current (USD) |
+| `api_execution_yields_user_kpi_active_lp_positions` | numberDisplay | -- |
+| `api_execution_yields_user_kpi_active_lending_positions` | numberDisplay | Active reserves |
+| `api_execution_yields_user_lp_positions` | table | Active and historical positions |
+| `api_execution_yields_user_lending_positions` | table | Lending supply balances on Gnosis (Aave V3 & SparkLend) |
+| `api_execution_yields_user_fee_collections_daily` | bar | Daily fees collected by pool |
+| `api_execution_yields_user_lending_balances_daily` | bar | Daily supply balance by token |
+| `api_execution_yields_user_activity` | table | LP & lending actions |
 
 <!-- END AUTO-GENERATED: dashboard-sectors -->
 
