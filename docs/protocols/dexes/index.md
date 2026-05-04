@@ -86,6 +86,7 @@ $$
 - [Balancer](balancer.md) — weighted pools, single Vault architecture
 - [CoW Protocol](cowswap.md) — intent-based batch auction DEX
 - [Swapr](swapr.md) — Algebra V3 (Uniswap V3 fork with dynamic fees)
+- [Pool Fee APR Analytics](analytics.md) — How daily fees, TVL, fee APR, net APR, and per-user LP positions are derived from raw events
 
 ## See Also
 

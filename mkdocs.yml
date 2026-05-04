@@ -162,6 +162,7 @@ nav:
         - Agave: protocols/lending/agave.md
         - Aave V3: protocols/lending/aave-v3.md
         - SparkLend: protocols/lending/spark.md
+        - Analytics: protocols/lending/analytics.md
       - Savings:
         - protocols/savings/index.md
       - DEX Protocols:
@@ -170,6 +171,7 @@ nav:
         - Balancer: protocols/dexes/balancer.md
         - CoW Protocol: protocols/dexes/cowswap.md
         - Swapr: protocols/dexes/swapr.md
+        - Analytics: protocols/dexes/analytics.md
       - Circles:
         - protocols/circles/index.md
         - Data Models: protocols/circles/data-models.md

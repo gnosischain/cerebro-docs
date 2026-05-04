@@ -80,6 +80,7 @@ All three lending protocols emit these core events (Agave uses `Deposit`, Aave V
 - [Agave](agave.md) — Aave V2 fork by 1Hive
 - [Aave V3](aave-v3.md) — Aave V3 with E-Mode, Isolation Mode, Siloed Borrowing
 - [SparkLend](spark.md) — Aave V3 fork by MakerDAO/Sky
+- [Rate Analytics](analytics.md) — How daily supply APY, borrow APY, utilization, and per-user balances are derived from raw events
 - [Savings xDAI](../savings/index.md) — ERC-4626 vault whose `SXDAI` token is listed as a SparkLend reserve
 
 ## See Also
