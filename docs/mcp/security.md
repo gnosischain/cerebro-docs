@@ -146,6 +146,27 @@ Security counters are exposed at the `/metrics` endpoint and visualized in the [
 
 The security assessment runs **after** the tool has executed. It is wrapped in `try/except Exception` to guarantee it never interferes with tool execution. If the security layer itself fails, a debug-level log is emitted and the tool result is returned unchanged.
 
+## Multi-tenant identity
+
+Cerebro can stamp every workflow with a SHA-256 hash of the calling identity. Plaintext identifiers never persist — only the digest. This adds a **separation** layer (so `list_resumable_workflows` returns only your own workflows) but it is not authorization on its own; for that, an upstream auth proxy must verify the identity before forwarding.
+
+### How it's set
+
+| Transport | Source |
+|---|---|
+| stdio | `CEREBRO_OWNER` env var, applied once at server boot |
+| SSE | `X-Cerebro-Owner` HTTP header per request, scoped via `ContextVar` |
+
+Optional: set `CEREBRO_OWNER_HASH_SALT` to make hashes deployment-specific. Rotating the salt is equivalent to a hard tenant reset — old workflows become unreachable.
+
+If neither is set, the contextvar stays `None`, all rows persist as `owner=NULL`, and the read filter treats NULL as legacy / visible to everyone (single-tenant fallback).
+
+### Trust model
+
+The `X-Cerebro-Owner` header is **self-attested** unless an upstream auth proxy verifies it. In a single-token shared SSE deployment, anyone with the token can claim any owner — useful for separation between honest collaborators, not a defense against malice. For real authz, validate JWT claims in middleware before the request hits cerebro.
+
+See the dedicated [Multi-Tenant page](advanced/multi-tenant.md) for the full design and operational notes.
+
 ## Future: Enforcement Phase
 
 The `MCP_SECURITY_POLICY_MODE` setting supports future enforcement modes:

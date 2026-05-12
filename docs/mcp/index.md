@@ -1,120 +1,117 @@
 # Cerebro MCP Server
 
-Cerebro MCP is a [Model Context Protocol](https://modelcontextprotocol.io/) server that connects AI assistants to Gnosis Chain's on-chain analytics infrastructure. It provides over 30 tools for querying a ClickHouse data warehouse, exploring ~400 dbt models, generating interactive visualizations, and assembling standalone HTML reports -- all through natural language.
+Cerebro MCP is a [Model Context Protocol](https://modelcontextprotocol.io/) server that connects AI assistants to Gnosis Chain's on-chain analytics infrastructure. It exposes ~50 tools that query a ClickHouse data warehouse, traverse ~862 dbt models, drive six interactive mini-apps, and orchestrate multi-phase analytical workflows — all over a single MCP connection.
+
+!!! tip "New to Cerebro?"
+    Start with the [Setup Guide](setup.md), then the [Usage Guide](advanced/usage-guide.md) for an end-to-end tour. For the dispatcher pattern (the front door for non-trivial requests) see [Cerebro Dispatcher](dispatcher.md).
 
 ## What is MCP?
 
-The Model Context Protocol (MCP) is an open standard that allows AI applications (hosts) to connect to external data sources and tools (servers) through a unified interface. Instead of building custom integrations for each AI assistant, a single MCP server can serve Claude Desktop, VS Code Copilot, Claude Code, and any other MCP-compatible client.
+The Model Context Protocol (MCP) is an open standard that lets AI hosts (Claude Desktop, VS Code, Claude Code, custom clients) connect to external tools and data sources through a unified interface. A single MCP server can serve every MCP-compatible client without per-client integration work.
+
+## What's in this section
+
+| Subsection | Purpose |
+|---|---|
+| [Setup](setup.md) | Install, configure, connect Claude Desktop / VS Code / Claude Code. Multi-tenant `CEREBRO_OWNER` env. |
+| [Available Tools](tools.md) | Categorised reference of every MCP tool. |
+| [Agent Fleet](agents.md) | The 23+ persona library loadable via `get_agent_persona`. |
+| [Cerebro Dispatcher](dispatcher.md) | Top-level intent triage + binding dispatch manifest. |
+| [Report Generation](reports.md) | `generate_report`, `generate_research_report`, `generate_case_study_report`, gates. |
+| [Security & Audit](security.md) | Tool risk classes, JSONL audit log, multi-tenant identity. |
+| [Observability](observability.md) | Prometheus metrics, structured logs, Grafana dashboard. |
+| **[Workflows](workflows/index.md)** | Research projects, quarterly reviews, storyteller, sandboxes, resumable workflows. |
+| **[Mini-Apps](mini-apps/index.md)** | Six interactive UI surfaces (Token Explorer, Portfolio, Yield, Graph Explorer, Metric Lab, QBR). |
+| **[Advanced](advanced/index.md)** | Hybrid search internals, event log, quality gates, multi-tenant, semantic metrics, full usage guide. |
+| [MMM](mmm.md) / [MMM User Guide](mmm-user-guide.md) | Marketing-mix modeling SOP and prompt recipes. |
 
 ## Architecture
 
-```
-                      +-----------------------------------------+
-                      |           MCP Host (Client)             |
-                      | Claude Desktop / VS Code / Claude Code  |
-                      +-------------------+---------------------+
-                                          | MCP Protocol
-                                          | (stdio / SSE)
-                      +-------------------v---------------------+
-                      |         cerebro-mcp (FastMCP)           |
-                      |                                         |
-                      |  +----------+ +----------+ +--------+  |
-                      |  |  Query   | |  Schema  | |  dbt   |  |
-                      |  |  Tools   | |  Tools   | |  Tools |  |
-                      |  +----+-----+ +----+-----+ +---+----+  |
-                      |       |            |           |        |
-                      |  +----v------------v-----------v----+   |
-                      |  |       ClickHouse Client          |   |
-                      |  |   (clickhouse-connect + cache)   |   |
-                      |  +----------------+-----------------+   |
-                      |                   |                     |
-                      |  +--------+-------+--------+            |
-                      |  | Visualization | Reasoning|           |
-                      |  | Tools         | Tracing  |           |
-                      |  +-------+-------+---------+            |
-                      |          |                              |
-                      |  +-------v----------------------------+ |
-                      |  | React Report UI (Vite bundle)      | |
-                      |  | ECharts + Sidebar + Theme toggle   | |
-                      |  +------------------------------------+ |
-                      +-------------------+---------------------+
-                                          |
-                      +-------------------v---------------------+
-                      |     ClickHouse Cloud (Gnosis Chain)     |
-                      |                                         |
-                      |  execution | consensus | crawlers_data  |
-                      |  nebula    | nebula_discv4 | dbt        |
-                      +---------------------------------------------+
+```mermaid
+flowchart TB
+    H[MCP Host<br/>Claude Desktop / VS Code / Claude Code] -- stdio / SSE --> S
+    subgraph S[cerebro-mcp - FastMCP]
+      direction TB
+      T[Tool Registry<br/>~50 tools] --> CH[ClickHouse Client]
+      T --> D[dbt Manifest<br/>BM25 + networkx]
+      T --> ES[(Event Log<br/>SQLite WAL)]
+      T --> RS[(Research Store<br/>JSON)]
+      T --> SB[(Sandboxes<br/>DuckDB + Parquet)]
+      T --> UI[Mini-App Bundles<br/>React + ECharts]
+    end
+    CH --> CHC[(ClickHouse Cloud<br/>Gnosis Chain)]
 ```
 
-## Transport Modes
+The server multiplexes four persistence layers:
 
-Cerebro MCP supports two transport mechanisms:
+1. **Event log** (`~/.cerebro/cerebro_state.db`) — append-only SQLite WAL holding workflows / events / gates. Powers crash recovery and resume hints. See [Memory & Resume](advanced/memory-and-resume.md).
+2. **Research / QBR JSON store** (`~/.cerebro/research_projects/`) — durable per-project state.
+3. **Sandbox snapshots** (`~/.cerebro/sandboxes/`) — DuckDB + Parquet for what-if simulations.
+4. **In-memory singletons** — storyteller phase machine, session counters.
 
-### stdio (Default)
+## Transport modes
 
-The default transport for local use with Claude Desktop and Claude Code. The MCP host spawns the server as a subprocess and communicates over stdin/stdout.
+### stdio (default)
+
+Local-only. Claude Desktop / Claude Code spawn `cerebro-mcp` as a subprocess and talk over stdin/stdout.
 
 ```bash
 cerebro-mcp
 ```
 
-### SSE / HTTP (Remote)
+### SSE / HTTP (remote)
 
-Server-Sent Events transport for remote deployments. Starts an HTTP server (uvicorn) that MCP clients connect to over the network.
+For team deployments. Starts a uvicorn server.
 
 ```bash
 cerebro-mcp --sse
-# Listens on http://0.0.0.0:8000 by default
+# Defaults to 0.0.0.0:8000 — bind via FASTMCP_HOST / FASTMCP_PORT
 ```
 
-Configure the bind address and port via `FASTMCP_HOST` and `FASTMCP_PORT` environment variables.
+The hosted team instance is at `mcp.analytics.gnosis.io` with bearer-token auth.
 
-The hosted team instance is available at `mcp.analytics.gnosis.io` with Bearer token authentication.
+## Capability summary
 
-## Key Capabilities
+### Discovery & query
 
-### Agent Fleet
+- 6 ClickHouse databases, ~862 dbt models across 8 modules (execution, consensus, bridges, p2p, contracts, ESG, probelab, crawlers).
+- Hybrid BM25 + RRF search (`search_models`, `discover_models`) — `hit@1` improved 4× over the legacy ranker (see [Hybrid Search](advanced/hybrid-search.md)).
+- Deterministic networkx lineage (`get_upstream_lineage`, `get_downstream_impact`).
+- Column-scoped schema injection for wide tables (`get_relevant_columns`).
+- 5.3M+ Dune address labels, token metadata, ENS / Safe / Circles / GPay resolution.
 
-- **23 agent personas** organised in three tiers — top-level dispatcher, workflow leads, domain specialists
-- Gated handoffs between personas (e.g. MMM `generate_report` blocked until `mmm_causal_reviewer` returns PASS)
-- See [Agent Fleet](agents.md), [Cerebro Dispatcher](dispatcher.md), and [Marketing Mix Modeling](mmm.md)
+### Visualisation & reporting
 
-### Data Exploration
+- Batch chart generation with ECharts (`generate_charts`).
+- Three report layouts: dashboard (`generate_report`), research essay (`generate_research_report`), scrollytelling case study (`generate_case_study_report`).
+- Eight enforcement gates on `generate_report` (stock/flow discipline, residual buckets, stationarity, aggregator dedup, discovered-model coverage, …). See [Quality Gates](advanced/quality-gates.md).
+- Reports render as native UI in MCP-aware hosts; standalone HTML at `~/.cerebro/reports/`.
 
-- Query 6 ClickHouse databases containing Gnosis Chain data
-- Browse ~400 dbt models across 8 modules (execution, consensus, bridges, p2p, contracts, ESG, probelab, crawlers)
-- Inspect table schemas with column types and dbt-generated descriptions
-- Resolve over 5.3 million address labels from Dune Analytics
-- Look up token metadata (address, decimals, price availability)
+### Workflows
 
-### Visualization and Reporting
+- **Research projects** — multi-phase plan/execute/verify with peer-review gate.
+- **Quarterly reviews** — auto-advancing QBR with `record_quarterly_note` and analysis attachments.
+- **Storyteller** — eight-step narrative pipeline (context brief → big idea → storyboard → visual specs → final story).
+- **Simulation sandboxes** — DuckDB + Parquet what-if isolation.
+- **Resumable workflows** — every workflow phase logged; `list_resumable_workflows` recovers from crashes.
 
-- Generate ECharts visualizations (line, area, bar, pie, number display)
-- Assemble multi-chart interactive reports with markdown narrative
-- Reports render as native UI in Claude Desktop/VS Code, or open in browser from Claude Code
-- Save reports as standalone HTML files at `~/.cerebro/reports/`
+### Mini-apps
+
+Six React + ECharts mini-apps that render inline in MCP-aware hosts: Token Explorer, Portfolio, Yield Opportunities, Graph Explorer, Metric Lab, Quarterly Review. See [Mini-Apps](mini-apps/index.md).
 
 ### Safety
 
-- All SQL execution is read-only (only `SELECT`, `EXPLAIN`, `DESCRIBE`, `SHOW`)
-- Write operations (`INSERT`, `UPDATE`, `DELETE`, `DROP`, etc.) are blocked at the validation layer
-- Maximum 10,000 rows per query, 30-second timeout, auto-appended `LIMIT` clauses
-- Identifier validation prevents SQL injection
+- Read-only ClickHouse SQL (allowlisted statements, identifier validation, row + time caps).
+- Tool-risk classification with detection-first JSONL audit log.
+- Optional multi-tenant identity via SHA-256 `owner` hash on every workflow.
+- 30-day reasoning trace retention with auto-redaction of secrets.
 
-### Reasoning and Tracing
+## Where to go next
 
-- Automatic capture of every tool call with timestamps, durations, and outcomes
-- Sensitive data (passwords, tokens) automatically redacted from traces
-- 30-day trace retention with session-level performance aggregation
-
-## Next Steps
-
-- [Available Tools](tools.md) -- Complete reference of all 30+ tools
-- [Agent Fleet](agents.md) -- 23 personas loadable via `get_agent_persona(role)`
-- [Cerebro Dispatcher](dispatcher.md) -- Top-level intent triage + gated routing
-- [Marketing Mix Modeling (MMM)](mmm.md) -- Sector contribution / ROI attribution with causal-DAG gate
-- [MMM User Guide](mmm-user-guide.md) -- Practical playbook for day-to-day MMM usage (prompt recipes, Sector Readiness Matrix, coefficient interpretation, FAQ)
-- [Report Generation](reports.md) -- How to build interactive reports
-- [Setup Guide](setup.md) -- Connect Cerebro MCP to your AI assistant
-- [Model Catalog](../models/index.md) -- Explore the dbt model library
+- New users → [Setup](setup.md) → [Usage Guide](advanced/usage-guide.md).
+- Looking for a tool? → [Available Tools](tools.md).
+- Building a report? → [Report Generation](reports.md) + [Quality Gates](advanced/quality-gates.md).
+- Long-running analysis crashed? → [Resumable Workflows](workflows/resumable-workflows.md).
+- Want to write narrative deliverables? → [Storyteller](workflows/storyteller.md).
+- Running counterfactuals? → [Simulation Sandboxes](workflows/simulation-sandboxes.md).
+- Dashboards / specific data? → [Mini-Apps](mini-apps/index.md).

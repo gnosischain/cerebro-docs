@@ -68,32 +68,49 @@ models/
 
 ## Incremental Processing
 
-Most intermediate models use ClickHouse's incremental materialization:
+Most intermediate models are incrementally materialized. The same model SQL supports four distinct invocation modes — daily catch-up, microbatch slicing, full-refresh batching, and refill recovery — selected by which dbt vars are set when the model runs.
+
+A typical incremental config:
 
 ```sql
 {{
-    config(
-        materialized='incremental',
-        incremental_strategy='delete+insert',
-        engine='ReplacingMergeTree()',
-        order_by='(block_timestamp, transaction_hash)',
-        unique_key='(block_timestamp, transaction_hash)',
-        partition_by='toStartOfMonth(block_timestamp)'
-    )
+  config(
+    materialized='incremental',
+    incremental_strategy=(
+      'append'
+      if (var('start_month', none) or var('incremental_end_date', none))
+      else 'delete+insert'
+    ),
+    engine='ReplacingMergeTree()',
+    order_by='(block_timestamp, transaction_hash)',
+    unique_key='(block_timestamp, transaction_hash)',
+    partition_by='toStartOfMonth(block_timestamp)'
+  )
 }}
 
 SELECT ...
 FROM {{ source('execution', 'transactions') }}
-
-{{ apply_monthly_incremental_filter('block_timestamp', 'date') }}
+{% if var('start_month', none) and var('end_month', none) %}
+WHERE toStartOfMonth(block_timestamp) >= toDate('{{ var("start_month") }}')
+  AND toStartOfMonth(block_timestamp) <= toDate('{{ var("end_month") }}')
+{% else %}
+{{ apply_monthly_incremental_filter('block_timestamp', 'date', false) }}
+{% endif %}
 ```
 
-Key characteristics of the incremental strategy:
+Key building blocks:
 
-- **`delete+insert`** -- On each run, delete existing rows for the affected time range and insert fresh data. This avoids duplicates without requiring merge operations.
-- **`ReplacingMergeTree`** -- ClickHouse engine that handles deduplication during background merges as an additional safety net.
-- **Monthly partitioning** -- `partition_by='toStartOfMonth(...)'` enables efficient partition-level deletes and queries.
-- **`apply_monthly_incremental_filter`** -- A custom macro that limits processing to only the months that contain new data.
+- **`delete+insert`** for daily runs (no vars set) — delete the affected window, insert fresh rows. Cheap on small windows.
+- **`append`** when either `start_month` (full-refresh / refill) or `incremental_end_date` (microbatch) is set — no mutation. RMT collapses duplicates on background merges or via on-demand `OPTIMIZE`.
+- **`ReplacingMergeTree`** handles deduplication on `unique_key` so re-runs are idempotent.
+- **Monthly partitioning** on `toStartOfMonth(...)` enables efficient partition-level deletes, queries, and `OPTIMIZE` operations.
+- **`apply_monthly_incremental_filter`** produces the WHERE clause for the daily and microbatch paths; the `start_month` branch is written inline because it filters source rows.
+
+For the full picture see:
+
+- [Incremental Strategies](incremental-strategies.md) — the four invocation modes, the macro routing logic, and the `refill_append` tag for heavy aggregates
+- [Running Models](running-models.md) — the four production runners with end-to-end examples
+- [Recovering from a Prices Gap](../../operations/prices-gap-recovery.md) — incident response when a prices source skips a day
 
 ## Contract ABI Decoding
 
@@ -105,7 +122,10 @@ The project includes custom macros in the `macros/` directory:
 
 | Category | Key Macros | Purpose |
 |----------|-----------|---------|
-| `db/` | `apply_monthly_incremental_filter` | Monthly incremental processing |
+| `db/` | `apply_monthly_incremental_filter` | Monthly incremental processing — see [Incremental Strategies](incremental-strategies.md) |
+| `db/` | `refill_safe_pre_hook` / `refill_safe_post_hook` | Memory contract for `tag:refill_append` models — caps memory at 8 GiB and enables disk spill |
+| `db/` | `optimize_partition_final` | `OPTIMIZE TABLE … PARTITION '<m>' FINAL DEDUPLICATE` — used by the refill script |
+| `db/` | `kill_failed_mutations` | Cleanup poisoned mutations from killed `delete+insert` runs |
 | `decoding/` | `decode_calls`, `decode_logs` | Contract ABI decoding |
 | `execution/` | Various helpers | Execution layer utilities |
 
@@ -177,6 +197,8 @@ docker exec dbt bash -c "dbt run && dbt test"
 # Or use the production cron script
 docker exec dbt /app/cron.sh
 ```
+
+For the full set of runners (daily cron, microbatch catch-up, full-refresh batched, refill recovery) see [Running Models](running-models.md).
 
 ## Development Workflow
 

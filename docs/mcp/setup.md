@@ -225,9 +225,52 @@ Configure the server with environment variables:
 
 When `MCP_AUTH_TOKEN` is set, all requests require an `Authorization: Bearer <token>` header. The `/health` endpoint bypasses authentication for Kubernetes liveness/readiness probes.
 
+## Multi-tenant identity
+
+If multiple humans share one Cerebro deployment, set `CEREBRO_OWNER` to identify the caller. Cerebro hashes the value with `CEREBRO_OWNER_HASH_SALT` (SHA-256) and stamps every workflow row, so `list_resumable_workflows` and `get_workflow_resume_hint` can filter by owner. See [Multi-Tenant](advanced/multi-tenant.md) for the full trust model.
+
+### stdio
+
+```json
+{
+  "mcpServers": {
+    "cerebro": {
+      "command": "cerebro-mcp",
+      "env": {
+        "CLICKHOUSE_PASSWORD": "your_password",
+        "CEREBRO_OWNER": "alice@gnosis.io",
+        "CEREBRO_OWNER_HASH_SALT": "rotate-me-quarterly"
+      }
+    }
+  }
+}
+```
+
+### SSE
+
+Send `X-Cerebro-Owner` per request:
+
+```json
+{
+  "mcpServers": {
+    "cerebro": {
+      "url": "https://mcp.analytics.gnosis.io/sse",
+      "headers": {
+        "Authorization": "Bearer <your-token>",
+        "X-Cerebro-Owner": "alice@gnosis.io"
+      }
+    }
+  }
+}
+```
+
+If neither is set, workflows write `owner=NULL` and the server runs in single-tenant fallback mode.
+
 ## Environment Variables
 
 Complete list of configuration variables:
+
+### Connectivity
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -238,18 +281,60 @@ Complete list of configuration variables:
 | `CLICKHOUSE_SECURE` | `True` | Enable TLS for ClickHouse connections |
 | `DBT_MANIFEST_URL` | `https://gnosischain.github.io/dbt-cerebro/manifest.json` | URL for the published dbt manifest |
 | `DBT_MANIFEST_PATH` | _(unset)_ | Local filesystem path to a manifest.json (overrides URL) |
+
+### Query and tool limits
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `MAX_ROWS` | `10000` | Maximum rows returned per query |
 | `QUERY_TIMEOUT_SECONDS` | `30` | Query execution timeout |
 | `MAX_QUERY_LENGTH` | `10000` | Maximum SQL string length accepted |
 | `TOOL_RESPONSE_MAX_CHARS` | `40000` | Maximum characters per tool response |
-| `THINKING_ALWAYS_ON` | `True` | Automatically capture all tool calls in reasoning traces |
-| `THINKING_LOG_DIR` | `.cerebro/logs` | Directory for reasoning trace files |
-| `THINKING_LOG_RETENTION_DAYS` | `30` | Days to retain trace logs before auto-pruning |
+
+### Storage
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `CEREBRO_REPORT_DIR` | `~/.cerebro/reports` | Directory for saved report HTML files |
 | `CEREBRO_SAVED_QUERIES_DIR` | `~/.cerebro-mcp` | Directory for saved query files |
+| `THINKING_LOG_DIR` | `.cerebro/logs` | Directory for reasoning trace files |
+| `THINKING_LOG_RETENTION_DAYS` | `30` | Days to retain trace logs before auto-pruning |
+| `THINKING_ALWAYS_ON` | `True` | Automatically capture all tool calls in reasoning traces |
+
+### Event log + workflows (Phase 3)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `EVENT_STORE_PATH` | `.cerebro/cerebro_state.db` | SQLite event log location |
+| `WORKFLOW_ORPHAN_AGE_SECONDS` | `86400` | Idle threshold for marking workflows orphaned (24h) |
+| `EVENT_PAYLOAD_COMPRESSION_THRESHOLD_BYTES` | `4096` | Payloads above this are gzipped |
+| `WORKFLOW_MAX_PARALLEL` | `8` | Cap on parallel sub-tasks in `run_parallel_phase` |
+
+### Sandboxes (Phase 2)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SANDBOX_ROOT` | `.cerebro/sandboxes` | Where Parquet snapshots live |
+| `SANDBOX_MAX_CONCURRENT` | `4` | LRU eviction threshold |
+| `SANDBOX_TTL_SECONDS` | `1800` | Idle TTL (30 min) |
+| `SANDBOX_MAX_BYTES_PER_EXPORT` | `2147483648` | Hard cap per export (2 GB) |
+
+### Multi-tenant
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CEREBRO_OWNER` | _(unset)_ | Caller identifier (hashed before persistence) |
+| `CEREBRO_OWNER_HASH_SALT` | _(unset)_ | Salt for SHA-256 owner hash; rotation = tenant reset |
+
+### SSE / auth
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `MCP_AUTH_TOKEN` | _(unset)_ | Bearer token for SSE authentication |
 | `FASTMCP_HOST` | `127.0.0.1` | SSE server bind address |
 | `FASTMCP_PORT` | `8000` | SSE server port |
+| `MCP_SECURITY_LOG_DIR` | `.cerebro/security_audit` | Audit JSONL directory |
+| `MCP_SECURITY_POLICY_MODE` | `log_only` | Future: `warn` / `enforce` |
 
 ## Security Recommendations
 

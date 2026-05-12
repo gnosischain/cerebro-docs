@@ -58,6 +58,9 @@ Bypasses itself on trivial / meta turns and on explicit specialist invocations. 
 | `mmm_analyst` | Marketing Mix Modeling SOP: spine-fill → multicollinearity → baseline → adstock → concave + Hill fit → contribution decomposition. Directional-only downgrade if <60 weekly rows. | Must hand DAG to `mmm_causal_reviewer` before `generate_report`. Cites Guidebook rules. |
 | `mmm_causal_reviewer` | DAG gate for MMM. Runs three Hakuhodo Ch.3 checks: chronological, non-inclusion, identifiability. | Returns `VERDICT: PASS` or `BLOCK`. `generate_report` is hard-blocked until PASS. |
 | `mmm_simulator` | Budget reallocation + marginal-ROI. Uses fitted `(β, r, λ)` from `mmm_analyst`. | Hard cap at ±30% period-over-period; never zeros out a media on a single window. |
+| `mta_analyst` | Multi-touch attribution: touchpoint paths, conversion funnels, rule-based / Markov / Shapley-proxy credit. Default 30-day lookback; sweeps 7/14/30/60 when volume permits. | Volume gates (<30 descriptive, 30–499 rule-based, ≥500 Markov). Output is observational — no causal claim without paired MMM PASS or experiment. |
+| `unified_causal_reviewer` | Gate for combined MMM + MTA. Runs eight checks: MMM-gate, conversion consistency, incrementality bound, coverage, leakage, identity grain, selection bias, method stability. Applies `calibrated = raw_mta × MMM_lift / Σ raw`. | Returns PASS / BLOCK. Unified `generate_report` is hard-blocked until PASS. Final report must disclose the `unexplained / untracked` residual. |
+| `unified_allocator` | Bounded micro/tactical recommendations from the unified MMM+MTA artifact. | Refuses to run without `unified_causal_reviewer` PASS. Inherits the ±30%/period cap from `mmm_simulator`. |
 
 ## Tier 3 — Domain specialists
 
@@ -158,9 +161,26 @@ The fleet has been live-tested against ClickHouse to flush out prompt-vs-reality
 
 See [MMM reference](mmm.md) for the worked smoke-test example and the SQL patches.
 
+## Architecture selection (Phase 3)
+
+The dispatcher persona now encodes a binding routing rule for **how** specialists should be composed (independently of *which* specialists). It picks one of three architectures based on whether the task is decomposable and how deep the sequential chain is:
+
+| Decomposable | Sequential depth | Architecture | `parallelism` | Example |
+|---|---|---|---|---|
+| no  | high | Single specialist       | `single`     | "stddev of TVL over 30d" |
+| no  | low  | Single specialist       | `single`     | "current bridge TVL" |
+| yes | low  | Centralized parallel    | `parallel`   | "Q3 review: network + tokenomics + bridge" |
+| yes | high | Centralized sequential  | `sequential` | "MMM contribution → causal review → simulation" |
+
+**Independent (no-reviewer) parallel is forbidden.** The validating-orchestrator role (`statistical_reviewer`, `mmm_causal_reviewer`, `reality_checker`) is mandatory in any `parallel` plan. Reasoning: Google's "Science of Scaling Agent Systems" (2026) measured 17.2× error amplification on uncoordinated parallel agents vs 4.4× with a validating orchestrator.
+
+The dispatch manifest gained a `Parallelism: <single | parallel | sequential>` line so downstream callers can see the routing decision explicitly. See [Dispatcher](dispatcher.md).
+
 ## See also
 
 - [Dispatcher](dispatcher.md) — intent triage + routing table + manifest format
+- [Workflows](workflows/index.md) — research / QBR / storyteller / sandbox flows the personas drive
+- [Resumable Workflows](workflows/resumable-workflows.md) — what happens to a persona's work when it crashes
 - [MMM](mmm.md) — Marketing Mix Modeling workflow end-to-end
 - [Tools](tools.md) — full tool catalog
 - [Reports](reports.md) — how `generate_report` assembles artifacts

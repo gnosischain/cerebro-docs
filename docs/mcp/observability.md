@@ -118,6 +118,34 @@ All metrics are exposed at the `/metrics` endpoint (unauthenticated, exempt from
 | `cerebro_security_app_only_calls_total` | Counter | `tool_name`, `transport` |
 | `cerebro_report_token_auth_total` | Counter | `status` |
 
+### Quality Gates (report enforcement)
+
+| Metric | Type | Labels |
+|---|---|---|
+| `cerebro_quality_gate_evaluations_total` | Counter | `gate_name`, `outcome` (`pass` / `fail`) |
+| `cerebro_quality_report_generations_total` | Counter | `report_kind`, `outcome` |
+| `cerebro_discovered_model_coverage_total` | Counter | `coverage_kind` (`queried` / `excluded` / `unused`) |
+
+These power the `quality_metrics` MCP tool's markdown summary. See [Quality Gates](advanced/quality-gates.md) for the full ruleset.
+
+### Workflows (Phase 3)
+
+| Metric | Type | Labels |
+|---|---|---|
+| `cerebro_workflow_resume_outcomes_total` | Counter | `kind`, `action` (`ready_to_resume` / `complete` / `failed` / `orphan` / `no_handler`) |
+| `cerebro_workflow_event_appends_total` | Counter | `kind`, `event_kind`, `status` |
+| `cerebro_workflow_event_payload_bytes` | Histogram | `kind`, `compressed` |
+| `cerebro_workflow_orphan_sweep_seconds` | Histogram | — |
+
+### Sandboxes (Phase 2)
+
+| Metric | Type | Labels |
+|---|---|---|
+| `cerebro_sandbox_create_total` | Counter | `outcome` |
+| `cerebro_sandbox_query_total` | Counter | `outcome` |
+| `cerebro_sandbox_export_bytes` | Histogram | — |
+| `cerebro_sandbox_active` | Gauge | — |
+
 ### Semantic Layer
 
 | Metric | Type | Labels |

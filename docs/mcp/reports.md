@@ -2,6 +2,75 @@
 
 Cerebro MCP can produce interactive, self-contained HTML reports with ECharts visualizations, narrative markdown, and a polished UI. Reports are rendered as native UI elements in Claude Desktop and VS Code, or opened in the default browser from Claude Code.
 
+## Picking a report tool
+
+All four report generators share the chart pipeline and enforcement gates. Pick the one that matches the deliverable:
+
+| Generator | When to use | Required extras |
+|---|---|---|
+| `generate_report` | Analytical dashboard. Default. Dense charts, KPIs, short commentary. | — |
+| `generate_research_report` | Long-form research essay (Anthropic-style). Whitepapers, narrative analyses, thesis pieces. | `deck` (≤240 chars), `key_takeaways` (3–6) |
+| `generate_case_study_report` | Scrollytelling layout — marketing case study, customer story, growth pitch, narrative-first investor update. | `deck`, `key_points` (3–6), optional `hero_image`, `cta` |
+| `storyteller_generate_story_report` | Final step of the [storyteller pipeline](workflows/storyteller.md) (memos, decision briefs, pitches). Routes to one of the three layouts above via `style="research" \| "scrollytelling" \| "dashboard"`. | n/a — storyteller drives args |
+
+The research and case-study generators support extra markdown directives:
+
+- `{{figure:CHART_ID caption="..." source="..."}}`, `{{pullquote}}`, `{{callout kind=...}}`, `{{sidebar}}`, footnotes (research)
+- `{{scene chart="..." side="left|right"}}`, `{{step chart="..." state="..."}}`, `{{reveal}}`, `{{image full_bleed=true}}`, `{{cta}}` (case study)
+
+Standard `{{chart:ID}}` and `{{grid:N}}` work in all layouts.
+
+## Batch-first chart generation
+
+Always call `generate_charts(specs=[...])` with **all** charts in a single batch — multiple `generate_chart` calls slow the run and break gate counting. Minimum 3 charts.
+
+```
+generate_charts(specs=[
+  {"sql": "...", "chart_type": "line", "title": "...", "x_field": "dt", "y_field": "txs"},
+  {"sql": "...", "chart_type": "scatter", "title": "...", "x_field": "fees", "y_field": "tps", "series_field": "protocol"},
+  {"sql": "...", "chart_type": "bar", "title": "...", "x_field": "label", "y_field": "share"},
+])
+```
+
+## Enforcement gates
+
+`generate_report` will REJECT a report that fails any of the following. The full ruleset (with rationale and mitigations) is on the [Quality Gates](advanced/quality-gates.md) page.
+
+| Gate | What it checks |
+|---|---|
+| **Dimensional breakdown** | At least one chart with `series_field`, or a pie / treemap / heatmap / sankey. |
+| **Relational analysis** | At least one scatter / heatmap chart, OR a correlation query. |
+| **Statistical query** | At least one `quantile`, `stddev`, or `corr` query. |
+| **Exploratory queries** | At least 2 EDA queries during the run. |
+| **Stock-flow discipline** | Rejects `SUM(tvl_usd \| balance \| supply)` over a date range without a point-in-time constraint. |
+| **Residual-bucket disclosure** | Rejects `WHERE col != ''` filters without acknowledging exclusion in chart title / subtitle. |
+| **Stationarity on correlations** | Rejects `corr(x, y)` over a series with date / month / week unless first-differenced (or ADF / Spearman / cointegration / `lagInFrame` mentioned). |
+| **Aggregator volume dedup** | Rejects `SUM(volume_usd)` over `fct_execution_pools_daily` etc. without dedup CTE. |
+| **Discovered-model coverage** | Every model returned by `search_models` must be queried, explored, OR explicitly excluded with `record_model_exclusion(name, reason)`. |
+
+Telemetry: gate evaluations and discovered-model coverage are exported as Prometheus counters (`cerebro_quality_gate_evaluations_total`, `cerebro_quality_report_generations_total`, `cerebro_discovered_model_coverage_total`).
+
+## Key takeaways formatting
+
+Key takeaways / summary sections in reports MUST use a 3-column markdown table:
+
+| Takeaway | Evidence | Why it matters |
+|----------|----------|----------------|
+| Q3 retention up 8% MoM | chart_4 + corr(cohort_size, retention)=0.71 | Concentrates risk in a single onboarding cohort |
+
+Do **not** use bullet lists for key takeaways. The renderer styles the table specifically.
+
+## After `generate_report` succeeds
+
+- Always include the `file://` link from the tool response in your reply.
+- Do NOT repeat the markdown content or `{{chart:ID}}` placeholders as text — the renderer handles them.
+- Summarize key insights and ask whether to convert to docx / pdf / pptx (use `export_report`).
+- SQL queries are embedded in the report UI — click `</>` on each chart card.
+
+`list_reports()` and `open_report(id)` reopen past reports. The list includes both dashboard and research-essay kinds.
+
+---
+
 ## Workflow Overview
 
 Report generation follows a structured pipeline with three phases:

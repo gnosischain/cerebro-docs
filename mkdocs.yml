@@ -135,11 +135,14 @@ nav:
   - Data Modeling:
     - data-pipeline/transformation/index.md
     - dbt-cerebro: data-pipeline/transformation/dbt-cerebro.md
+    - Incremental Strategies: data-pipeline/transformation/incremental-strategies.md
+    - Running Models: data-pipeline/transformation/running-models.md
     - Model Layers: data-pipeline/transformation/model-layers.md
     - Modules Reference: data-pipeline/transformation/modules.md
     - Contract ABI Decoding: data-pipeline/transformation/abi-decoding.md
     - Registry Pattern (Proxies): data-pipeline/transformation/safe-module-registry-pattern.md
     - Privacy & Pseudonyms: data-pipeline/transformation/privacy-pseudonyms.md
+    - Measurement Stack (MTA + MMM): data-pipeline/transformation/measurement-stack.md
     - Schema Generator: data-pipeline/transformation/dbt-schema-gen.md
     - dbt Model Catalog:
       - models/index.md
@@ -155,6 +158,7 @@ nav:
     - research/index.md
     - Marketing Mix Modeling (MMM):
       - research/mmm/index.md
+    - Multi-Touch Attribution (MTA): research/mta/index.md
     - Protocol Analytics:
       - protocols/index.md
       - Lending Protocols:
@@ -202,15 +206,36 @@ nav:
       - Error Handling: api/errors.md
     - MCP Server:
       - mcp/index.md
+      - Setup: mcp/setup.md
       - Available Tools: mcp/tools.md
       - Agent Fleet: mcp/agents.md
       - Cerebro Dispatcher: mcp/dispatcher.md
-      - Marketing Mix Modeling (MMM): mcp/mmm.md
-      - MMM User Guide: mcp/mmm-user-guide.md
       - Report Generation: mcp/reports.md
       - Security & Audit: mcp/security.md
       - Observability: mcp/observability.md
-      - Setup: mcp/setup.md
+      - Workflows:
+        - mcp/workflows/index.md
+        - Research Projects: mcp/workflows/research-projects.md
+        - Storyteller: mcp/workflows/storyteller.md
+        - Simulation Sandboxes: mcp/workflows/simulation-sandboxes.md
+        - Resumable Workflows: mcp/workflows/resumable-workflows.md
+      - Mini-Apps:
+        - mcp/mini-apps/index.md
+        - Portfolio: mcp/mini-apps/portfolio.md
+        - Graph Explorer: mcp/mini-apps/graph-explorer.md
+        - Metric Lab: mcp/mini-apps/metric-lab.md
+        - Contract Explorer: mcp/mini-apps/contract-explorer.md
+      - Advanced:
+        - mcp/advanced/index.md
+        - Hybrid Search: mcp/advanced/hybrid-search.md
+        - Memory & Resume: mcp/advanced/memory-and-resume.md
+        - Quality Gates: mcp/advanced/quality-gates.md
+        - Multi-Tenant: mcp/advanced/multi-tenant.md
+        - Semantic Metrics: mcp/advanced/semantic-metrics.md
+        - Usage Guide: mcp/advanced/usage-guide.md
+      - Marketing Mix Modeling (MMM): mcp/mmm.md
+      - MMM User Guide: mcp/mmm-user-guide.md
+      - Measurement Flow (MTA + MMM + Unified): mcp/measurement-flow.md
     - Dashboard:
       - dashboard/index.md
       - Sectors: dashboard/sectors.md
@@ -221,6 +246,7 @@ nav:
     - Deployment: operations/deployment.md
     - Monitoring: operations/monitoring.md
     - Troubleshooting: operations/troubleshooting.md
+    - Recovering from a Prices Gap: operations/prices-gap-recovery.md
   - Reference:
     - reference/index.md
     - Environment Variables: reference/env-vars.md
