@@ -4,7 +4,7 @@ How to recover a workflow that was interrupted by a crash, network blip, server 
 
 ## What it is
 
-Every workflow in Cerebro (research / QBR / storyteller / sandbox) writes structured events to `~/.cerebro/cerebro_state.db`. On every server start, a `WorkflowRegistry` walks each open workflow's event stream and computes a `ResumeOutcome` — a structured advice payload that the agent reads on the next user interaction.
+Every workflow in Cerebro (research / storyteller / sandbox) writes structured events to `~/.cerebro/cerebro_state.db`. On every server start, a `WorkflowRegistry` walks each open workflow's event stream and computes a `ResumeOutcome` — a structured advice payload that the agent reads on the next user interaction.
 
 The registry **never** auto-acts. It only emits a hint. The agent decides whether and how to resume.
 
@@ -13,7 +13,7 @@ The registry **never** auto-acts. It only emits a hint. The agent decides whethe
 - After an Anthropic 529 / rate limit interrupted a long workflow.
 - After Claude Code wiped the conversation buffer.
 - After `kill -9` on the MCP server.
-- When picking up someone else's in-progress QBR / research project.
+- When picking up someone else's in-progress research project.
 - When you want to know "did I publish that report?" without re-deriving it.
 
 ## The three resume tools
@@ -126,7 +126,7 @@ Walks the full event log fresh and writes a new hint. Status is flipped to `comp
 On every server start, `bootstrap.init_event_store_async()`:
 
 1. Initializes the event store schema (idempotent).
-2. Registers all known resume handlers (research, QBR, storyteller).
+2. Registers all known resume handlers (research, storyteller).
 3. Calls `registry.resume_all_running(max_age_seconds=24h)` — finds every workflow last touched > 24h ago.
 4. For each, writes a `workflow_resume_hint` event with the outcome.
 5. Logs a one-line summary: `Workflow resume sweep on startup: ready_to_resume=2, complete=1, orphaned=1`.

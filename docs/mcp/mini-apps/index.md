@@ -32,7 +32,9 @@ flowchart LR
 
 ## Launching a mini-app
 
-In any MCP-aware host:
+### Inside an MCP host (live data)
+
+This is the only path that gives you real ClickHouse / RPC results. Connect a host to either your local `cerebro-mcp` or the hosted endpoint — see [Setup](../setup.md) for Claude Desktop, Claude Code, and VS Code configurations. Then:
 
 ```text
 > Open the portfolio for 0xabc…
@@ -40,7 +42,31 @@ agent calls open_portfolio(address="0xabc…")
 → panel renders inline
 ```
 
-For terminal-only hosts, the mini-app opens in the default browser.
+GUI hosts render the bundle inline. Terminal hosts open the temp HTML in your default browser, hydrated with the same payload.
+
+### Standalone in a browser (UI only, mock data)
+
+For UI development you can run the React bundles directly via Vite, with no MCP host and no ClickHouse:
+
+```bash
+cd cerebro-mcp/ui
+npm install      # first time only
+npm run dev      # Vite on http://localhost:5173/
+```
+
+Then open any of:
+
+- `http://localhost:5173/`                          — Report Renderer
+- `http://localhost:5173/portfolio.html`            — Portfolio
+- `http://localhost:5173/graph-explorer.html`       — Graph Explorer
+- `http://localhost:5173/metric-lab.html`           — Metric Lab
+- `http://localhost:5173/contract-explorer.html`    — Contract Explorer
+
+(Or `make dev` from the repo root.)
+
+Each app boots into its `MOCK_PAYLOAD` fixture defined inside the app's React component. Layout, styling, and client-side state all work, but **`callServerTool` is unavailable**, so Call / Expand / Load buttons are no-ops — you'll see `[useMiniApp] callServerTool(...) unavailable (no ext-apps host)` in the devtools console. Use this loop only for UI iteration; switch to the MCP-host flow for anything data-driven.
+
+There is no `https://mcp.analytics.gnosis.io/mini-apps/<id>` route on the deployed server — mini-apps are exposed solely as MCP resources (`ui://cerebro/<app>`), unlike reports which have a `/reports/{id}` HTTP route.
 
 ## See also
 

@@ -179,7 +179,7 @@ The dispatch manifest gained a `Parallelism: <single | parallel | sequential>` l
 ## See also
 
 - [Dispatcher](dispatcher.md) — intent triage + routing table + manifest format
-- [Workflows](workflows/index.md) — research / QBR / storyteller / sandbox flows the personas drive
+- [Workflows](workflows/index.md) — research / storyteller / sandbox flows the personas drive
 - [Resumable Workflows](workflows/resumable-workflows.md) — what happens to a persona's work when it crashes
 - [MMM](mmm.md) — Marketing Mix Modeling workflow end-to-end
 - [Tools](tools.md) — full tool catalog

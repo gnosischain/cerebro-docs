@@ -5,7 +5,7 @@ A comprehensive end-to-end guide: setup, recipes, recovery, best practices, and 
 > Companion pages:
 > - [Setup](../setup.md) — install + connect Claude Desktop / VS Code / Claude Code
 > - [Tools](../tools.md) — categorised tool reference
-> - [Workflows](../workflows/index.md) — research / QBR / storyteller / sandbox flows
+> - [Workflows](../workflows/index.md) — research / storyteller / sandbox flows
 > - [Mini-Apps](../mini-apps/index.md) — interactive UI surfaces
 > - [Memory & Resume](memory-and-resume.md), [Quality Gates](quality-gates.md), [Multi-Tenant](multi-tenant.md), [Semantic Metrics](semantic-metrics.md)
 
@@ -42,7 +42,7 @@ The 30-second tour. Everything else elaborates on this.
    → returns file:// link. Show it. Don't paste markdown back.
 ```
 
-For research projects, QBRs, or storyteller sessions, swap step 7 for the appropriate `publish_*` / `storyteller_generate_story_report` tool.
+For research projects or storyteller sessions, swap step 7 for the appropriate `publish_research_report` / `storyteller_generate_story_report` tool.
 
 ---
 

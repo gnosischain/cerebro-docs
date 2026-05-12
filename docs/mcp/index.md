@@ -15,13 +15,13 @@ The Model Context Protocol (MCP) is an open standard that lets AI hosts (Claude 
 |---|---|
 | [Setup](setup.md) | Install, configure, connect Claude Desktop / VS Code / Claude Code. Multi-tenant `CEREBRO_OWNER` env. |
 | [Available Tools](tools.md) | Categorised reference of every MCP tool. |
-| [Agent Fleet](agents.md) | The 23+ persona library loadable via `get_agent_persona`. |
+| [Agent Fleet](agents.md) | The 27-persona library loadable via `get_agent_persona`. |
 | [Cerebro Dispatcher](dispatcher.md) | Top-level intent triage + binding dispatch manifest. |
 | [Report Generation](reports.md) | `generate_report`, `generate_research_report`, `generate_case_study_report`, gates. |
 | [Security & Audit](security.md) | Tool risk classes, JSONL audit log, multi-tenant identity. |
 | [Observability](observability.md) | Prometheus metrics, structured logs, Grafana dashboard. |
-| **[Workflows](workflows/index.md)** | Research projects, quarterly reviews, storyteller, sandboxes, resumable workflows. |
-| **[Mini-Apps](mini-apps/index.md)** | Six interactive UI surfaces (Token Explorer, Portfolio, Yield, Graph Explorer, Metric Lab, QBR). |
+| **[Workflows](workflows/index.md)** | Research projects, storyteller, sandboxes, resumable workflows. |
+| **[Mini-Apps](mini-apps/index.md)** | Five interactive UI surfaces (Report Renderer, Portfolio, Graph Explorer, Metric Lab, Contract Explorer). |
 | **[Advanced](advanced/index.md)** | Hybrid search internals, event log, quality gates, multi-tenant, semantic metrics, full usage guide. |
 | [MMM](mmm.md) / [MMM User Guide](mmm-user-guide.md) | Marketing-mix modeling SOP and prompt recipes. |
 
@@ -45,7 +45,7 @@ flowchart TB
 The server multiplexes four persistence layers:
 
 1. **Event log** (`~/.cerebro/cerebro_state.db`) — append-only SQLite WAL holding workflows / events / gates. Powers crash recovery and resume hints. See [Memory & Resume](advanced/memory-and-resume.md).
-2. **Research / QBR JSON store** (`~/.cerebro/research_projects/`) — durable per-project state.
+2. **Research JSON store** (`~/.cerebro/research_projects/`) — durable per-project state.
 3. **Sandbox snapshots** (`~/.cerebro/sandboxes/`) — DuckDB + Parquet for what-if simulations.
 4. **In-memory singletons** — storyteller phase machine, session counters.
 
@@ -90,14 +90,13 @@ The hosted team instance is at `mcp.analytics.gnosis.io` with bearer-token auth.
 ### Workflows
 
 - **Research projects** — multi-phase plan/execute/verify with peer-review gate.
-- **Quarterly reviews** — auto-advancing QBR with `record_quarterly_note` and analysis attachments.
 - **Storyteller** — eight-step narrative pipeline (context brief → big idea → storyboard → visual specs → final story).
 - **Simulation sandboxes** — DuckDB + Parquet what-if isolation.
 - **Resumable workflows** — every workflow phase logged; `list_resumable_workflows` recovers from crashes.
 
 ### Mini-apps
 
-Six React + ECharts mini-apps that render inline in MCP-aware hosts: Token Explorer, Portfolio, Yield Opportunities, Graph Explorer, Metric Lab, Quarterly Review. See [Mini-Apps](mini-apps/index.md).
+Five React + ECharts mini-apps that render inline in MCP-aware hosts: Report Renderer, Portfolio, Graph Explorer, Metric Lab, Contract Explorer. See [Mini-Apps](mini-apps/index.md).
 
 ### Safety
 
