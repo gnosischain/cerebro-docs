@@ -144,6 +144,15 @@ nav:
     - Privacy & Pseudonyms: data-pipeline/transformation/privacy-pseudonyms.md
     - Measurement Stack (MTA + MMM): data-pipeline/transformation/measurement-stack.md
     - Schema Generator: data-pipeline/transformation/dbt-schema-gen.md
+    - Semantic Layer:
+      - data-pipeline/transformation/semantic-layer/index.md
+      - Architecture: data-pipeline/transformation/semantic-layer/architecture.md
+      - User-Pseudonym Graph: data-pipeline/transformation/semantic-layer/user-pseudonym-graph.md
+      - Time Spines: data-pipeline/transformation/semantic-layer/time-spines.md
+      - Metric Registry: data-pipeline/transformation/semantic-layer/metric-registry.md
+      - Maintenance & Invariants: data-pipeline/transformation/semantic-layer/maintenance.md
+      - Cross-Sector Examples: data-pipeline/transformation/semantic-layer/cross-sector-examples.md
+      - Semantic Graph (auto-generated): data-pipeline/transformation/semantic-layer/graph.md
     - dbt Model Catalog:
       - models/index.md
       - Execution: models/execution.md
