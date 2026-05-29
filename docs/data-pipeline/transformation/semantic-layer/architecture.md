@@ -112,8 +112,14 @@ metrics:
 
 A few invariants the build enforces (see [maintenance](maintenance.md)):
 
-- **Measure names are globally unique.** Two `value_value` measures in two
-  different `semantic_models` are an `ambiguous_measure_binding` error.
+- **Measure names are globally unique.** Metrics bind to measures **by
+  name** — `build_metrics()` builds a `measure_name → [models]` map and a
+  metric pointing at a name that exists on more than one semantic_model
+  is an `ambiguous_measure_binding` error. This is why uniqueness is
+  mandatory the moment you want a metric for a measure, and why
+  `scripts/semantic/scaffold_metrics.py` uniquifies collided names to
+  `<semantic_model_name>__<measure>` before emitting the ~965
+  auto-generated candidate metrics.
 - **Metrics resolve deterministically.** `build_metrics()` keys
   `measure_to_models` as a sorted-first dict so the registry is
   reproducible even when an ambiguity exists.
@@ -130,7 +136,7 @@ between metric roots. Three kinds in production today:
 | File | Axis | Purpose |
 | --- | --- | --- |
 | `time_spines.yml` | `day` / `week` / `month` | Cross-grain composition. Every weekly mart joins to `dim_time_spine_weekly`. |
-| `user_pseudonym.yml` | `user_pseudonym` | Cross-sector user-overlap. 4-node graph (revenue × gpay × gnosis_app × circles). |
+| `user_pseudonym.yml` | `user_pseudonym` | Cross-sector user-overlap. 7-node graph (revenue ×2 grains, gpay, gnosis_app, circles, validator withdrawal addresses, + the Safe owner↔contract bridge). |
 | `execution_graph.yml` | `circles_avatar`, `safe`, `validator`, ... | Entity-specific joins (Circles trust graph, GP wallet ↔ Safe owner, validator withdrawal address ↔ Safe). |
 
 Relationship shape:
@@ -265,6 +271,22 @@ specific error code in `target/semantic_validation_report.json`:
 
 The validation is non-fatal by default; CI should run it with `--validate`
 and fail the build on errors.
+
+Two validator behaviours are worth knowing because they prevent
+false-positive errors against legitimate authoring:
+
+- **Graph-meta column names are matched with ClickHouse quoting
+  stripped.** A `graph.source_column: '`from`'` (back-ticked because
+  `from` / `to` are reserved words and are interpolated verbatim into
+  generated SQL) is validated against the catalog's bare `from` column —
+  the validator strips back-ticks before the membership check, so quoted
+  identifiers don't trip `graph_meta_unknown_column`.
+- **Snapshot / no-time-dimension models are exempt from the `grain`
+  requirement.** `REQUIRED_APPROVED_META` normally requires `grain`, but
+  a semantic_model with no `type: time` dimension (e.g. a
+  point-in-time `*_latest` snapshot) cannot have a meaningful grain, so
+  `grain` is dropped from the required set for those models rather than
+  emitting `missing_required_approved_meta`.
 
 ## Where the planner code lives
 

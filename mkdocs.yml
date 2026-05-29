@@ -75,10 +75,19 @@ hooks:
 
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/semantic-graph.css
 
 extra_javascript:
   - javascripts/mathjax.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+  # Interactive semantic-graph explorer (loaded in dependency order:
+  # cytoscape core + fcose layout deps, then the init script). Consumes
+  # the auto-generated graph_data.json on the Semantic Graph page.
+  - javascripts/vendor/cytoscape.min.js
+  - javascripts/vendor/layout-base.js
+  - javascripts/vendor/cose-base.js
+  - javascripts/vendor/cytoscape-fcose.js
+  - javascripts/semantic-graph.js
 
 extra:
   llms:

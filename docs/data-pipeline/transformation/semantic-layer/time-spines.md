@@ -177,3 +177,14 @@ Every new weekly / monthly mart should add itself here.
   conventions rather than a shared spine.
 
 These are all addressable when there's a concrete need — none are blocking.
+
+## Snapshot models have no grain
+
+Not every semantic_model is a time series. Point-in-time snapshots
+(`*_latest` distinct-user marts, current-balance projections, etc.)
+have no `type: time` dimension and therefore no meaningful time grain.
+The registry validator special-cases these: `grain` is dropped from
+the `REQUIRED_APPROVED_META` set when a model has no time dimension, so
+an `approved` snapshot model does **not** raise
+`missing_required_approved_meta` just for omitting `grain`. They simply
+don't participate in time-spine bridges or cross-grain upcasts.

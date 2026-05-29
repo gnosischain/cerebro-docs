@@ -130,12 +130,19 @@ the 300s ETag-based poll. Use during authoring loops:
 
 ```python
 mcp__cerebro-dev__reload_semantic_registry()
-# → {"changed": true, "before_hash": "...", "after_hash": "...",
-#    "metric_count": 50, "approved_metric_count": 35}
+# → {"changed": true,
+#    "registry_hash_before": "...", "registry_hash_after": "...",
+#    "manifest_hash_before": "...", "manifest_hash_after": "...",
+#    "catalog_hash_before": "...", "catalog_hash_after": "...",
+#    "metric_count": 1037, "approved_metric_count": 72}
 ```
 
 Returns the hash delta and count summary so the caller can verify the
-refresh actually picked up new content.
+refresh actually picked up new content. As of the cerebro-mcp sync fix,
+a force reload refreshes **all four artifacts together** (registry +
+docs + manifest + catalog), so the returned manifest/catalog hashes
+let you confirm a post-deploy mismatch is fully cleared in a single
+call — see [maintenance → stale registry](maintenance.md#drift-modes-what-to-watch-for).
 
 ## Candidate-metric opt-in for authoring
 
@@ -217,6 +224,28 @@ form filters, scatter plots, correlation matrices, ad-hoc joins).
 
 ## What's in the registry today
 
+The registry now carries **~1,037 metrics** (~72 `approved`, ~965
+`candidate`) across ~1,095 semantic-mapped models and 51 cross-sector
+relationships. The jump from the original hand-authored ~70 metrics is
+deliberate: `scripts/semantic/scaffold_metrics.py` emits **one candidate
+metric for every eligible measure** across all 26 authoring domains, so
+no measure is invisible to `discover_metrics` / `query_metrics` just
+because nobody hand-wrote a metric for it.
+
+Practical consequences:
+
+- **`discover_metrics` is unchanged in feel.** It only surfaces
+  `approved` metrics, so the ~965 auto-generated candidates don't add
+  noise — you reach them by name via `get_metric_details` or with
+  `allow_candidate=true`.
+- **Promotion is the curation step.** A candidate becomes a first-class,
+  discoverable metric only when an analyst reviews it and flips both the
+  metric and its root model to `approved` (see the
+  [promotion checklist](maintenance.md#promotion-checklist)).
+- **Measure names are globally unique** — a hard prerequisite for
+  binding a metric to every measure. The scaffolder enforces this; see
+  [maintenance invariant #1](maintenance.md#1-measure-names-are-globally-unique).
+
 Run-time count from the most recent build:
 
 ```bash
@@ -226,7 +255,8 @@ python3 -c "import json; r = json.load(open('target/semantic_registry.json')); \
                                      if m['quality_tier'] == 'approved'))"
 ```
 
-See the [semantic graph](graph.md) for the auto-generated current state.
+See the [semantic graph](graph.md) for the auto-generated current state
+(now an interactive cytoscape explorer with a static-Mermaid fallback).
 
 ## Adding a new metric
 
@@ -235,7 +265,12 @@ checklist. The three things that bite if you skip them:
 
 1.  **Measure names must be globally unique.** Use `<metric_name>_value`
     convention. Two `value_value` measures in two semantic_models is an
-    error caught by `validate_registry`.
+    error caught by `validate_registry` *once a metric references them*.
+    `scripts/semantic/scaffold_metrics.py` enforces this automatically:
+    it rewrites only collided names (to `<semantic_model>__<measure>`)
+    and emits a candidate metric for every eligible measure, so a
+    measure without a metric should not exist. Re-run it after adding
+    measures rather than hand-authoring the metric block.
 2.  **The root semantic_model's `quality_tier` must be approved too.**
     Promoting only the metric leaves the root candidate and the metric
     becomes silently unqueryable.

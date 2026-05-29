@@ -1,0 +1,127 @@
+/* Interactive semantic-layer graph explorer styling.
+ * Companion to javascripts/semantic-graph.js. */
+
+.semantic-graph-explorer {
+  margin: 1rem 0 1.5rem;
+  border: 1px solid var(--md-default-fg-color--lightest, #e0e0e0);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.semantic-graph-explorer .sg-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--md-code-bg-color, #f5f5f5);
+  border-bottom: 1px solid var(--md-default-fg-color--lightest, #e0e0e0);
+}
+
+.semantic-graph-explorer .sg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.semantic-graph-explorer .sg-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.semantic-graph-explorer .sg-swatch {
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  border-top-width: 3px;
+  border-top-style: solid;
+}
+
+.semantic-graph-explorer .sg-swatch--pseudo {
+  border-top-color: #2e7d32;
+}
+
+.semantic-graph-explorer .sg-swatch--spine {
+  border-top-color: #e65100;
+  border-top-style: dashed;
+}
+
+.semantic-graph-explorer .sg-swatch--other {
+  border-top-color: #607d8b;
+}
+
+.semantic-graph-explorer .sg-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex: 1 1 auto;
+}
+
+.semantic-graph-explorer .sg-chip {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  padding: 0.15rem 0.5rem;
+  border: 1.5px solid #90a4ae;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--md-default-fg-color, #333);
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.semantic-graph-explorer .sg-chip--on {
+  background: var(--md-default-fg-color--lightest, #eceff1);
+}
+
+.semantic-graph-explorer .sg-chip--off {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.semantic-graph-explorer .sg-reset {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--md-primary-fg-color, #009485);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--md-primary-fg-color, #009485);
+  cursor: pointer;
+}
+
+.semantic-graph-explorer .sg-reset:hover {
+  background: var(--md-primary-fg-color, #009485);
+  color: #fff;
+}
+
+#sg-canvas {
+  width: 100%;
+  height: 620px;
+  background:
+    radial-gradient(circle, rgba(0, 0, 0, 0.04) 1px, transparent 1px)
+    0 0 / 22px 22px;
+}
+
+#sg-canvas[data-error]::after {
+  content: "Interactive graph unavailable — see the static diagram below.";
+  display: block;
+  padding: 1rem;
+  font-size: 0.8rem;
+  color: var(--md-default-fg-color--light, #777);
+}
+
+.semantic-graph-explorer .sg-hint {
+  margin: 0;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.72rem;
+  color: var(--md-default-fg-color--light, #777);
+  border-top: 1px solid var(--md-default-fg-color--lightest, #e0e0e0);
+}
+
+/* Dark-mode: lighten the dotted background so nodes stay legible. */
+[data-md-color-scheme="slate"] #sg-canvas {
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px)
+    0 0 / 22px 22px;
+}

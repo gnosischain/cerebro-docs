@@ -24,8 +24,12 @@ full story.
 
 ## The current graph
 
-Five user-keyed marts, twelve approved relationships. The graph is fully
-connected — any node reaches any other in at most one hop.
+Seven user-keyed nodes, 26 approved relationships. The five original
+sector marts are directly connected; the validator-withdrawal mart and
+the Safe owner↔contract **bridge** were added later (the bridge routes
+Safe-keyed activity to the underlying EOA owner — see
+[Safe-wallet fanout](#safe-wallet-fanout-smart-contract-wallet-human-owner)
+below).
 
 ```mermaid
 flowchart LR
@@ -34,6 +38,8 @@ flowchart LR
     gpay[gpay_users_distinct]
     gnosis_app[gnosis_app_users_distinct]
     circles[circles_human_avatars_distinct]
+    validator[validators_withdrawal_addresses_distinct]
+    bridge[[safe_owner_pseudonyms bridge]]
 
     revenue_w --- gpay
     revenue_m --- gpay
@@ -45,12 +51,21 @@ flowchart LR
     gpay --- circles
     gnosis_app --- circles
 
+    revenue_w --- bridge
+    revenue_m --- bridge
+    gpay --- bridge
+    gnosis_app --- bridge
+    circles --- bridge
+    validator --- bridge
+
     classDef u fill:#e8f5e9,stroke:#2e7d32,stroke-width:1px,color:#1b5e20;
-    class revenue_w,revenue_m,gpay,gnosis_app,circles u;
+    classDef b fill:#fff3e0,stroke:#e65100,stroke-width:1.5px,color:#bf360c;
+    class revenue_w,revenue_m,gpay,gnosis_app,circles,validator u;
+    class bridge b;
 ```
 
-See **[Semantic graph](graph.md)** for the auto-generated current state
-(may include nodes added since this page was written).
+See **[Semantic graph](graph.md)** for the auto-generated, interactive
+current state (this hand-drawn view may lag nodes added since).
 
 ## Cohort sizes (lifetime totals)
 
@@ -167,10 +182,12 @@ right graph node. The placeholder is documented in
 
 ### Validator withdrawal addresses
 
-A natural future axis — most validators are owned by humans (or pools)
-with withdrawable balances. The withdrawal-address pseudonym is
-deterministic in the same hash space. Not yet built; would slot in next
-to `gnosis_app_users_distinct` on the graph.
+Now in the graph as `fct_consensus_validators_withdrawal_addresses_distinct`.
+Most validators are owned by humans (or pools) with withdrawable
+balances, and the withdrawal-address pseudonym is deterministic in the
+same hash space. Because many withdrawal addresses are Safes, this node
+overlaps the other sectors primarily *through* the
+`safe_owner_pseudonyms` bridge rather than via direct edges.
 
 ### Safe-wallet fanout (smart-contract wallet → human owner)
 

@@ -19,15 +19,26 @@ into a `measure_name → [model_names]` map; when a metric's
 `type_params.measure` resolves to two or more models, the binding is
 ambiguous and the validator emits `ambiguous_measure_binding`.
 
-Convention: prefix the measure with the metric name. A metric
-`cow_volume_usd` should be backed by a measure
-`execution_cow_volume_usd_value` (or similar — what matters is
-uniqueness).
+Convention: `<column>_value`, or `<semantic_model_name>__<measure>`
+when that collides. Two same-named measures across semantic_models is
+only a build error *once a metric references them*
+(`ambiguous_measure_binding`).
 
 The build picks a deterministic winner (`sorted(candidates)[0]`) so
 the registry is reproducible even when collisions exist. But the
-validator will flag every collision as an error if you run with
+validator will flag every *bound* collision as an error if you run with
 `--validate`.
+
+**Let the scaffolder enforce this.**
+`scripts/semantic/scaffold_metrics.py` is the source of truth for
+measure uniqueness: it rewrites only the collided names to
+`<semantic_model_name>__<measure>` (already-unique names — including
+every name an existing metric binds to — are left untouched, so churn
+is minimal) and emits one candidate metric per eligible measure. The
+result is the property that makes "a metric for every measure" possible
+in the first place: no measure is left without a globally-unique name
+and a metric. Re-run it whenever you add measures (`--target-dir target
+--write`) rather than hand-editing the `metrics:` block.
 
 ### 2. Root semantic_model's `quality_tier` matches the metric's
 
@@ -174,17 +185,18 @@ When adding a new metric:
 
 | Drift mode | How it presents | Mitigation |
 | --- | --- | --- |
-| Measure-name collision | New metric resolves to wrong root_model; `discover_metrics` returns confusing scores. | `validate_registry` catches at build time. Naming convention: `<metric_name>_value`. |
+| Measure-name collision | New metric resolves to wrong root_model; `discover_metrics` returns confusing scores. | `validate_registry` catches at build time. Re-run `scaffold_metrics.py` to uniquify + (re)bind. |
 | Root semantic_model still candidate | Metric appears in `discover_metrics` but `query_metrics` rejects with "not approved". | Promotion checklist above — promote both. |
 | Week-anchor outlier | Cross-sector joins return misaligned rows; counts look weirdly low. | Audit `*_weekly.sql` for bare `toStartOfWeek(date)`. CI check pending. |
 | Renamed dbt model | `unknown_left_model` validation error. | Update every `semantic/relationships/*.yml` that referenced the old name. |
-| Stale registry on MCP side | `query_metrics` returns "metric not found" or pre-promotion state. | Call `reload_semantic_registry`. If still stale, check CDN cache headers on the GitHub Pages publish. |
+| Stale registry on MCP side | `query_metrics` returns "metric not found" or pre-promotion state. | Call `reload_semantic_registry`. The force path now reloads all four artifacts (registry + docs + manifest + catalog) atomically, so a single call clears a post-deploy `manifest_hash_mismatch` and the first query after a deploy self-heals. If still stale, check CDN cache headers on the GitHub Pages publish, and confirm the MCP isn't pinned to a stale local artifact path. |
 | Salt rotation (hypothetical) | All `user_pseudonym` joins return empty. | **Don't rotate.** If absolutely necessary, full refresh of every pseudonymized mart in a single transaction. |
 
 ## Ongoing-maintenance time budget
 
-Realistic projection based on the current shape (50 metrics, 34
-relationships, ~150 semantic_models, ~1000 dbt models):
+Realistic projection based on the current shape (~1,037 metrics — ~72
+approved, ~965 auto-generated candidates — 51 relationships, ~1,095
+semantic-mapped models):
 
 - **New cross-sector metric**: 30 min (write YAML + validate + smoke
   test).
@@ -208,7 +220,8 @@ i.e. doesn't register every new mart, only the analyst-facing ones.
 | `scripts/semantic/build_registry.py --validate` | Add invariant checks (measure uniqueness, missing measures, unknown relationship models, etc.). | dbt-cerebro |
 | `scripts/semantic/build_semantic_docs.py` | Generate `semantic_docs_index.json` for MCP's `gnosis://semantic-model/{name}` resource. | dbt-cerebro |
 | `scripts/semantic/scaffold_candidates.py` | Auto-generate candidate `semantic_models` from new dbt models (rough starting point only — review before committing). | dbt-cerebro |
-| `scripts/semantic/generate_graph_diagram.py` | Auto-generate the Mermaid graph in [graph.md](graph.md). | dbt-cerebro |
+| `scripts/semantic/scaffold_metrics.py` | Uniquify collided measure names and emit one candidate metric per eligible measure across all domains. Idempotent; re-run after adding measures. Skips blocked/internal/`expose_to_mcp: false` models and id-like measures. | dbt-cerebro |
+| `scripts/semantic/generate_graph_diagram.py` | Auto-generate [graph.md](graph.md) (static Mermaid) **and** the `graph_data.json` sidecar that powers the interactive cytoscape explorer. | dbt-cerebro |
 | `mcp__cerebro-dev__reload_semantic_registry` | Force MCP runtime refresh, bypassing the 300s poll. | cerebro-mcp MCP tool |
 | `tests/test_semantic_registry.py` | pytest suite for `build_registry.py` + validation. | dbt-cerebro |
 
@@ -223,9 +236,11 @@ Tracked here so authoring debt stays visible:
    to a different value than the one used by any existing
    pseudonymized mart. Currently nothing prevents an accidental
    rotation in a non-prod environment.
-3. **Auto-published `graph.md`** — wire
+3. **Auto-published `graph.md`** — partly done. The generator now emits
+   both the static Mermaid `graph.md` and the `graph_data.json` sidecar
+   behind the interactive cytoscape explorer. Remaining: wire
    `scripts/semantic/generate_graph_diagram.py` into the registry-build
-   CI step so the graph stays current automatically.
+   CI step (with `--json-output`) so both stay current automatically.
 4. **Cross-grain enforcement** — flag a metric in `discover_metrics`
    results when its `supported_time_grains` declare a grain that's not
    reachable from its root model (i.e. no spine bridge or upcast
