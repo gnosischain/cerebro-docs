@@ -56,7 +56,7 @@ ClickHouse was chosen for its columnar storage, high compression ratios, and fas
 
 ## Transformation Layer
 
-Raw data is transformed by **dbt-cerebro**, a dbt project containing approximately 400 SQL models organized into eight domain modules. The transformation follows a strict layered architecture:
+Raw data is transformed by **dbt-cerebro**, a dbt project containing approximately 1,200 SQL models organized into 14 domain modules. The transformation follows a strict layered architecture:
 
 ```
 Raw Tables (execution.blocks, consensus.blocks, ...)

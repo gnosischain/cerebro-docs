@@ -1,6 +1,6 @@
 # Consensus Module
 
-The Consensus module contains approximately **54 models** covering all data from the Gnosis Chain Beacon Chain (consensus layer). This includes validator lifecycle management, attestation performance, sync committee participation, proposer duties, rewards and penalties, deposits, withdrawals, slashings, blob commitments, client distribution, and epoch/slot metadata.
+The Consensus module covers all data from the Gnosis Chain Beacon Chain (consensus layer). This includes validator lifecycle management, attestation performance, sync committee participation, proposer duties, rewards and penalties, deposits, withdrawals, slashings, blob commitments, client distribution, and epoch/slot metadata.
 
 ## Data Sources
 
@@ -42,7 +42,9 @@ Gnosis Chain shares the Ethereum Beacon Chain specification with several key dif
 |-------|-------|-------------|
 | `stg_consensus__attestations` | Staging | The stg_consensus__attestations model consolidates attestation data from the consensus layer, enabling analysis of va... |
 | `int_consensus_attestations_daily` | Intermediate | The int_consensus_attestations_daily model aggregates daily consensus attestations, providing insights into attestati... |
+| `fct_consensus_attestations_performance_daily` | Fact | Network-wide daily attestation KPI fact derived from int_consensus_attestations_daily. One row per day. |
 | `api_consensus_attestations_daily` | API | The api_consensus_attestations_daily model provides a daily summary of consensus attestations, capturing key metrics ... |
+| `api_consensus_attestations_performance_daily` | API | Public API view over fct_consensus_attestations_performance_daily. Network-wide daily attestation KPIs. |
 
 **Blob**
 
@@ -59,6 +61,14 @@ Gnosis Chain shares the Ethereum Beacon Chain specification with several key dif
 | `stg_consensus__blocks` | Staging | The stg_consensus__blocks model provides a structured view of blockchain block data, capturing key consensus layer at... |
 | `int_consensus_blocks_daily` | Intermediate | The int_consensus_blocks_daily model aggregates daily consensus block production metrics, including counts of blocks ... |
 | `api_consensus_blocks_daily` | API | The api_consensus_blocks_daily model aggregates daily consensus block data, providing insights into blocks produced a... |
+
+**Consolidations**
+
+| Model | Layer | Description |
+|-------|-------|-------------|
+| `fct_consensus_consolidations_daily` | Fact | Daily EIP-7251 consolidation event counts and transferred amounts stacked by role
+('self', 'source', 'target'). Mater... |
+| `api_consensus_consolidations_daily` | API | Public API view — SELECT * FROM fct_consensus_consolidations_daily. Filter/pagination metadata in model config. |
 
 **Credentials**
 
@@ -146,18 +156,66 @@ Gnosis Chain shares the Ethereum Beacon Chain specification with several key dif
 | Model | Layer | Description |
 |-------|-------|-------------|
 | `stg_consensus__validators` | Staging | This view consolidates validator information from the consensus layer, focusing on active validators with a positive ... |
+| `stg_consensus__validators_all` | Staging | Unfiltered validator snapshot view — every validator regardless of status or balance (verified: the SQL is `SELECT * ... |
+| `int_consensus_validators_apy_dist_income_daily` | Intermediate | Network-wide daily APY quantile distribution, built on int_consensus_validators_income_daily
+(the spec-bounded APY so... |
 | `int_consensus_validators_balances_daily` | Intermediate | The `int_consensus_validators_balances_daily` model aggregates daily total and effective balances of validators from ... |
+| `int_consensus_validators_consolidation_flags` | Intermediate | Small per-validator lookup: does this validator appear as the SOURCE or
+TARGET of any cross-consolidation request (ev... |
+| `int_consensus_validators_consolidation_requests` | Intermediate | Deduplicated EIP-7251 (MaxEB) validator consolidation requests. One row
+per unique (source_pubkey, is_self_consolidat... |
+| `int_consensus_validators_consolidations_daily` | Intermediate | EIP-7251 (MaxEB) consolidation events at per-(date, validator_index, role) grain. See
+https://notes.ethereum.org/@fra... |
+| `int_consensus_validators_deposits_daily` | Intermediate | Daily per-validator consensus-layer deposits in GNO. Combines beacon deposits (stg_consensus__deposits) with executio... |
 | `int_consensus_validators_dists_daily` | Intermediate | This model aggregates daily distributions of validator balances and APY (Annual Percentage Yield) metrics to support ... |
-| `int_consensus_validators_per_index_apy_daily` | Intermediate | This model calculates daily validator consensus participation and withdrawal metrics, aggregated by validator index, ... |
+| `int_consensus_validators_explorer_apy_dist_daily` | Intermediate | Per-(date, withdrawal_credentials) cross-sectional APY distribution plus rolling 7d/30d
+medians of the credential's b... |
+| `int_consensus_validators_income_daily` | Intermediate | Daily per-(date, validator_index) consensus income fact, including exited and
+zero-balance validators. Amount columns... |
+| `int_consensus_validators_per_index_apy_daily` | Intermediate | Per-(date, validator_index) APY for active / pending-queued validators.
+Rescoped 2026-06: `apy` is now read straight ... |
+| `int_consensus_validators_proposer_rewards_daily` | Intermediate | Daily per-validator proposer rewards aggregated from slot-level stg_consensus__rewards. Amounts in real GNO (source g... |
+| `int_consensus_validators_snapshots_daily` | Intermediate | Last-of-day validator snapshot per (date, validator_index). Built from stg_consensus__validators_all so exited and ze... |
 | `int_consensus_validators_status_daily` | Intermediate | The int_consensus_validators_status_daily model aggregates daily counts of validators' statuses to monitor network he... |
+| `int_consensus_validators_withdrawal_addresses` | Intermediate | Thin projection over int_consensus_validators_labels that derives the controlling
+EVM address from each validator's w... |
+| `int_consensus_validators_withdrawals_daily` | Intermediate | Daily per-validator consensus-layer withdrawals in GNO, keyed by validator_index. Withdrawals only exist on Gnosis po... |
+| `fct_consensus_validators_apy_mean_daily` | Fact | Network-wide daily mean APY, balance-weighted by balance_prev_gno so exited / idle
+/ just-entered validators (apy=0 a... |
 | `fct_consensus_validators_dists_last_30_days` | Fact | This model provides statistical summaries of validator balances and annual percentage yields (APY) over the last 30 d... |
+| `fct_consensus_validators_explorer_daily` | Fact | Per-operator (withdrawal_credentials) daily roll-up feeding the five daily charts on
+the Validator Explorer tab. Mate... |
+| `fct_consensus_validators_explorer_latest` | Fact | Per-operator (withdrawal_credentials) latest-snapshot roll-up. Feeds the KPI cards on
+the Validator Explorer tab. Rea... |
+| `fct_consensus_validators_explorer_members_table` | Fact | Members table for the Validator Explorer tab: one row per validator under the
+selected withdrawal credential. Reads i... |
+| `fct_consensus_validators_income_total_daily` | Fact | Network-wide daily consensus income in GNO, summed across every validator (including
+exited / zero-balance). Derived ... |
+| `fct_consensus_validators_status_latest` | Fact | Validator-level point-in-time snapshot at the most recent slot. One row
+per validator with current balance, effective... |
+| `fct_consensus_validators_withdrawal_addresses_distinct` | Fact | One row per `user_pseudonym` (sipHash of validator withdrawal
+address). Aggregates `n_validators_controlled` per addr... |
 | `api_consensus_validators_active_daily` | API | The api_consensus_validators_active_daily model provides a daily snapshot of the number of validators that are active... |
 | `api_consensus_validators_apy_dist_daily` | API | This view provides daily distribution metrics of validator APYs, enabling analysis of validator performance variabili... |
+| `api_consensus_validators_apy_dist_income_daily` | API | Public API view — SELECT * FROM int_consensus_validators_apy_dist_income_daily. Filter/pagination metadata in model c... |
 | `api_consensus_validators_apy_dist_last_30_days` | API | This view provides a distribution of validator APYs over the last 30 days, enabling analysis of APY variability and t... |
+| `api_consensus_validators_apy_mean_daily` | API | Public API view — SELECT * FROM fct_consensus_validators_apy_mean_daily. Filter/pagination metadata in model config. |
 | `api_consensus_validators_balance_dist_last_30_days` | API | This view provides the distribution of validator balances over the last 30 days, summarized through various quantiles... |
 | `api_consensus_validators_balances_daily` | API | The api_consensus_validators_balances_daily model provides a daily overview of validator balances and effective balan... |
 | `api_consensus_validators_balances_dist_daily` | API | This view provides daily distribution percentiles of validator balances in GNO, enabling analysis of validator balanc... |
+| `api_consensus_validators_explorer_apy_dist_daily` | API | Public API view — SELECT * FROM int_consensus_validators_explorer_apy_dist_daily. Requires withdrawal_credentials fil... |
+| `api_consensus_validators_explorer_balance_dist` | API | Balance-distribution histogram across co-validators sharing a withdrawal credential.
+Light view over fct_consensus_va... |
+| `api_consensus_validators_explorer_daily` | API | Public API view — SELECT * FROM fct_consensus_validators_explorer_daily. Requires withdrawal_credentials filter; see ... |
+| `api_consensus_validators_explorer_latest` | API | Public API view — SELECT * FROM fct_consensus_validators_explorer_latest. Requires withdrawal_credentials filter; see... |
+| `api_consensus_validators_explorer_members_table` | API | Public API view — SELECT * FROM fct_consensus_validators_explorer_members_table. Requires withdrawal_credentials filt... |
+| `api_consensus_validators_income_total_daily` | API | Public API view — SELECT * FROM fct_consensus_validators_income_total_daily. Filter/pagination metadata in model config. |
+| `api_consensus_validators_performance_daily` | API | Public API view joining daily income and proposer-reward facts at (date, validator_index). Filterable by validator_in... |
+| `api_consensus_validators_performance_latest` | API | Public API view — one row per validator with latest snapshot fields plus 30-day and lifetime aggregates. |
+| `api_consensus_validators_search` | API | Dropdown source for the Validator Explorer tab. Grain is one row per
+WITHDRAWAL_CREDENTIALS (not per validator) — on ... |
 | `api_consensus_validators_status_daily` | API | The api_consensus_validators_status_daily model provides a daily summary of validator statuses, excluding ongoing act... |
+| `api_consensus_validators_status_latest` | API | The api_consensus_validators_status_latest model provides the latest validator-level consensus status snapshot and su... |
 
 **Withdrawal**
 

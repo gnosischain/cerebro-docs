@@ -54,9 +54,9 @@ Public (tier0) endpoints are available without authentication. To access higher-
 
 | Tier | Access Level | Rate Limit |
 |------|-------------|------------|
-| `tier0` | Public | 20 requests/min |
-| `tier1` | Partner | 100 requests/min |
-| `tier2` | Premium | 500 requests/min |
+| `tier0` | Public | 100 requests/min |
+| `tier1` | Partner | 500 requests/min |
+| `tier2` | Premium | 1,000 requests/min |
 | `tier3` | Internal | 10,000 requests/min |
 
 To request an API key, contact the Gnosis Analytics team or visit the self-service portal (if available for your organization).

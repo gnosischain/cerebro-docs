@@ -103,13 +103,13 @@ All endpoints return JSON with the following structure:
 
 | Tier | Authentication | Rate Limit | Access |
 |:----:|:---------------|:----------:|:-------|
-| Tier 0 | None (public) | 20 req/min | All ESG endpoints |
-| Tier 1 | API key required | 100 req/min | All endpoints + extended history |
-| Tier 2 | API key required | 500 req/min | All endpoints + raw data access |
-| Tier 3 | API key required | 1,000 req/min | Enterprise / dedicated |
+| Tier 0 | None (public) | 100 req/min | All ESG endpoints |
+| Tier 1 | API key required | 500 req/min | All endpoints + extended history |
+| Tier 2 | API key required | 1,000 req/min | All endpoints + raw data access |
+| Tier 3 | API key required | 10,000 req/min | Enterprise / dedicated |
 
 !!! info "Tier 0 -- No Authentication Required"
-    All ESG endpoints listed above are available at **Tier 0** (public access) with no API key required. Rate limiting is applied per IP address at 20 requests per minute.
+    All ESG endpoints listed above are available at **Tier 0** (public access) with no API key required. Rate limiting is applied per IP address at 100 requests per minute.
 
 For Tier 1+ access, include your API key in the request header:
 

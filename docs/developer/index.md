@@ -29,7 +29,7 @@ The API is entirely metadata-driven. To expose a new dataset through the REST AP
 
 ### Add dbt Models
 
-All analytics transformations happen in dbt-cerebro, a dbt project with approximately 400 SQL models organized across 8 modules. Models follow a layered architecture (staging, intermediate, facts, API) with consistent naming conventions and incremental processing strategies.
+All analytics transformations happen in dbt-cerebro, a dbt project with approximately 1,200 SQL models organized across 14 modules. Models follow a layered architecture (staging, intermediate, facts, API) with consistent naming conventions and incremental processing strategies.
 
 [:octicons-arrow-right-24: Adding dbt Models](add-model.md)
 

@@ -194,8 +194,8 @@ When adding a new metric:
 
 ## Ongoing-maintenance time budget
 
-Realistic projection based on the current shape (~1,037 metrics — ~72
-approved, ~965 auto-generated candidates — 51 relationships, ~1,095
+Realistic projection based on the current shape (1,645 metrics — 1,383
+approved, 262 auto-generated candidates — 714 relationships, ~1,166
 semantic-mapped models):
 
 - **New cross-sector metric**: 30 min (write YAML + validate + smoke

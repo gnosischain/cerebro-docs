@@ -15,7 +15,7 @@ The Gnosis Analytics platform stores all data in a ClickHouse Cloud cluster orga
 | `consensus` | Raw consensus layer data | beacon-indexer, era-parser | ~10 |
 | `crawlers_data` | External data from third-party sources | click-runner, ip-crawler | ~10 |
 | `nebula` | P2P network crawl data | nebula | ~5 |
-| `dbt` | Transformed and modeled data | dbt-cerebro | ~400 |
+| `dbt` | Transformed and modeled data | dbt-cerebro | ~1,200 |
 
 ---
 
@@ -437,7 +437,7 @@ Aggregated peer records with the latest known state for each discovered peer.
 
 ## dbt Database
 
-Transformed and modeled data produced by dbt-cerebro. Contains approximately 400 models organized by layer and module.
+Transformed and modeled data produced by dbt-cerebro. Contains approximately 1,200 models organized by layer and module.
 
 ### Model Naming Pattern
 

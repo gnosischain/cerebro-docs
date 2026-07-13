@@ -44,7 +44,7 @@ The modeling layer transforms raw data into analytics-ready datasets using dbt (
 
 | Repository | Description |
 |-----------|-------------|
-| **dbt-cerebro** | The core dbt project containing approximately 400 models organized into 8 modules: `execution`, `consensus`, `p2p`, `bridges`, `ESG`, `probelab`, `crawlers_data`, and `contracts`. Models follow a staging/intermediate/marts pattern and produce the API-facing views. |
+| **dbt-cerebro** | The core dbt project containing approximately 1,200 models organized into 14 modules, including `execution`, `consensus`, `p2p`, `bridges`, `ESG`, `probelab`, `crawlers_data`, `contracts`, `celo`, `revenue`, `quarterly_data`, and `mixpanel_ga`. Models follow a staging/intermediate/marts pattern and produce the API-facing views. |
 | **dbt-schema-gen** | An LLM-powered tool that automatically generates dbt schema YAML files. Analyzes SQL models and produces column descriptions, tests, and documentation. |
 | **cryo-base** | Docker base image for the Cryo indexer. Provides a pre-built ARM64 container with Cryo installed, used as the foundation for cryo-indexer deployments. |
 
@@ -68,7 +68,7 @@ The serving layer exposes transformed data to end users through three complement
 | click-runner | Python / SQL | External data ingestion (Ember, ProbeLab, Dune) |
 | nebula | Go | P2P DHT network crawler |
 | ip-crawler | Go | IP geolocation enrichment for peer data |
-| dbt-cerebro | SQL / dbt | ~400 analytics models across 8 modules |
+| dbt-cerebro | SQL / dbt | ~1,200 analytics models across 14 modules |
 | dbt-schema-gen | Python | LLM-powered dbt schema generation |
 | cryo-base | Docker | Base image for Cryo deployments |
 | cerebro-api | Python / FastAPI | REST API with auto-generated endpoints |

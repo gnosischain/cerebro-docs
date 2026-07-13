@@ -11,9 +11,9 @@ The Gnosis Analytics API enforces per-tier rate limits to ensure fair usage and 
 
 | Tier | Access Level | Rate Limit | Window | Keyed By |
 |------|-------------|------------|--------|----------|
-| `tier0` | Public | 20 requests/min | 60 seconds | IP address (no key) or API key (if provided) |
-| `tier1` | Partner | 100 requests/min | 60 seconds | API key |
-| `tier2` | Premium | 500 requests/min | 60 seconds | API key |
+| `tier0` | Public | 100 requests/min | 60 seconds | IP address (no key) or API key (if provided) |
+| `tier1` | Partner | 500 requests/min | 60 seconds | API key |
+| `tier2` | Premium | 1,000 requests/min | 60 seconds | API key |
 | `tier3` | Internal | 10,000 requests/min | 60 seconds | API key |
 
 ## How Rate Limiting Works
@@ -194,9 +194,9 @@ If your application consistently hits rate limits, consider upgrading to a highe
 
 | Current | Upgrade To | Rate Increase |
 |---------|-----------|---------------|
-| tier0 (20/min) | tier1 | 5x (100/min) |
-| tier1 (100/min) | tier2 | 5x (500/min) |
-| tier2 (500/min) | tier3 | 20x (10,000/min) |
+| tier0 (100/min) | tier1 | 5x (500/min) |
+| tier1 (500/min) | tier2 | 2x (1,000/min) |
+| tier2 (1,000/min) | tier3 | 10x (10,000/min) |
 
 Contact the Gnosis Analytics team to discuss tier upgrades. See [Authentication](authentication.md) for details on the tier hierarchy and how to obtain keys.
 

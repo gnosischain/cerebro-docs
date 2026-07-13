@@ -1,6 +1,6 @@
 # P2P Network Module
 
-The P2P Network module contains approximately **27 models** that analyze the peer-to-peer network infrastructure of Gnosis Chain. It covers node discovery protocols (discv4 and discv5), network topology, geographic distribution of nodes, client version tracking, ISP diversity, and connectivity metrics.
+The P2P Network module analyzes the peer-to-peer network infrastructure of Gnosis Chain. It covers node discovery protocols (discv4 and discv5), network topology, geographic distribution of nodes, client version tracking, ISP diversity, and connectivity metrics.
 
 ## Data Sources
 

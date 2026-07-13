@@ -1,6 +1,6 @@
 # ProbeLab Module
 
-The ProbeLab module contains approximately **9 models** that analyze network infrastructure data collected by the ProbeLab crawler. This module focuses on cloud provider distribution, QUIC protocol support adoption, and agent version tracking across Gnosis Chain nodes, complementing the P2P module's broader network topology analysis.
+The ProbeLab module analyzes network infrastructure data collected by the ProbeLab crawler. This module focuses on cloud provider distribution, QUIC protocol support adoption, and agent version tracking across Gnosis Chain nodes, complementing the P2P module's broader network topology analysis.
 
 ## Data Sources
 

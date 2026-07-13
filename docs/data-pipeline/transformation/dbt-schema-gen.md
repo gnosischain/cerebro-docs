@@ -229,7 +229,7 @@ Jinja comment syntax is also supported:
 
 ## Integration with dbt-cerebro
 
-dbt-schema-gen is used alongside dbt-cerebro to maintain documentation for the ~400 models in the project. A typical workflow:
+dbt-schema-gen is used alongside dbt-cerebro to maintain documentation for the ~1,200 models in the project. A typical workflow:
 
 ```bash
 # After adding or modifying models

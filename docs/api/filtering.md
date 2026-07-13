@@ -1,6 +1,6 @@
 ---
 title: Filtering & Pagination
-description: Query parameters, POST bodies, filter operators, data types, pagination, and sort
+description: Query parameters, POST bodies, filter operators, data types, pagination, response shapes, and sorting
 ---
 
 # Filtering & Pagination
@@ -275,9 +275,60 @@ Each endpoint declares its own:
 | `limit` omitted | Uses the endpoint's `default_limit` |
 | `offset` omitted | Defaults to `0` |
 
+## Response Shapes
+
+Endpoints return one of two response shapes, selected per-endpoint via `meta.api.pagination.response`:
+
+| Mode | Response Body |
+|------|---------------|
+| `list` (default) | A bare JSON array of row objects |
+| `envelope` | An object with `items` and `pagination` keys |
+
+### `list` (default)
+
+The response body is the result rows themselves:
+
+```json
+[
+  {"date": "2024-06-30", "symbol": "GNO", "balance": "123.4"},
+  {"date": "2024-06-29", "symbol": "GNO", "balance": "120.1"}
+]
+```
+
+### `envelope`
+
+The rows are wrapped in an object together with pagination metadata:
+
+```json
+{
+  "items": [
+    {"date": "2024-06-30", "symbol": "GNO", "balance": "123.4"},
+    {"date": "2024-06-29", "symbol": "GNO", "balance": "120.1"}
+  ],
+  "pagination": {
+    "limit": 100,
+    "offset": 0,
+    "returned": 2,
+    "has_more": false
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `limit` | The limit applied to this request (client-provided or `default_limit`) |
+| `offset` | The offset applied to this request |
+| `returned` | Number of rows in `items` |
+| `has_more` | `true` if another page exists beyond this one |
+
+`has_more` is computed with a **limit+1 probe**: the API fetches one row more than requested and reports `has_more: true` when that extra row exists. The extra row is never included in `items`.
+
+!!! note "Envelope requires pagination"
+    The `envelope` mode only takes effect on endpoints with pagination enabled. Endpoints without pagination (and all legacy endpoints) always return a bare JSON array.
+
 ## Sort
 
-Sort order is declared in the dbt model metadata and applied server-side. **Clients cannot override the sort order.** The sort is fixed per endpoint and defined as a list of columns with directions.
+Sort order is declared in the dbt model metadata and applied server-side. The sort is fixed per endpoint and defined as a list of columns with directions. Clients cannot override it unless the endpoint also declares `sortable_fields` -- see [User-Controlled Sorting](#user-controlled-sorting) below.
 
 A typical pattern sorts by date descending so the most recent data appears first:
 
@@ -295,6 +346,54 @@ Multi-column sorting is supported:
 ```
 
 When no `sort` is declared, rows are returned in the database's natural order (which is not guaranteed to be deterministic).
+
+## User-Controlled Sorting
+
+Endpoints that declare `sortable_fields` in their metadata accept two additional parameters -- as query parameters on GET and as body fields on POST:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `sort_by` | string | none | Column to sort by. Must be one of the endpoint's declared `sortable_fields`. |
+| `sort_direction` | string | `ASC` | `ASC` or `DESC` (case-insensitive). Only valid together with `sort_by`. |
+
+For example, given an endpoint that declares:
+
+```json
+"sortable_fields": ["date", "balance"],
+"sort": [{"column": "date", "direction": "DESC"}]
+```
+
+=== "GET"
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/token_balances/daily?symbol=GNO&sort_by=balance&sort_direction=DESC" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+=== "POST"
+
+    ```bash
+    curl -X POST "https://api.analytics.gnosis.io/v1/execution/token_balances/daily" \
+      -H "Content-Type: application/json" \
+      -H "X-API-Key: YOUR_API_KEY" \
+      -d '{"symbol": "GNO", "sort_by": "balance", "sort_direction": "DESC"}'
+    ```
+
+The user sort is **prepended** to the declared `sort` columns, which remain as tie-breakers (a declared sort entry on the same column as `sort_by` is dropped). The example above produces:
+
+```sql
+ORDER BY balance DESC, date DESC
+```
+
+### Sorting Rules
+
+| Constraint | Behavior |
+|------------|----------|
+| Endpoint has no `sortable_fields` | Returns 400: `This endpoint does not support user-controlled sorting.` |
+| `sort_by` not in `sortable_fields` | Returns 400: `'sort_by' must be one of: date, balance.` |
+| `sort_direction` without `sort_by` | Returns 400: `'sort_direction' requires 'sort_by'.` |
+| `sort_direction` not `ASC`/`DESC` | Returns 400: `'sort_direction' must be ASC or DESC.` |
+| `sort_direction` omitted | Defaults to `ASC` |
 
 ## Filter Policy
 
@@ -343,7 +442,7 @@ Then the client must provide either `symbol`, `address`, or both. Providing only
 
 ## Undeclared Parameters
 
-The API enforces a strict contract: only parameters declared in the endpoint's `meta.api.parameters` (plus `limit`/`offset` when pagination is enabled) are accepted. Any other parameter is rejected.
+The API enforces a strict contract: only parameters declared in the endpoint's `meta.api.parameters` (plus `limit`/`offset` when pagination is enabled, and `sort_by`/`sort_direction`, which are only usable when the endpoint declares `sortable_fields`) are accepted. Any other parameter is rejected.
 
 === "GET"
 
@@ -444,6 +543,8 @@ The `meta.api` object in the dbt model configuration controls all endpoint behav
 | `parameters` | list of objects | `[]` | Declared filter parameters (see below) |
 | `pagination` | object | disabled | Pagination configuration (see below) |
 | `sort` | list of objects | `[]` | Server-side sort order (see below) |
+| `sortable_fields` | list of strings | `[]` | Column names clients may sort by via `sort_by` (see [User-Controlled Sorting](#user-controlled-sorting)) |
+| `exclude_from_api` | boolean | `false` | When `true`, the model is not exposed as an endpoint at all |
 
 ### Parameter Object
 
@@ -464,6 +565,7 @@ The `meta.api` object in the dbt model configuration controls all endpoint behav
 | `enabled` | Yes | boolean | Must be `true` to enable `limit`/`offset` parameters |
 | `default_limit` | Yes (when enabled) | integer | Default row limit when client omits `limit` |
 | `max_limit` | Yes (when enabled) | integer | Hard upper bound for `limit` |
+| `response` | No | string | `list` (default) or `envelope` -- selects the [response shape](#response-shapes) |
 
 ### Sort Object
 

@@ -66,7 +66,7 @@ ClickHouse
 :   A column-oriented database management system designed for online analytical processing (OLAP). Used as the primary data warehouse for all Gnosis Analytics data. Excels at scanning billions of rows per second for aggregation queries.
 
 dbt (data build tool)
-:   An open-source transformation framework that enables data analysts and engineers to transform data using SQL. dbt-cerebro is the platform's dbt project containing approximately 400 models.
+:   An open-source transformation framework that enables data analysts and engineers to transform data using SQL. dbt-cerebro is the platform's dbt project containing approximately 1,200 models.
 
 Incremental Model
 :   A dbt materialization strategy where only new or changed data is processed on each run, rather than rebuilding the entire table. The platform uses `delete+insert` incremental strategy with monthly partitioning.
@@ -135,7 +135,7 @@ cryo-indexer
 :   An execution layer data indexer built on the Cryo framework. Extracts blocks, transactions, logs, traces, and state data from Gnosis Chain EL nodes.
 
 dbt-cerebro
-:   The core dbt project containing approximately 400 SQL models organized into 8 modules. Transforms raw blockchain data into analytics-ready datasets.
+:   The core dbt project containing approximately 1,200 SQL models organized into 14 modules. Transforms raw blockchain data into analytics-ready datasets.
 
 dbt-schema-gen
 :   An LLM-powered tool that automatically generates dbt schema YAML files with column descriptions, tests, and documentation from SQL model definitions.

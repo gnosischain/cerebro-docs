@@ -2,23 +2,23 @@
 
 This section covers everything that turns raw blockchain data into analytics-ready datasets:
 
-- **[Data Transformation](#components)** -- The dbt projects that build ~400 SQL models from raw ClickHouse tables
-- **[dbt Model Catalog](../../models/index.md)** -- Reference for all models across execution, consensus, bridges, P2P, contracts, ESG, crawlers, and ProbeLab
+- **[Data Transformation](#components)** -- The dbt projects that build ~1,200 SQL models from raw ClickHouse tables
+- **[dbt Model Catalog](../../models/index.md)** -- Reference for all models across 14 modules, including execution, consensus, bridges, P2P, contracts, ESG, crawlers, and ProbeLab
 
 ## Data Transformation
 
 The transformation layer converts raw blockchain data in ClickHouse into analytics-ready datasets using [dbt](https://www.getdbt.com/) (data build tool). Two projects handle this:
 
-- **dbt-cerebro** -- the core transformation project containing ~400 SQL models organized across eight domain modules
+- **dbt-cerebro** -- the core transformation project containing ~1,200 SQL models organized across 14 domain modules
 - **dbt-schema-gen** -- an LLM-powered tool that generates and maintains `schema.yml` documentation files for dbt models
 
 ## Components
 
 | Component | Purpose |
 |-----------|---------|
-| [dbt-cerebro](dbt-cerebro.md) | Core dbt project: ~400 models, 8 modules, incremental processing |
+| [dbt-cerebro](dbt-cerebro.md) | Core dbt project: ~1,200 models, 14 modules, incremental processing |
 | [Model Layers](model-layers.md) | Explanation of the `stg_*` / `int_*` / `fct_*` / `api_*` naming convention and materialization strategy |
-| [Modules Reference](modules.md) | The 8 domain modules with model counts, key models, and descriptions |
+| [Modules Reference](modules.md) | The 14 domain modules with model counts, key models, and descriptions |
 | [ABI Decoding](abi-decoding.md) | Contract ABI decoding system for converting raw transaction data into human-readable function calls and events |
 | [dbt-schema-gen](dbt-schema-gen.md) | LLM-powered schema documentation generator |
 

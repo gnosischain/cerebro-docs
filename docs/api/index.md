@@ -7,8 +7,8 @@ description: APIs, MCP server, and dashboards for accessing Gnosis Analytics dat
 
 The Gnosis Analytics platform provides three ways to access and explore blockchain data:
 
-- **REST API** -- Programmatic access to 400+ analytics endpoints with tiered authentication
-- **[MCP Server](../mcp/index.md)** -- 30+ tools for AI assistants to query ClickHouse, explore dbt models, and generate visualizations
+- **REST API** -- Programmatic access to 460+ endpoints across 11 categories with tiered authentication
+- **[MCP Server](../mcp/index.md)** -- 160+ tools for AI assistants to query ClickHouse, explore dbt models, and generate visualizations
 - **[Dashboard](../dashboard/index.md)** -- Interactive metrics dashboard at [metrics.gnosischain.com](https://metrics.gnosischain.com)
 
 ---
@@ -50,10 +50,13 @@ Explore all endpoints interactively:
 |---------|-------------|
 | [Authentication](authentication.md) | API key setup, tier hierarchy, and access control |
 | [Endpoints](endpoints.md) | URL conventions, categories, granularities, and tag mapping |
+| [Metrics Explorer](explorer.md) | Searchable catalog of every endpoint |
+| [Endpoint Catalog](catalog/index.md) | Per-category reference with columns and filters |
 | [Filtering & Pagination](filtering.md) | Query parameters, POST bodies, operators, and pagination |
 | [Rate Limits](rate-limits.md) | Per-tier rate limits and throttling behavior |
 | [Swagger UI](swagger.md) | Interactive API documentation |
 | [Error Handling](errors.md) | HTTP status codes, error response format, and common scenarios |
+| [Changelog](changelog.md) | Notable changes to the API surface |
 
 ## Quick Example
 

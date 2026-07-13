@@ -182,9 +182,9 @@ Retry-After: 42
 
 | Tier | Rate Limit |
 |------|-----------|
-| tier0 (no key) | 20 requests/min per IP |
-| tier1 (partner) | 100 requests/min per key |
-| tier2 (premium) | 500 requests/min per key |
+| tier0 (no key) | 100 requests/min per IP |
+| tier1 (partner) | 500 requests/min per key |
+| tier2 (premium) | 1,000 requests/min per key |
 | tier3 (internal) | 10,000 requests/min per key |
 
 ### Resolution Steps

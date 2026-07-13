@@ -1,6 +1,6 @@
 # dbt-cerebro
 
-dbt-cerebro is the core data transformation project for the Gnosis Analytics platform. It is a [dbt](https://www.getdbt.com/) project containing approximately 400 SQL models that transform raw blockchain data from ClickHouse into analytics-ready datasets.
+dbt-cerebro is the core data transformation project for the Gnosis Analytics platform. It is a [dbt](https://www.getdbt.com/) project containing approximately 1,200 SQL models that transform raw blockchain data from ClickHouse into analytics-ready datasets.
 
 ## Overview
 

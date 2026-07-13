@@ -10,6 +10,8 @@ Interactive React + ECharts mini-apps that render inline in any MCP-aware host (
 | [Graph Explorer](graph-explorer.md) | `ui://cerebro/graph_explorer` | `open_graph_explorer` | Cross-sector force graph |
 | [Metric Lab](metric-lab.md) | `ui://cerebro/metric_lab` | `open_metric_lab*` | Build a metric from SQL or the semantic registry |
 | [Contract Explorer](contract-explorer.md) | `ui://cerebro/contract_explorer` | `open_contract_explorer` | Inspect any EVM contract via RPC: ABI, read calls, decoded txs |
+| [Model Lineage](model-lineage.md) | `ui://cerebro/model_lineage` | `open_model_lineage` | dbt-Explorer-style DAG view with layer toggle + column-level lineage |
+| [Data Catalog](data-catalog.md) | `ui://cerebro/data_catalog` | `open_data_catalog` | OpenMetadata-style search-first catalog over models / metrics / glossary |
 
 The Report Renderer (`ui://cerebro/report`, entry `generate_report`) shares the same plumbing — covered on the [Reports](../reports.md) page.
 
@@ -61,15 +63,25 @@ Then open any of:
 - `http://localhost:5173/graph-explorer.html`       — Graph Explorer
 - `http://localhost:5173/metric-lab.html`           — Metric Lab
 - `http://localhost:5173/contract-explorer.html`    — Contract Explorer
+- `http://localhost:5173/model-lineage.html`        — Model Lineage
+- `http://localhost:5173/data-catalog.html`         — Data Catalog
 
 (Or `make dev` from the repo root.)
 
 Each app boots into its `MOCK_PAYLOAD` fixture defined inside the app's React component. Layout, styling, and client-side state all work, but **`callServerTool` is unavailable**, so Call / Expand / Load buttons are no-ops — you'll see `[useMiniApp] callServerTool(...) unavailable (no ext-apps host)` in the devtools console. Use this loop only for UI iteration; switch to the MCP-host flow for anything data-driven.
 
-There is no `https://mcp.analytics.gnosis.io/mini-apps/<id>` route on the deployed server — mini-apps are exposed solely as MCP resources (`ui://cerebro/<app>`), unlike reports which have a `/reports/{id}` HTTP route.
+### Standalone web-app delivery
+
+Every mini-app is also served as a plain browser URL by the SSE server — no MCP host required, with live data:
+
+- `GET /app/{app_id}` — serves the bundled single-file React app with the initial `MiniAppPayload` injected inline. Query params are forwarded to the app's entry tool, with a `seed` alias that maps onto whichever seed-like parameter the open tool exposes (`seed_model`, `seed_node_id`, `address`) — e.g. `/app/portfolio?seed=0xabc…` or `/app/model_lineage?seed_model=fct_transactions`.
+- `POST /app/{app_id}/api/tool/{tool_name}` — the HTTP fallback the frontend uses for follow-up tool calls (`expand_*`, `load_*`, …). Returns the same `{structuredContent, isError, content}` shape as the ext-apps bridge.
+- `GET /app/{app_id}/assets/{path}` — hashed, immutable build assets for split-bundle apps.
+
+Valid `app_id` values: `portfolio`, `graph_explorer`, `metric_lab`, `contract_explorer`, `model_lineage`, `data_catalog`. When `MCP_AUTH_TOKEN` is set, both routes accept it as an `Authorization: Bearer` header or a `?token=` query param (mirroring the `/reports/{id}` auth); the served page embeds the presented token so in-app tool calls and cross-app links stay authenticated. See `src/cerebro_mcp/tools/visualization/web_apps.py`.
 
 ## See also
 
-- [Tools](../tools.md#6-mini-apps-live-ui-surfaces) — full tool reference
-- [Portfolio](portfolio.md), [Graph Explorer](graph-explorer.md), [Metric Lab](metric-lab.md), [Contract Explorer](contract-explorer.md)
+- [Tools](../tools.md) — full tool reference
+- [Portfolio](portfolio.md), [Graph Explorer](graph-explorer.md), [Metric Lab](metric-lab.md), [Contract Explorer](contract-explorer.md), [Model Lineage](model-lineage.md), [Data Catalog](data-catalog.md)
 - [Reports](../reports.md) — the Report Renderer mini-app

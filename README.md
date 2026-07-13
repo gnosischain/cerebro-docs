@@ -51,7 +51,7 @@ docs/
 ├── getting-started/     Platform overview, quickstart, architecture
 ├── data-pipeline/       Ingestion, crawlers, transformation
 ├── api/                 Authentication, endpoints, filtering, rate limits
-├── models/              dbt model catalog (8 modules, 387 models)
+├── models/              dbt model catalog (14 modules, ~1,200 models)
 ├── esg-reporting/       ESG methodology, carbon footprint, data pipeline
 ├── mcp/                 MCP server tools, reports, setup
 ├── dashboard/           Sectors and configuration

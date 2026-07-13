@@ -97,4 +97,4 @@ update_portfolio_focus(active_tab="yields", window_days=180)
 - [Mini-Apps overview](index.md)
 - [Graph Explorer](graph-explorer.md) — visual network view
 - [Contract Explorer](contract-explorer.md) — single-contract RPC view
-- [Tools §6](../tools.md#6-mini-apps-live-ui-surfaces)
+- [Available Tools](../tools.md)

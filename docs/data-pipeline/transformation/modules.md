@@ -1,19 +1,27 @@
 # Modules Reference
 
-dbt-cerebro organizes its approximately 400 models into eight domain modules. Each module has its own directory under `models/` and covers a distinct analytical domain.
+dbt-cerebro organizes its approximately 1,200 models into 14 domain modules. Most modules have their own directory under `models/` and cover a distinct analytical domain; the marketing-analytics modules (MTA and MMM) live as tagged subfolders of `models/execution/`.
 
 ## Module Summary
 
 | Module | Directory | Approx. Models | Source Database | Description |
 |--------|-----------|-----------------|-----------------|-------------|
-| [Execution](#execution) | `models/execution/` | ~208 | `execution` | Blocks, transactions, gas, contracts |
-| [Consensus](#consensus) | `models/consensus/` | ~54 | `consensus` | Validators, attestations, sync committees |
-| [Contracts](#contracts) | `models/contracts/` | ~44 | `execution` | ABI-decoded smart contract calls and events |
+| [Execution](#execution) | `models/execution/` | ~728 | `execution` | Blocks, transactions, gas, contracts |
+| [Consensus](#consensus) | `models/consensus/` | ~89 | `consensus` | Validators, attestations, sync committees |
+| [Contracts](#contracts) | `models/contracts/` | ~105 | `execution` | ABI-decoded smart contract calls and events |
 | [P2P](#p2p) | `models/p2p/` | ~27 | `nebula` | Peer discovery, client distribution, geography |
 | [Bridges](#bridges) | `models/bridges/` | ~18 | `execution` | Cross-chain bridge transfers and volumes |
 | [ESG](#esg) | `models/ESG/` | ~18 | Multiple | Power consumption, carbon emissions |
 | [ProbeLab](#probelab) | `models/probelab/` | ~9 | `crawlers_data` | P2P network crawl metrics from ProbeLab |
-| [Crawlers](#crawlers) | `models/crawlers/` | ~9 | `crawlers_data` | IP geolocation and network metadata |
+| [Crawlers](#crawlers) | `models/crawlers/` | ~12 | `crawlers_data` | IP geolocation and network metadata |
+| Celo (Gnosis Pay) | `models/celo/` | ~54 | `crawlers_data` | Gnosis Pay activity on the Celo chain |
+| Revenue | `models/revenue/` | ~50 | Multiple | Protocol revenue and per-user revenue metrics |
+| Quarterly Data | `models/quarterly_data/` | ~27 | Multiple | Quarterly reporting rollups |
+| Web Analytics (Mixpanel/GA) | `models/mixpanel_ga/` | ~59 | `mixpanel_ga` | Mixpanel and Google Analytics product analytics |
+| MTA (Attribution) | `models/execution/gnosis_app/` | ~27 | Multiple | Multi-touch attribution for Gnosis app user journeys |
+| MMM (Marketing Mix) | `models/execution/mmm/` | ~7 | Multiple | Marketing-mix modeling inputs and diagnostics |
+
+The [Model Catalog](../../models/index.md) carries the authoritative per-module counts and full model listings.
 
 ## Execution
 

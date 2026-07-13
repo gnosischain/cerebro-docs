@@ -1,6 +1,6 @@
 # Cerebro MCP Server
 
-Cerebro MCP is a [Model Context Protocol](https://modelcontextprotocol.io/) server that connects AI assistants to Gnosis Chain's on-chain analytics infrastructure. It exposes ~50 tools that query a ClickHouse data warehouse, traverse ~862 dbt models, drive six interactive mini-apps, and orchestrate multi-phase analytical workflows — all over a single MCP connection.
+Cerebro MCP is a [Model Context Protocol](https://modelcontextprotocol.io/) server that connects AI assistants to Gnosis Chain's on-chain analytics infrastructure. It exposes 160+ tools that query a ClickHouse data warehouse, traverse ~1,200 dbt models, drive seven interactive surfaces, and orchestrate multi-phase analytical workflows — all over a single MCP connection.
 
 !!! tip "New to Cerebro?"
     Start with the [Setup Guide](setup.md), then the [Usage Guide](advanced/usage-guide.md) for an end-to-end tour. For the dispatcher pattern (the front door for non-trivial requests) see [Cerebro Dispatcher](dispatcher.md).
@@ -15,13 +15,13 @@ The Model Context Protocol (MCP) is an open standard that lets AI hosts (Claude 
 |---|---|
 | [Setup](setup.md) | Install, configure, connect Claude Desktop / VS Code / Claude Code. Multi-tenant `CEREBRO_OWNER` env. |
 | [Available Tools](tools.md) | Categorised reference of every MCP tool. |
-| [Agent Fleet](agents.md) | The 27-persona library loadable via `get_agent_persona`. |
+| [Agent Fleet](agents.md) | The 29-persona library loadable via `get_agent_persona`. |
 | [Cerebro Dispatcher](dispatcher.md) | Top-level intent triage + binding dispatch manifest. |
 | [Report Generation](reports.md) | `generate_report`, `generate_research_report`, `generate_case_study_report`, gates. |
 | [Security & Audit](security.md) | Tool risk classes, JSONL audit log, multi-tenant identity. |
 | [Observability](observability.md) | Prometheus metrics, structured logs, Grafana dashboard. |
 | **[Workflows](workflows/index.md)** | Research projects, storyteller, sandboxes, resumable workflows. |
-| **[Mini-Apps](mini-apps/index.md)** | Five interactive UI surfaces (Report Renderer, Portfolio, Graph Explorer, Metric Lab, Contract Explorer). |
+| **[Mini-Apps](mini-apps/index.md)** | Seven interactive surfaces (Report Renderer, Portfolio, Graph Explorer, Metric Lab, Contract Explorer, Model Lineage, Data Catalog). |
 | **[Advanced](advanced/index.md)** | Hybrid search internals, event log, quality gates, multi-tenant, semantic metrics, full usage guide. |
 | [MMM](mmm.md) / [MMM User Guide](mmm-user-guide.md) | Marketing-mix modeling SOP and prompt recipes. |
 
@@ -32,7 +32,7 @@ flowchart TB
     H[MCP Host<br/>Claude Desktop / VS Code / Claude Code] -- stdio / SSE --> S
     subgraph S[cerebro-mcp - FastMCP]
       direction TB
-      T[Tool Registry<br/>~50 tools] --> CH[ClickHouse Client]
+      T[Tool Registry<br/>160+ tools] --> CH[ClickHouse Client]
       T --> D[dbt Manifest<br/>BM25 + networkx]
       T --> ES[(Event Log<br/>SQLite WAL)]
       T --> RS[(Research Store<br/>JSON)]
@@ -48,6 +48,19 @@ The server multiplexes four persistence layers:
 2. **Research JSON store** (`~/.cerebro/research_projects/`) — durable per-project state.
 3. **Sandbox snapshots** (`~/.cerebro/sandboxes/`) — DuckDB + Parquet for what-if simulations.
 4. **In-memory singletons** — storyteller phase machine, session counters.
+
+## At a glance
+
+<!-- BEGIN AUTO-GENERATED: mcp-at-a-glance -->
+| Surface | Count |
+|---------|:-----:|
+| Static MCP tools | 159 |
+| Dynamic YAML tools | 7 |
+| Core (lean) tool surface | 18 |
+| Agent personas | 29 |
+| Interactive mini-app surfaces | 7 |
+| Feature-gated families | `CUSTOM_TOOLS_ENABLED`, `DASHBOARD_BUILDER_ENABLED`, `GRAFANA_TOOLS_ENABLED`, `LEAN_CORE_ENABLED`, `RPC_SCAN_ENABLED`, `SANDBOX_ENABLED`, `SEMANTIC_ENABLED`, `WORKFLOW_RESUME_TOOLS_ENABLED` |
+<!-- END AUTO-GENERATED: mcp-at-a-glance -->
 
 ## Transport modes
 
@@ -74,11 +87,14 @@ The hosted team instance is at `mcp.analytics.gnosis.io` with bearer-token auth.
 
 ### Discovery & query
 
-- 6 ClickHouse databases, ~862 dbt models across 8 modules (execution, consensus, bridges, p2p, contracts, ESG, probelab, crawlers).
+- 6 ClickHouse databases, ~1,200 dbt models across 8 modules (execution, consensus, bridges, p2p, contracts, ESG, probelab, crawlers).
+- Unified discovery: the `find(query, mode)` router answers "what do I use for X?" in one call with a pre-filled `recommended_action`; `list(kind=...)` unifies the listing family; the opt-in lean core (`LEAN_CORE_ENABLED` + `load_tools`) trims the advertised surface to ~18 everyday tools. See [Finding Tools](advanced/discovery.md).
 - Hybrid BM25 + RRF search (`search_models`, `discover_models`) — `hit@1` improved 4× over the legacy ranker (see [Hybrid Search](advanced/hybrid-search.md)).
+- Data Catalog: OpenMetadata-style search + entity profiles over models, metrics, and glossary terms, with Elementary-backed run/test health. See [Data Catalog](mini-apps/data-catalog.md).
 - Deterministic networkx lineage (`get_upstream_lineage`, `get_downstream_impact`).
 - Column-scoped schema injection for wide tables (`get_relevant_columns`).
 - 5.3M+ Dune address labels, token metadata, ENS / Safe / Circles / GPay resolution.
+- Bulk on-chain RPC scans (`rpc_scan_logs`, `rpc_batch_call`, `rpc_scan_traces`, …) that stream logs, view-call sweeps, storage slots, bytecode, and traces into ClickHouse scratch tables for SQL analysis. See [RPC Scans](advanced/rpc-scans.md).
 
 ### Visualisation & reporting
 
@@ -86,6 +102,7 @@ The hosted team instance is at `mcp.analytics.gnosis.io` with bearer-token auth.
 - Three report layouts: dashboard (`generate_report`), research essay (`generate_research_report`), scrollytelling case study (`generate_case_study_report`).
 - Eight enforcement gates on `generate_report` (stock/flow discipline, residual buckets, stationarity, aggregator dedup, discovered-model coverage, …). See [Quality Gates](advanced/quality-gates.md).
 - Reports render as native UI in MCP-aware hosts; standalone HTML at `~/.cerebro/reports/`.
+- Grafana dashboard publishing: preview → validate → verify → publish, idempotent by UID with live per-panel data checks (`GRAFANA_TOOLS_ENABLED`). See [Grafana Publishing](advanced/grafana-publishing.md).
 
 ### Workflows
 
@@ -96,7 +113,7 @@ The hosted team instance is at `mcp.analytics.gnosis.io` with bearer-token auth.
 
 ### Mini-apps
 
-Five React + ECharts mini-apps that render inline in MCP-aware hosts: Report Renderer, Portfolio, Graph Explorer, Metric Lab, Contract Explorer. See [Mini-Apps](mini-apps/index.md).
+Seven React + ECharts interactive surfaces that render inline in MCP-aware hosts: Report Renderer, Portfolio, Graph Explorer, Metric Lab, Contract Explorer, Model Lineage, Data Catalog. Each is also delivered as a standalone web app at `GET /app/{app_id}` on the SSE server. See [Mini-Apps](mini-apps/index.md).
 
 ### Safety
 

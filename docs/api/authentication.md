@@ -50,9 +50,9 @@ The tier system is hierarchical: a key at tier N can access all endpoints requir
 
 | Tier | Access Level | Rate Limit | Can Access | API Key Required |
 |------|-------------|------------|------------|------------------|
-| `tier0` | Public | 20 req/min | `tier0` only | No |
-| `tier1` | Partner | 100 req/min | `tier0`, `tier1` | Yes |
-| `tier2` | Premium | 500 req/min | `tier0`, `tier1`, `tier2` | Yes |
+| `tier0` | Public | 100 req/min | `tier0` only | No |
+| `tier1` | Partner | 500 req/min | `tier0`, `tier1` | Yes |
+| `tier2` | Premium | 1,000 req/min | `tier0`, `tier1`, `tier2` | Yes |
 | `tier3` | Internal | 10,000 req/min | All endpoints | Yes |
 
 ```mermaid

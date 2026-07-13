@@ -24,9 +24,11 @@ full story.
 
 ## The current graph
 
-Seven user-keyed nodes, 26 approved relationships. The five original
-sector marts are directly connected; the validator-withdrawal mart and
-the Safe owner↔contract **bridge** were added later (the bridge routes
+Nine user-keyed nodes, 28 approved relationships. The five original
+sector marts are directly connected; the validator-withdrawal mart,
+the Safe owner↔contract **bridge**, and the two mixpanel_ga
+web-analytics marts (`fct_mixpanel_ga_gnosis_app_users`,
+`fct_mixpanel_ga_gpay_users`) were added later (the bridge routes
 Safe-keyed activity to the underlying EOA owner — see
 [Safe-wallet fanout](#safe-wallet-fanout-smart-contract-wallet-human-owner)
 below).
@@ -39,7 +41,12 @@ flowchart LR
     gnosis_app[gnosis_app_users_distinct]
     circles[circles_human_avatars_distinct]
     validator[validators_withdrawal_addresses_distinct]
+    mixpanel_app[mixpanel_ga_gnosis_app_users]
+    mixpanel_gpay[mixpanel_ga_gpay_users]
     bridge[[safe_owner_pseudonyms bridge]]
+
+    gnosis_app --- mixpanel_app
+    gpay --- mixpanel_gpay
 
     revenue_w --- gpay
     revenue_m --- gpay
@@ -60,7 +67,7 @@ flowchart LR
 
     classDef u fill:#e8f5e9,stroke:#2e7d32,stroke-width:1px,color:#1b5e20;
     classDef b fill:#fff3e0,stroke:#e65100,stroke-width:1.5px,color:#bf360c;
-    class revenue_w,revenue_m,gpay,gnosis_app,circles,validator u;
+    class revenue_w,revenue_m,gpay,gnosis_app,circles,validator,mixpanel_app,mixpanel_gpay u;
     class bridge b;
 ```
 
@@ -141,28 +148,25 @@ A future planner enhancement will support a `set_intersection` metric type.
 
 ## What's NOT in the graph
 
-Three deliberate omissions worth understanding:
+A few deliberate omissions — and former omissions since closed — worth understanding:
 
 ### Mixpanel `user_id_hash`
 
 Mixpanel's `user_id_hash` is in the *same hash space* as `user_pseudonym`
-(both use `pseudonymize_address` with the same salt). They would join
-directly. But the per-user Mixpanel mart
-(`api_mixpanel_ga_users_daily`) is **explicitly excluded** from the
-semantic registry:
+(both use `pseudonymize_address` with the same salt), so web-analytics
+identities join the graph directly. Two distinct-user marts from the
+mixpanel_ga module are now graph nodes — `fct_mixpanel_ga_gnosis_app_users`
+and `fct_mixpanel_ga_gpay_users` — each with a direct edge to its
+on-chain counterpart (`fct_execution_gnosis_app_users_distinct` /
+`fct_execution_gpay_users_distinct`).
+
+The *per-user daily* Mixpanel mart (`api_mixpanel_ga_users_daily`)
+remains **explicitly excluded** from the semantic registry:
 
 - Per-user grain + a hashed identifier makes re-identification feasible
   with even modest auxiliary information.
 - The project's privacy policy (see [Privacy & Pseudonyms](../privacy-pseudonyms.md))
   blocks this mart from `expose_to_mcp` and from cerebro-api.
-- Aggregate Mixpanel views (DAU, modal opens, funnel) are MCP-accessible
-  but don't expose `user_id_hash`, so they can't participate as a node in
-  the user-pseudonym graph.
-
-The cross-domain join therefore happens **inside the Gnosis App
-on-chain mart** (`fct_execution_gnosis_app_users_distinct`), which
-identifies users via on-chain heuristics that overlap with Mixpanel
-identification roughly 1:1 in practice.
 
 ### Lending / LP per-user attribution
 

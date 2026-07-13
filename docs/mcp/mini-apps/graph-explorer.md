@@ -108,7 +108,7 @@ These edges drive the "suggested next hops" chips in the side panel:
 
 | Setting | Default | Where |
 |---|---|---|
-| `MAX_HOPS` | 5 | `tools/graph_explorer.py` |
+| `MAX_HOPS` | 5 | `tools/semantic/graph_explorer.py` |
 | `DEFAULT_WINDOW_DAYS` | 90 | same |
 | `DEFAULT_MAX_NEIGHBORS` | 25 | same |
 

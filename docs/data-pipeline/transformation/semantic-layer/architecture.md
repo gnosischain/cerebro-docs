@@ -118,7 +118,7 @@ A few invariants the build enforces (see [maintenance](maintenance.md)):
   is an `ambiguous_measure_binding` error. This is why uniqueness is
   mandatory the moment you want a metric for a measure, and why
   `scripts/semantic/scaffold_metrics.py` uniquifies collided names to
-  `<semantic_model_name>__<measure>` before emitting the ~965
+  `<semantic_model_name>__<measure>` before emitting the
   auto-generated candidate metrics.
 - **Metrics resolve deterministically.** `build_metrics()` keys
   `measure_to_models` as a sorted-first dict so the registry is
@@ -136,7 +136,7 @@ between metric roots. Three kinds in production today:
 | File | Axis | Purpose |
 | --- | --- | --- |
 | `time_spines.yml` | `day` / `week` / `month` | Cross-grain composition. Every weekly mart joins to `dim_time_spine_weekly`. |
-| `user_pseudonym.yml` | `user_pseudonym` | Cross-sector user-overlap. 7-node graph (revenue ×2 grains, gpay, gnosis_app, circles, validator withdrawal addresses, + the Safe owner↔contract bridge). |
+| `user_pseudonym.yml` | `user_pseudonym` | Cross-sector user-overlap. 9-node graph (revenue ×2 grains, gpay, gnosis_app, circles, validator withdrawal addresses, the two mixpanel_ga web-analytics nodes, + the Safe owner↔contract bridge). |
 | `execution_graph.yml` | `circles_avatar`, `safe`, `validator`, ... | Entity-specific joins (Circles trust graph, GP wallet ↔ Safe owner, validator withdrawal address ↔ Safe). |
 
 Relationship shape:
@@ -166,7 +166,7 @@ The fields the planner actually uses:
 - `cardinality` + `join_semantics` — affects which join type the planner
   emits (`INNER` vs `LEFT`).
 - `preferred_bridge` — used for cost weighting in
-  `find_safest_path` (cerebro-mcp `semantic_graph.py`).
+  `find_safest_path` (cerebro-mcp `semantic/graph.py`).
 - `quality_tier` — only `approved` relationships are eligible for the
   planner's path search. Lets you stage new joins as `candidate`.
 
@@ -293,16 +293,16 @@ false-positive errors against legitimate authoring:
 Bug fixes and feature work for the planner happen in the **`cerebro-mcp`**
 repo (separate from `dbt-cerebro`). Key files:
 
-- `src/cerebro_mcp/semantic_sql_compiler.py` — emits ClickHouse SQL from
+- `src/cerebro_mcp/semantic/sql_compiler.py` — emits ClickHouse SQL from
   the metric plan. The `_AGG_TO_CLICKHOUSE` map lives here (translates
   `count_distinct` → `uniqExact`, etc.).
-- `src/cerebro_mcp/semantic_planner.py` — resolves dimension bindings,
+- `src/cerebro_mcp/semantic/planner.py` — resolves dimension bindings,
   including the time-spine upcast (`_try_time_spine_upcast`).
-- `src/cerebro_mcp/semantic_graph.py` — builds the reachability graph
+- `src/cerebro_mcp/semantic/graph.py` — builds the reachability graph
   from relationships and runs `find_safest_path`.
-- `src/cerebro_mcp/semantic_loader.py` — registry refresh, ETag-based
+- `src/cerebro_mcp/loaders/semantic.py` — registry refresh, ETag-based
   poll, and the force-reload path used by `reload_semantic_registry`.
-- `src/cerebro_mcp/tools/semantic.py` — the MCP-tool surface
+- `src/cerebro_mcp/tools/semantic/semantic.py` — the MCP-tool surface
   (`discover_metrics`, `query_metrics`, `explain_metric_query`,
   `reload_semantic_registry`).
 

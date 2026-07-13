@@ -13,6 +13,8 @@ ClickHouse is `readonly=1` for analyst safety. That's the right default but it l
 
 Production CH never sees a write. The parquet is auditable and replayable.
 
+The sandbox tools are registered only when `SANDBOX_ENABLED=true` (off by default — enable it for local use; the deployed instance keeps it off to avoid provisioning persistent storage).
+
 ## When to use it
 
 - Counterfactuals that touch >10 rows or >2 dimensions ("what if cashback was +30% across all February?").

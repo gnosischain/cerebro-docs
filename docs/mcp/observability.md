@@ -190,8 +190,8 @@ All server logs are emitted as single-line JSON via `JsonFormatter` to stderr. E
 
 | Event | Source | When |
 |---|---|---|
-| `mcp_tool_call` | `tools/reasoning.py` | Every tool invocation |
-| `mcp_request` | `tools/reasoning.py` | Low-level MCP protocol requests |
+| `mcp_tool_call` | `tools/governance/reasoning.py` | Every tool invocation |
+| `mcp_request` | `tools/governance/reasoning.py` | Low-level MCP protocol requests |
 | `clickhouse_query` | `clickhouse_client.py` | ClickHouse query execution |
 | `security_audit` | `security.py` | Suspicious tool calls (non-empty flags) |
 | `report_token_auth` | `server.py` | Report endpoint access attempts |

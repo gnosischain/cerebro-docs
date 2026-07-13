@@ -76,6 +76,7 @@ hooks:
 extra_css:
   - stylesheets/extra.css
   - stylesheets/semantic-graph.css
+  - stylesheets/api-catalog.css
 
 extra_javascript:
   - javascripts/mathjax.js
@@ -88,6 +89,9 @@ extra_javascript:
   - javascripts/vendor/cose-base.js
   - javascripts/vendor/cytoscape-fcose.js
   - javascripts/semantic-graph.js
+  # Interactive API endpoint explorer (no vendor deps). Consumes the
+  # auto-generated api/catalog_data.json on the Metrics Explorer page.
+  - javascripts/api-catalog.js
 
 extra:
   llms:
@@ -172,6 +176,12 @@ nav:
       - ESG: models/esg.md
       - Crawlers: models/crawlers.md
       - ProbeLab: models/probelab.md
+      - Celo (Gnosis Pay): models/celo.md
+      - Web Analytics (Mixpanel/GA): models/mixpanel_ga.md
+      - MMM (Marketing Mix): models/mmm.md
+      - MTA (Attribution): models/mta.md
+      - Quarterly Data: models/quarterly_data.md
+      - Revenue: models/revenue.md
   - Research:
     - research/index.md
     - Marketing Mix Modeling (MMM):
@@ -217,11 +227,26 @@ nav:
     - api/index.md
     - API Reference:
       - Authentication: api/authentication.md
-      - Endpoints: api/endpoints.md
+      - Endpoints & Routing: api/endpoints.md
+      - Metrics Explorer: api/explorer.md
+      - Endpoint Catalog:
+        - api/catalog/index.md
+        - Bridges: api/catalog/bridges.md
+        - Celo: api/catalog/celo.md
+        - Consensus: api/catalog/consensus.md
+        - Crawlers Data: api/catalog/crawlers_data.md
+        - ESG: api/catalog/esg.md
+        - Execution: api/catalog/execution.md
+        - MMM: api/catalog/mmm.md
+        - MTA: api/catalog/mta.md
+        - P2P: api/catalog/p2p.md
+        - Quarterly Data: api/catalog/quarterly_data.md
+        - Revenue: api/catalog/revenue.md
       - Filtering & Pagination: api/filtering.md
       - Rate Limits: api/rate-limits.md
       - Interactive Docs (Swagger): api/swagger.md
       - Error Handling: api/errors.md
+      - Changelog: api/changelog.md
     - MCP Server:
       - mcp/index.md
       - Setup: mcp/setup.md
@@ -243,13 +268,18 @@ nav:
         - Graph Explorer: mcp/mini-apps/graph-explorer.md
         - Metric Lab: mcp/mini-apps/metric-lab.md
         - Contract Explorer: mcp/mini-apps/contract-explorer.md
+        - Model Lineage: mcp/mini-apps/model-lineage.md
+        - Data Catalog: mcp/mini-apps/data-catalog.md
       - Advanced:
         - mcp/advanced/index.md
+        - Finding Tools (find, list, lean core): mcp/advanced/discovery.md
         - Hybrid Search: mcp/advanced/hybrid-search.md
         - Memory & Resume: mcp/advanced/memory-and-resume.md
         - Quality Gates: mcp/advanced/quality-gates.md
         - Multi-Tenant: mcp/advanced/multi-tenant.md
         - Semantic Metrics: mcp/advanced/semantic-metrics.md
+        - RPC Bulk Scans: mcp/advanced/rpc-scans.md
+        - Grafana Publishing: mcp/advanced/grafana-publishing.md
         - Usage Guide: mcp/advanced/usage-guide.md
       - Marketing Mix Modeling (MMM): mcp/mmm.md
       - MMM User Guide: mcp/mmm-user-guide.md

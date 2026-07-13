@@ -1,0 +1,414 @@
+/* Interactive API metrics catalog explorer styling.
+ * Companion to javascripts/api-catalog.js.
+ *
+ * Themed exclusively with Material CSS variables (plus color-mix on them)
+ * so both the default (light) and slate (dark) schemes work unchanged. */
+
+.api-catalog-explorer {
+  margin: 1rem 0 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--md-default-fg-color) 15%, transparent);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* ---------- toolbar ---------- */
+
+.api-catalog-explorer .ac-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.8rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--md-default-bg-color);
+  border-bottom: 1px solid color-mix(in srgb, var(--md-default-fg-color) 12%, transparent);
+}
+
+.api-catalog-explorer #ac-search {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.8rem;
+  font-family: inherit;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--md-default-fg-color) 25%, transparent);
+  border-radius: 4px;
+  background: var(--md-default-bg-color);
+  color: var(--md-typeset-color);
+}
+
+.api-catalog-explorer #ac-search::placeholder {
+  color: var(--md-default-fg-color--light);
+}
+
+.api-catalog-explorer #ac-search:focus {
+  outline: none;
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 0 0 1px var(--md-accent-fg-color);
+}
+
+.api-catalog-explorer .ac-count {
+  font-size: 0.72rem;
+  white-space: nowrap;
+  color: var(--md-default-fg-color--light);
+}
+
+/* ---------- facet chips ---------- */
+
+.api-catalog-explorer .ac-facets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.6rem 0.8rem;
+  background: color-mix(in srgb, var(--md-default-fg-color) 3%, var(--md-default-bg-color));
+  border-bottom: 1px solid color-mix(in srgb, var(--md-default-fg-color) 12%, transparent);
+}
+
+.api-catalog-explorer .ac-facet-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.api-catalog-explorer .ac-facet-label {
+  min-width: 5.4rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--md-default-fg-color--light);
+}
+
+.api-catalog-explorer .ac-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-family: inherit;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  padding: 0.12rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--md-default-fg-color) 25%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--md-default-fg-color);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.api-catalog-explorer .ac-chip:hover {
+  border-color: var(--md-accent-fg-color);
+}
+
+.api-catalog-explorer .ac-chip--on {
+  border-color: var(--md-accent-fg-color);
+  background: color-mix(in srgb, var(--md-accent-fg-color) 14%, transparent);
+  color: var(--md-accent-fg-color);
+  font-weight: 600;
+}
+
+.api-catalog-explorer .ac-chip-count {
+  font-size: 0.6rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.api-catalog-explorer .ac-chip--on .ac-chip-count {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.api-catalog-explorer .ac-chip--clear {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--md-primary-fg-color) 60%, transparent);
+  color: var(--md-primary-fg-color);
+}
+
+.api-catalog-explorer .ac-chip--clear:hover {
+  background: color-mix(in srgb, var(--md-primary-fg-color) 12%, transparent);
+}
+
+/* ---------- result list ---------- */
+
+.api-catalog-explorer .ac-loading,
+.api-catalog-explorer .ac-empty {
+  padding: 1rem 0.8rem;
+  font-size: 0.75rem;
+  color: var(--md-default-fg-color--light);
+}
+
+#api-catalog[data-error]::after {
+  content: "Endpoint catalog unavailable — use the category pages below.";
+  display: block;
+  padding: 1rem 0.8rem;
+  font-size: 0.75rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.api-catalog-explorer .ac-item {
+  border-top: 1px solid color-mix(in srgb, var(--md-default-fg-color) 10%, transparent);
+}
+
+.api-catalog-explorer .ac-item:first-child {
+  border-top: none;
+}
+
+.api-catalog-explorer .ac-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.45rem 0.8rem;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.72rem;
+  text-align: left;
+  color: var(--md-typeset-color);
+  cursor: pointer;
+}
+
+.api-catalog-explorer .ac-row:hover {
+  background: color-mix(in srgb, var(--md-default-fg-color) 5%, transparent);
+}
+
+.api-catalog-explorer .ac-item--open > .ac-row {
+  background: color-mix(in srgb, var(--md-default-fg-color) 4%, transparent);
+}
+
+.api-catalog-explorer .ac-path {
+  padding: 0;
+  background: none;
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.7rem;
+  color: var(--md-typeset-color);
+  white-space: nowrap;
+}
+
+.api-catalog-explorer .ac-desc {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color--light);
+}
+
+/* ---------- method + tier badges ---------- */
+
+.api-catalog-explorer .ac-badge {
+  flex: none;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  padding: 0.02rem 0.35rem;
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+
+.api-catalog-explorer .ac-badge--get {
+  color: var(--md-primary-fg-color);
+  border-color: color-mix(in srgb, var(--md-primary-fg-color) 45%, transparent);
+  background: color-mix(in srgb, var(--md-primary-fg-color) 8%, transparent);
+}
+
+.api-catalog-explorer .ac-badge--post {
+  color: var(--md-accent-fg-color);
+  border-color: color-mix(in srgb, var(--md-accent-fg-color) 45%, transparent);
+  background: color-mix(in srgb, var(--md-accent-fg-color) 8%, transparent);
+}
+
+.api-catalog-explorer .ac-tier {
+  flex: none;
+  font-size: 0.56rem;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 0.02rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+/* tier0 (public) — subtle, accent-tinted */
+.api-catalog-explorer .ac-tier--tier0 {
+  color: color-mix(in srgb, var(--md-accent-fg-color) 80%, var(--md-default-fg-color));
+  border-color: color-mix(in srgb, var(--md-accent-fg-color) 35%, transparent);
+  background: color-mix(in srgb, var(--md-accent-fg-color) 8%, transparent);
+}
+
+/* tier1..tier3 — increasing emphasis on the primary hue */
+.api-catalog-explorer .ac-tier--tier1 {
+  color: var(--md-default-fg-color--light);
+  border-color: color-mix(in srgb, var(--md-default-fg-color) 25%, transparent);
+  background: color-mix(in srgb, var(--md-default-fg-color) 5%, transparent);
+}
+
+.api-catalog-explorer .ac-tier--tier2 {
+  color: var(--md-primary-fg-color);
+  border-color: color-mix(in srgb, var(--md-primary-fg-color) 45%, transparent);
+  background: color-mix(in srgb, var(--md-primary-fg-color) 10%, transparent);
+}
+
+.api-catalog-explorer .ac-tier--tier3 {
+  color: var(--md-primary-fg-color);
+  font-weight: 700;
+  border-color: color-mix(in srgb, var(--md-primary-fg-color) 75%, transparent);
+  background: color-mix(in srgb, var(--md-primary-fg-color) 18%, transparent);
+}
+
+/* ---------- detail panel ---------- */
+
+.api-catalog-explorer .ac-detail {
+  padding: 0.7rem 0.9rem 0.8rem 1.4rem;
+  border-top: 1px dashed color-mix(in srgb, var(--md-default-fg-color) 15%, transparent);
+  border-left: 3px solid var(--md-accent-fg-color);
+  background: color-mix(in srgb, var(--md-code-bg-color) 55%, var(--md-default-bg-color));
+  font-size: 0.72rem;
+}
+
+.api-catalog-explorer .ac-detail-desc {
+  margin: 0 0 0.5rem;
+  font-size: 0.74rem;
+  color: var(--md-typeset-color);
+}
+
+.api-catalog-explorer .ac-detail-h {
+  margin: 0.8rem 0 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--md-default-fg-color--light);
+}
+
+.api-catalog-explorer .ac-detail-meta {
+  margin: 0.25rem 0;
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.api-catalog-explorer .ac-detail-meta strong {
+  font-weight: 600;
+  color: var(--md-default-fg-color);
+}
+
+.api-catalog-explorer .ac-note {
+  margin: 0.5rem 0;
+  font-size: 0.7rem;
+  font-style: italic;
+  color: var(--md-default-fg-color--light);
+}
+
+.api-catalog-explorer .ac-table-wrap {
+  overflow-x: auto;
+  margin: 0.2rem 0 0.5rem;
+}
+
+.api-catalog-explorer .ac-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.68rem;
+}
+
+.api-catalog-explorer .ac-table-wrap th,
+.api-catalog-explorer .ac-table-wrap td {
+  padding: 0.25rem 0.6rem 0.25rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--md-default-fg-color) 10%, transparent);
+  text-align: left;
+  vertical-align: top;
+  color: var(--md-typeset-color);
+}
+
+.api-catalog-explorer .ac-table-wrap th {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--md-default-fg-color--light);
+}
+
+.api-catalog-explorer .ac-table-wrap code {
+  padding: 0 0.2rem;
+  background: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.66rem;
+  border-radius: 2px;
+  word-break: break-word;
+}
+
+.api-catalog-explorer .ac-curl {
+  margin: 0.3rem 0 0.6rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.api-catalog-explorer .ac-curl code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.68rem;
+}
+
+.api-catalog-explorer .ac-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.4rem;
+  font-size: 0.72rem;
+}
+
+.api-catalog-explorer .ac-link,
+.api-catalog-explorer .ac-link:visited {
+  color: var(--md-accent-fg-color);
+}
+
+.api-catalog-explorer .ac-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- show-more ---------- */
+
+.api-catalog-explorer .ac-more:not(:empty) {
+  padding: 0.6rem 0.8rem;
+  text-align: center;
+  border-top: 1px solid color-mix(in srgb, var(--md-default-fg-color) 10%, transparent);
+}
+
+.api-catalog-explorer .ac-show-more {
+  font-family: inherit;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.8rem;
+  border: 1px solid var(--md-primary-fg-color);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--md-primary-fg-color);
+  cursor: pointer;
+}
+
+.api-catalog-explorer .ac-show-more:hover {
+  background: var(--md-primary-fg-color);
+  color: var(--md-default-bg-color);
+}
+
+/* ---------- responsive ---------- */
+
+@media screen and (max-width: 44.9375em) {
+  .api-catalog-explorer .ac-facet-label {
+    min-width: 100%;
+  }
+
+  .api-catalog-explorer .ac-row {
+    flex-wrap: wrap;
+  }
+
+  .api-catalog-explorer .ac-desc {
+    flex-basis: 100%;
+    white-space: normal;
+  }
+}

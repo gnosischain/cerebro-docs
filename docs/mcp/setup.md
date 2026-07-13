@@ -268,28 +268,64 @@ If neither is set, workflows write `owner=NULL` and the server runs in single-te
 
 ## Environment Variables
 
-Complete list of configuration variables:
+The authoritative source is `src/cerebro_mcp/config.py` (a pydantic `Settings` class); `.env.example` covers the common subset. The tables below list the variables you are most likely to touch.
 
 ### Connectivity
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CLICKHOUSE_HOST` | `ujt1j3jrk0.eu-central-1.aws.clickhouse.cloud` | ClickHouse server hostname |
+| `CLICKHOUSE_HOST` | `localhost` | ClickHouse server hostname (`.env.example` ships the ClickHouse Cloud host) |
 | `CLICKHOUSE_PORT` | `8443` | ClickHouse HTTPS port |
 | `CLICKHOUSE_USER` | `default` | ClickHouse username |
 | `CLICKHOUSE_PASSWORD` | _(required)_ | ClickHouse password |
 | `CLICKHOUSE_SECURE` | `True` | Enable TLS for ClickHouse connections |
 | `DBT_MANIFEST_URL` | `https://gnosischain.github.io/dbt-cerebro/manifest.json` | URL for the published dbt manifest |
-| `DBT_MANIFEST_PATH` | _(unset)_ | Local filesystem path to a manifest.json (overrides URL) |
+| `DBT_MANIFEST_PATH` | _(unset)_ | Local filesystem path to a manifest.json (takes precedence over the URL) |
+| `DBT_CATALOG_URL` | `https://gnosischain.github.io/dbt-cerebro/catalog.json` | URL for the published dbt catalog |
+| `DBT_CATALOG_PATH` | _(unset)_ | Local filesystem path to a catalog.json (takes precedence over the URL) |
+
+### Feature flags
+
+Each flag gates the registration of a whole tool family — when off, the tools do not appear at all.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SEMANTIC_ENABLED` | `False` | Register the semantic tools (`find`, `query_metrics`, `preflight_analytics_request`, …). Requires a healthy registry snapshot at execution time |
+| `SEMANTIC_REGISTRY_URL` | `https://gnosischain.github.io/dbt-cerebro/semantic_registry.json` | Semantic registry artifact (local `SEMANTIC_REGISTRY_PATH` takes precedence) |
+| `SEMANTIC_DOCS_INDEX_URL` | `https://gnosischain.github.io/dbt-cerebro/semantic_docs_index.json` | Semantic docs index artifact (local `SEMANTIC_DOCS_INDEX_PATH` takes precedence) |
+| `CUSTOM_TOOLS_ENABLED` | `False` | Register the dynamic SQL tools defined in the custom-tools YAML |
+| `CUSTOM_TOOLS_PATH` | _(unset)_ | Path to the `custom_tools.yaml` file |
+| `SANDBOX_ENABLED` | `False` | Register the DuckDB + Parquet [simulation sandbox](workflows/simulation-sandboxes.md) tools |
+| `WORKFLOW_RESUME_TOOLS_ENABLED` | `False` | Register `list_resumable_workflows` / `get_workflow_resume_hint` / `recompute_workflow_resume_hint`. The underlying event store records workflow state regardless |
+| `RPC_SCAN_ENABLED` | `False` | Register the bulk [RPC scan](advanced/rpc-scans.md) family (`rpc_scan_logs`, `rpc_batch_call`, …). Results stream into ClickHouse scratch tables, so the ClickHouse user needs `GRANT CREATE DATABASE, CREATE TABLE, INSERT, DROP TABLE, SELECT ON scratch.*` |
+| `GRAFANA_TOOLS_ENABLED` | `False` | Register the [Grafana dashboard publishing](advanced/grafana-publishing.md) tools |
+| `GRAFANA_URL` | _(empty)_ | Grafana base URL (required for publishing) |
+| `GRAFANA_API_TOKEN` | _(empty)_ | Grafana service-account token |
+| `GRAFANA_CLICKHOUSE_DATASOURCE_UID` | _(empty)_ | UID of the ClickHouse datasource dashboards should query |
+| `GRAFANA_CLICKHOUSE_DATASOURCE_TYPE` | `grafana-clickhouse-datasource` | Datasource plugin type |
+| `GRAFANA_FOLDER_UID` | _(empty)_ | Target folder UID; empty publishes to the default (General) folder |
+| `LEAN_CORE_ENABLED` | `False` | Advertise only the ~18 core tools; advanced tools stay callable and can be un-hidden via `load_tools`. See [Finding Tools](advanced/discovery.md) |
+
+### Web3 / RPC
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GNOSIS_RPC_URL` | `https://rpc.gnosischain.com` | JSON-RPC endpoint for latest-state reads |
+| `GNOSIS_ARCHIVE_RPC_URL` | _(empty)_ | Archive node endpoint — required for non-`latest` block reads; trace scans additionally require a trace-capable node (Erigon, or Nethermind with Trace) |
+| `BLOCKSCOUT_API_BASE_URL` | `https://gnosis.blockscout.com/api/v2` | Blockscout API used for ABI / contract metadata resolution |
+| `RPC_TIMEOUT_SECONDS` | `15` | Per-request timeout for single-call RPC tools |
+| `RPC_MAX_RETRIES` | `3` | Retry budget for single-call RPC tools |
 
 ### Query and tool limits
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MAX_ROWS` | `10000` | Maximum rows returned per query |
-| `QUERY_TIMEOUT_SECONDS` | `30` | Query execution timeout |
+| `QUERY_TIMEOUT_SECONDS` | `30` | Query execution timeout (`CLICKHOUSE_QUERY_TIMEOUT_SECONDS` overrides it when set) |
 | `MAX_QUERY_LENGTH` | `10000` | Maximum SQL string length accepted |
-| `TOOL_RESPONSE_MAX_CHARS` | `40000` | Maximum characters per tool response |
+| `TOOL_RESULT_MAX_ROWS` | `200` | Maximum rows embedded in a tool response |
+| `TOOL_RESULT_MAX_CHARS` | `40000` | Maximum characters per tool response (falls back to the legacy `TOOL_RESPONSE_MAX_CHARS` when unset) |
+| `CLICKHOUSE_MAX_QUERY_MEMORY_GB` | `4.0` | Per-query memory ceiling in GiB (`0` disables the cap) |
 
 ### Storage
 

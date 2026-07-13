@@ -20,7 +20,7 @@ profile. Knowing which one you're touching matters.
 | **Time spines** | `dim_time_spine_{daily,weekly,monthly}` reference dimensions. The Monday-anchored join axis for time-series cross-sector composition. | `models/shared/marts/dim_time_spine_*.sql` | Anyone composing metrics across grains. |
 | **Schema docs** | Column-level descriptions on every analyst-facing api_ / fct_ model. Powers `describe_table` and `get_model_details` in the MCP. | `models/**/schema.yml` | LLMs, analysts navigating the model space. |
 | **Semantic models** | `semantic_models:` blocks in `semantic/authoring/`. Declare which dimensions and measures a model exposes, plus its `quality_tier` and `question_synonyms`. | `semantic/authoring/<module>/semantic_models.yml` | The `discover_metrics` and `query_metrics` MCP tools. |
-| **Metric registry** | Named metrics (e.g. `cow_volume_usd`, `revenue_active_users_weekly`) bound to measures — ~1,037 today (~72 `approved`, the rest auto-generated `candidate`s, one per eligible measure). Compiled into `target/semantic_registry.json`. | `semantic/authoring/<module>/semantic_models.yml` (the `metrics:` block); build scripts `scripts/semantic/build_registry.py` + `scaffold_metrics.py` | AI agents, dashboard tools, anyone calling `query_metrics`. |
+| **Metric registry** | Named metrics (e.g. `cow_volume_usd`, `revenue_active_users_weekly`) bound to measures — 1,645 today (1,383 `approved`, 262 auto-generated `candidate`s, one per eligible measure). Compiled into `target/semantic_registry.json`. | `semantic/authoring/<module>/semantic_models.yml` (the `metrics:` block); build scripts `scripts/semantic/build_registry.py` + `scaffold_metrics.py` | AI agents, dashboard tools, anyone calling `query_metrics`. |
 
 The first three are **infrastructure** — small, durable, broadly useful.
 The last two are **interfaces** — only worth their weight when there's
@@ -50,7 +50,7 @@ Three concrete pain points motivated the work, in priority order:
 | Audience | Primary tool | Semantic-layer ROI |
 | --- | --- | --- |
 | **SQL-fluent analyst writing a one-off report** | `execute_query` (raw SQL via the MCP) | ~20% — the marts help; the metric registry is bypassed for ad-hoc work. |
-| **AI chat agent answering analytics questions** | `discover_metrics` → `query_metrics` | ~80% — can't easily compose raw SQL across 1000+ dbt models. Metric names and `question_synonyms` are essential. |
+| **AI chat agent answering analytics questions** | `discover_metrics` → `query_metrics` | ~80% — can't easily compose raw SQL across 1,200+ dbt models. Metric names and `question_synonyms` are essential. |
 | **Dashboard / BI tool consumers** | Stable metric IDs (`cow_volume_usd`, etc.) | ~90% — needs the contract more than the SQL. |
 
 Most teams underestimate that the registry's value is **concentrated in
@@ -66,8 +66,9 @@ benefits from the stable name + the underlying maintenance discipline.
   `semantic/relationships/`, and `target/semantic_registry.json` fit
   together.
 - **[User-pseudonym graph](user-pseudonym-graph.md)** — cross-sector user
-  overlap analysis. The 7-node graph (revenue ×2, gpay, gnosis_app,
-  circles, validator withdrawal addresses, + the Safe owner↔contract
+  overlap analysis. The 9-node graph (revenue ×2, gpay, gnosis_app,
+  circles, validator withdrawal addresses, the two mixpanel_ga
+  web-analytics nodes, + the Safe owner↔contract
   bridge) and how to compose joins through it.
 - **[Time spines](time-spines.md)** — cross-grain composition. How
   `dim_time_spine_{daily,weekly,monthly}` enable daily metrics to compose

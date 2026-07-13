@@ -4,7 +4,7 @@ Single-contract inspection surface powered by direct JSON-RPC reads. Resolves a 
 
 - **Resource URI:** `ui://cerebro/contract_explorer`
 - **Entry tool:** `open_contract_explorer(address)`
-- **Backed by:** `src/cerebro_mcp/tools/contract_explorer.py` + `tools/rpc.py` (`call_view_function`, `abi_resolver`, `web3_client`)
+- **Backed by:** `src/cerebro_mcp/tools/web3/contract_explorer.py` + `tools/web3/rpc.py` (`call_view_function`, `abi_resolver`, `web3_client`)
 
 ## When to use it
 
@@ -27,7 +27,7 @@ For **multi-address sweeps, historical balances, USD-valued holdings, or aggrega
 
 ## Standalone RPC tools
 
-These work without the mini-app — same engine, agent-callable directly. See [Tools §7 — On-chain RPC & contract tools](../tools.md#7-on-chain-rpc-contract-tools).
+These work without the mini-app — same engine, agent-callable directly. See [Tools — Web3](../tools.md#web3). For bulk sweeps across address sets or block windows, see [RPC Scans](../advanced/rpc-scans.md).
 
 - `contract_explore(address, include_abi=False)`
 - `contract_call_function(address, function_name, args?, block_identifier="latest", function_signature?, ...)`
@@ -64,6 +64,7 @@ Proxy detection (EIP-1967 + transparent + minimal-proxy patterns) follows automa
 
 ## See also
 
-- [Tools §7 — On-chain RPC & contract tools](../tools.md#7-on-chain-rpc-contract-tools)
+- [Tools — Web3](../tools.md#web3)
+- [RPC Scans](../advanced/rpc-scans.md) — bulk sweeps across address sets / block windows
 - [Portfolio](portfolio.md) — multi-protocol view for a single address (uses dbt, not RPC)
 - [Graph Explorer](graph-explorer.md) — cross-sector relationship graph

@@ -23,7 +23,7 @@ flowchart TD
         CH[(ClickHouse Cloud)]
     end
     subgraph L3["Data Analysis & Modeling Layer"]
-        DBT["dbt-cerebro\n~400 models"]
+        DBT["dbt-cerebro\n~1,200 models"]
         DSG[dbt-schema-gen]
     end
     subgraph L4["Data Serving Layer"]
@@ -73,7 +73,7 @@ Raw data lands in the source databases (`execution`, `consensus`, `crawlers_data
 
 ## Layer 3: Data Analysis & Modeling
 
-The modeling layer uses **dbt-cerebro**, a dbt project containing approximately 400 SQL models organized into 8 modules:
+The modeling layer uses **dbt-cerebro**, a dbt project containing approximately 1,200 SQL models organized into 14 modules:
 
 | Module | Description |
 |--------|-------------|
@@ -85,6 +85,12 @@ The modeling layer uses **dbt-cerebro**, a dbt project containing approximately 
 | `probelab` | Network performance, latency measurements |
 | `crawlers_data` | Aggregated external data metrics |
 | `contracts` | Smart contract analytics, protocol-specific models |
+| `celo` | Gnosis Pay activity on the Celo chain |
+| `revenue` | Protocol revenue and per-user revenue metrics |
+| `quarterly_data` | Quarterly reporting rollups |
+| `mixpanel_ga` | Mixpanel and Google Analytics product analytics |
+| `mta` | Multi-touch attribution for user journeys |
+| `mmm` | Marketing-mix modeling inputs |
 
 Models follow a layered pattern: `staging` models clean and standardize raw data, `intermediate` models join and aggregate across sources, and `api_*` models provide the final projections optimized for API consumption. Each API-facing model declares its endpoint configuration through dbt tags and `meta.api` metadata, enabling the serving layer to automatically discover and expose new endpoints.
 

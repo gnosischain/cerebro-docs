@@ -17,13 +17,14 @@ Every tool registered with Cerebro MCP is assigned a risk class:
 | `workspace_write` | Writes to the workspace filesystem | `scaffold_dashboard_tab` |
 | `subprocess` | Spawns external processes | `scaffold_dashboard_tab` |
 | `app_only` | Hidden from the model; only callable by the frontend | `get_mini_app_rows`, `get_mini_app_state` |
+| `external_write` | Writes that escape the server boundary to an external system | `publish_grafana_dashboard` |
 
 !!! note "Unknown tools"
     Dynamically registered tools (e.g., custom query tools from YAML) that are not in the static registry default to `read_only` and are flagged as `unknown_tool` in the audit log.
 
 ### Risk Priority
 
-When a tool has multiple risk classes, the **primary** class is determined by severity: `subprocess` > `workspace_write` > `app_only` > `server_state_write` > `read_only`.
+When a tool has multiple risk classes, the **primary** class is determined by severity: `subprocess` > `external_write` > `workspace_write` > `app_only` > `server_state_write` > `read_only`.
 
 ## Suspicious-Call Detection
 
@@ -125,7 +126,7 @@ Security counters are exposed at the `/metrics` endpoint and visualized in the [
                         |
                         v
             +------------------------+
-            |  _wrapped_call_tool()  |  (tools/reasoning.py)
+            |  _wrapped_call_tool()  |  (tools/governance/reasoning.py)
             |  - timing              |
             |  - tracing             |
             |  - observability       |

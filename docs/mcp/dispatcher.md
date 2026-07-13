@@ -163,7 +163,7 @@ The dispatcher sits one level above all of these. It is the first thing a non-tr
 ## Implementation
 
 - Persona file: `src/cerebro_mcp/prompts/agents/cerebro_dispatcher.md`
-- Registered role: `_VALID_ROLES` in `src/cerebro_mcp/tools/agents.py`
+- Registered role: `_VALID_ROLES` in `src/cerebro_mcp/tools/governance/agents.py`
 - MCP prompt: `adopt_persona_cerebro_dispatcher` in `src/cerebro_mcp/prompts/templates.py`
 - Tests: `tests/test_cerebro_dispatcher.py` (10 tests covering registration, routing-table references to every real specialist, MCP prompt surface, gate language)
 

@@ -1,6 +1,6 @@
 # dbt Model Catalog
 
-The Gnosis Analytics data platform is powered by **dbt-cerebro**, a dbt project that transforms raw Gnosis Chain data into approximately **400 curated models** organized across 8 thematic modules. These models are materialized in a ClickHouse Cloud warehouse and serve as the backbone for both the Cerebro MCP server and the metrics dashboard.
+The Gnosis Analytics data platform is powered by **dbt-cerebro**, a dbt project that transforms raw Gnosis Chain data into approximately **1,200 curated models** organized across 14 thematic modules. These models are materialized in a ClickHouse Cloud warehouse and serve as the backbone for both the Cerebro MCP server and the metrics dashboard.
 
 ## Naming Convention
 
@@ -36,13 +36,19 @@ Models are organized into four layers, each building on the previous one. Always
 | Module | Models | Description |
 |--------|:------:|-------------|
 | [Bridges](bridges.md) | ~17 | -- |
-| [Consensus](consensus.md) | ~53 | -- |
-| [Contracts](contracts.md) | ~14 | -- |
-| [Crawlers](crawlers.md) | ~13 | -- |
+| [Celo (Gnosis Pay)](celo.md) | ~48 | -- |
+| [Consensus](consensus.md) | ~88 | -- |
+| [Contracts](contracts.md) | ~101 | -- |
+| [Crawlers](crawlers.md) | ~16 | -- |
 | [ESG](esg.md) | ~16 | -- |
-| [Execution](execution.md) | ~176 | -- |
+| [Execution](execution.md) | ~676 | -- |
+| [Web Analytics (Mixpanel/GA)](mixpanel_ga.md) | ~59 | -- |
+| [MMM (Marketing Mix)](mmm.md) | ~7 | -- |
+| [MTA (Attribution)](mta.md) | ~26 | -- |
 | [P2P Network](p2p.md) | ~25 | -- |
 | [ProbeLab](probelab.md) | ~5 | -- |
+| [Quarterly Data](quarterly_data.md) | ~27 | -- |
+| [Revenue](revenue.md) | ~50 | -- |
 <!-- END AUTO-GENERATED: models-summary -->
 
 ## Source Databases
@@ -56,7 +62,7 @@ Models are built from raw data stored across multiple ClickHouse databases:
 | `crawlers_data` | Dune labels, Dune prices, bridge flows, GNO supply, Gnosis Pay wallets |
 | `nebula` | P2P network crawls and visit records |
 | `nebula_discv4` | Discovery v4 protocol data (variant schema) |
-| `dbt` | Materialized dbt models (~400 tables) |
+| `dbt` | Materialized dbt models (~1,200 tables) |
 
 ## Using Models with Cerebro MCP
 

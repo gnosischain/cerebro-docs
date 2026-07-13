@@ -14,7 +14,7 @@ A separate **Column BM25 index** ranks columns within a single model — this is
 
 A **networkx DAG** of model + source nodes provides deterministic lineage: `get_upstream_lineage`, `get_downstream_impact`.
 
-All deterministic. No embeddings, no model loading. Builds in <100ms on the live ~862-model manifest.
+All deterministic. No embeddings, no model loading. Builds in <100ms on the live ~1,200-model manifest.
 
 ## When it matters
 
@@ -24,7 +24,7 @@ All deterministic. No embeddings, no model loading. Builds in <100ms on the live
 
 ## Measured outcomes
 
-On the live manifest (862 models / 75 sources / 5,136 column docs):
+On the manifest at benchmark time (862 models / 75 sources / 5,136 column docs):
 
 | Metric | Hybrid | Legacy | Δ |
 |---|---|---|---|
@@ -82,6 +82,6 @@ The +0.9 ms search overhead is well below typical MCP serialization overhead. `h
 
 ## See also
 
-- [Tools §1](../tools.md#1-discovery-schema)
+- [Tools — Analytics](../tools.md#analytics)
 - [Quality Gates](quality-gates.md) — `discovered_model_coverage` enforces that you actually used the search results
 - [Phase 1 design doc (cerebro-mcp repo)](https://github.com/gnosischain/cerebro-mcp/blob/main/docs/phase1_hybrid_search.md) — full sprint write-up

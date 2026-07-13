@@ -5,7 +5,7 @@ description: Guide to creating new dbt models in the dbt-cerebro project
 
 # Adding dbt Models
 
-All analytics transformations in the Gnosis Analytics platform happen in **dbt-cerebro**, a dbt project containing approximately 400 SQL models. This guide covers everything you need to create new models: naming conventions, layer selection, materialization strategies, testing, and the PR workflow.
+All analytics transformations in the Gnosis Analytics platform happen in **dbt-cerebro**, a dbt project containing approximately 1,200 SQL models. This guide covers everything you need to create new models: naming conventions, layer selection, materialization strategies, testing, and the PR workflow.
 
 ## Naming Convention
 

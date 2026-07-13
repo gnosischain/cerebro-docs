@@ -1,6 +1,6 @@
 # Crawlers Module
 
-The Crawlers module contains approximately **9 models** that aggregate and enrich external reference data from third-party sources. Its primary dataset is the Dune Analytics label directory with over 5.3 million address labels, supplemented by price feeds, token supply data, and other reference datasets used to enrich on-chain analytics across the platform.
+The Crawlers module aggregates and enriches external reference data from third-party sources. Its primary dataset is the Dune Analytics label directory with over 5.3 million address labels, supplemented by price feeds, token supply data, and other reference datasets used to enrich on-chain analytics across the platform.
 
 ## Data Sources
 
@@ -17,17 +17,30 @@ All data is sourced from the `crawlers_data` ClickHouse database, which is popul
 ## Model Categories
 
 <!-- BEGIN AUTO-GENERATED: models-crawlers -->
+**Circles**
+
+| Model | Layer | Description |
+|-------|-------|-------------|
+| `stg_crawlers_data__circles_blacklisted` | Staging | Current Circles v2 bot/sybil blacklist (lowercased), refreshed daily by click-runner. Fully replaced on every ingest ... |
+
 **Country**
 
 | Model | Layer | Description |
 |-------|-------|-------------|
 | `stg_crawlers_data__country_codes` | Staging | The stg_crawlers_data__country_codes model consolidates standardized country identifiers and regional classifications... |
 
+**Cow**
+
+| Model | Layer | Description |
+|-------|-------|-------------|
+| `stg_crawlers_data__cow_api_trade_fees` | Staging | Staging view over cow_api_trade_fees (ingested by click-runner from the CoW Protocol API). Exposes protocol fees per ... |
+
 **Data**
 
 | Model | Layer | Description |
 |-------|-------|-------------|
 | `int_crawlers_data_labels` | Intermediate | The int_crawlers_data_labels model consolidates and categorizes crawler data labels for various blockchain projects, ... |
+| `int_crawlers_data_labels_dex` | Intermediate | DEX-only slice of int_crawlers_data_labels — address to project mapping restricted to sector = 'DEX'. Used by live-tr... |
 | `api_crawlers_data_gno_supply_daily` | API | The api_crawlers_data_gno_supply_daily model aggregates daily GNO supply data from crawler sources to support trend a... |
 
 **Dune**

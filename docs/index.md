@@ -149,7 +149,7 @@ flowchart TD
 
     ---
 
-    Browse the ~400 dbt models across 8 modules powering the analytics platform.
+    Browse the ~1,200 dbt models across 14 modules powering the analytics platform.
 
     [:octicons-arrow-right-24: Model Catalog](models/index.md)
 

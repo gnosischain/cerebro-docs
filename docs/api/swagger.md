@@ -7,6 +7,9 @@ description: Interactive API documentation, ReDoc, and OpenAPI specification
 
 The Gnosis Analytics API provides auto-generated interactive documentation through **Swagger UI** and **ReDoc**. Both interfaces are generated from the OpenAPI specification and always reflect the current endpoint catalog -- when new dbt models are deployed, they appear in the docs automatically after the next manifest refresh.
 
+!!! tip "Trying vs finding"
+    Swagger UI is best for **trying out an endpoint you already know**. To **find** metrics in the first place, use the [Metrics Explorer](explorer.md) for a searchable catalog of every endpoint, or the [Endpoint Catalog](catalog/index.md) for a per-category reference with columns and filters.
+
 ## Live Swagger UI
 
 Browse, test, and explore all API endpoints directly in the browser:

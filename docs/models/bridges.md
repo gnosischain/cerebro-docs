@@ -1,6 +1,6 @@
 # Bridges Module
 
-The Bridges module contains approximately **18 models** focused on cross-chain bridge analytics between Gnosis Chain and other networks, primarily Ethereum. It tracks token flows, bridge volumes, netflow direction, and provides visualization-ready data for sankey diagrams.
+The Bridges module is focused on cross-chain bridge analytics between Gnosis Chain and other networks, primarily Ethereum. It tracks token flows, bridge volumes, netflow direction, and provides visualization-ready data for sankey diagrams.
 
 ## Data Sources
 

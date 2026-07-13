@@ -29,7 +29,7 @@ graph LR
     end
 
     subgraph Transformation
-        DBT[dbt-cerebro<br/>~400 models]
+        DBT[dbt-cerebro<br/>~1,200 models]
     end
 
     subgraph Serving

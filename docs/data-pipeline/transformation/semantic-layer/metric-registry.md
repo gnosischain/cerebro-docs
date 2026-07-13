@@ -134,7 +134,7 @@ mcp__cerebro-dev__reload_semantic_registry()
 #    "registry_hash_before": "...", "registry_hash_after": "...",
 #    "manifest_hash_before": "...", "manifest_hash_after": "...",
 #    "catalog_hash_before": "...", "catalog_hash_after": "...",
-#    "metric_count": 1037, "approved_metric_count": 72}
+#    "metric_count": 1645, "approved_metric_count": 1383}
 ```
 
 Returns the hash delta and count summary so the caller can verify the
@@ -224,9 +224,9 @@ form filters, scatter plots, correlation matrices, ad-hoc joins).
 
 ## What's in the registry today
 
-The registry now carries **~1,037 metrics** (~72 `approved`, ~965
-`candidate`) across ~1,095 semantic-mapped models and 51 cross-sector
-relationships. The jump from the original hand-authored ~70 metrics is
+The registry now carries **1,645 metrics** (1,383 `approved`, 262
+`candidate`) across ~1,166 semantic-mapped models and 714
+relationships (433 `approved`). The jump from the original hand-authored ~70 metrics is
 deliberate: `scripts/semantic/scaffold_metrics.py` emits **one candidate
 metric for every eligible measure** across all 26 authoring domains, so
 no measure is invisible to `discover_metrics` / `query_metrics` just
@@ -235,7 +235,7 @@ because nobody hand-wrote a metric for it.
 Practical consequences:
 
 - **`discover_metrics` is unchanged in feel.** It only surfaces
-  `approved` metrics, so the ~965 auto-generated candidates don't add
+  `approved` metrics, so the auto-generated candidates don't add
   noise — you reach them by name via `get_metric_details` or with
   `allow_candidate=true`.
 - **Promotion is the curation step.** A candidate becomes a first-class,

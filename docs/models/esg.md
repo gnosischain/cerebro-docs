@@ -1,6 +1,6 @@
 # ESG Module
 
-The ESG (Environmental, Social, and Governance) module contains approximately **18 models** focused on environmental sustainability metrics for the Gnosis Chain network. It estimates carbon emissions, electrical power consumption, and maps node geographic distribution to regional electricity carbon intensity factors using data from the Ember Global Electricity Review.
+The ESG (Environmental, Social, and Governance) module is focused on environmental sustainability metrics for the Gnosis Chain network. It estimates carbon emissions, electrical power consumption, and maps node geographic distribution to regional electricity carbon intensity factors using data from the Ember Global Electricity Review.
 
 ## Data Sources
 

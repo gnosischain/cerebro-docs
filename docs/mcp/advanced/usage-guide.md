@@ -127,18 +127,17 @@ The dispatcher is a router. It does not query the DB or write SQL. See [Cerebro 
 
 | Category | Anchor |
 |---|---|
-| Discovery & schema | [Tools §1](../tools.md#1-discovery-schema) |
-| Query execution | [Tools §2](../tools.md#2-query-execution) |
-| Visualisation & reporting | [Tools §3](../tools.md#3-visualisation-reporting) |
-| Research workflow | [Tools §4](../tools.md#4-research-workflow) |
-| Storyteller | [Tools §5](../tools.md#5-storyteller-narrative-pipeline) |
-| Mini-apps | [Tools §6](../tools.md#6-mini-apps-live-ui-surfaces) |
-| On-chain RPC & contract | [Tools §7](../tools.md#7-on-chain-rpc-contract-tools) |
-| Simulation sandbox | [Tools §8](../tools.md#8-simulation-sandbox-duckdb-parquet) |
-| Resume & state | [Tools §9](../tools.md#9-resume-state-inspection) |
-| Bridges, validators, on-chain | [Tools §10](../tools.md#10-bridges-validators-on-chain-helpers) |
-| Documentation & reasoning | [Tools §11](../tools.md#11-documentation-reasoning) |
-| Agent personas | [Tools §12](../tools.md#12-agent-personas) |
+| Discovery, schema & query execution | [Tools — Analytics](../tools.md#analytics) |
+| Governed metrics & semantic routing | [Tools — Semantic](../tools.md#semantic) |
+| Visualisation & reporting | [Tools — Visualization & Reporting](../tools.md#visualization-reporting) |
+| Research workflow | [Tools — Research Workflow](../tools.md#research-workflow) |
+| Storyteller | [Tools — Storyteller Workflow](../tools.md#storyteller-workflow) |
+| Mini-apps | [Mini-Apps](../mini-apps/index.md) |
+| On-chain RPC & contract | [Tools — Web3](../tools.md#web3) |
+| Simulation sandbox | [Simulation Sandboxes](../workflows/simulation-sandboxes.md) |
+| Resume & state | [Tools — Workflow Resume](../tools.md#workflow-resume) |
+| Bridges, validators, on-chain helpers | [Tools — Dynamic Custom Tools](../tools.md#dynamic-custom-tools) |
+| Verification, reasoning & personas | [Tools — Governance](../tools.md#governance) |
 
 ---
 

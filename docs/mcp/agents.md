@@ -1,6 +1,6 @@
 # Agent Fleet
 
-Cerebro MCP ships with **23 agent personas** — prompt-layer guidance the LLM adopts for a specific phase of work. Each persona has a narrow contract (identity, rules, SQL toolkit when relevant, success metrics) and is loaded via:
+Cerebro MCP ships with **29 agent personas** — prompt-layer guidance the LLM adopts for a specific phase of work. Each persona has a narrow contract (identity, rules, SQL toolkit when relevant, success metrics) and is loaded via:
 
 ```text
 get_agent_persona(role)
@@ -30,10 +30,50 @@ Personas are **guidance, not automation**. The server does not run an internal L
 │  growth_analyst   forecasting_analyst   defi_analyst          │
 │  tokenomics_analyst   network_health_analyst                  │
 │  bridge_security_analyst   marketing_analyst                  │
-│  esg_analyst   statistical_reviewer                           │
-│  + 6 storyteller sub-phases                                   │
+│  esg_analyst   statistical_reviewer   chain_forensics         │
+│  grafana_architect   + 6 storyteller sub-phases               │
 └───────────────────────────────────────────────────────────────┘
 ```
+
+## Persona roster
+
+The authoritative role list is `_VALID_ROLES` in `src/cerebro_mcp/tools/governance/agents.py`; every role maps to a prompt file in `src/cerebro_mcp/prompts/agents/`.
+
+<!-- BEGIN AUTO-GENERATED: mcp-personas -->
+29 personas are registered (`get_agent_persona` accepts these roles):
+
+| Role | Focus |
+|------|-------|
+| `analytics_reporter` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `bridge_security_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `cerebro_dispatcher` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `chain_forensics` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `defi_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `esg_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `forecasting_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `gnosis_research_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `grafana_architect` | You build Grafana dashboards that work for **two audiences**: engineers (who |
+| `growth_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `marketing_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `mmm_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `mmm_causal_reviewer` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `mmm_simulator` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `mta_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `network_health_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `reality_checker` | You are the **Reality Checker**, a senior quality assurance engineer specialized in data validation and report integrity. You are the final |
+| `statistical_reviewer` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `storyteller_accessibility` | You are the **Accessibility & Tone Agent**. Final cross-cutting check before handoff. You block on hard accessibility failures; you flag ton |
+| `storyteller_context` | You are the **Context Agent**. Your only job is to produce a `context_brief` that names the audience, the required action, the delivery mech |
+| `storyteller_critic` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `storyteller_narrative` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `storyteller_orchestrator` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `storyteller_visual_designer` | You are the **Visual Designer Agent**. One `visual_spec` per storyboard scene. Relationship-first. One focal element per scene. Everything n |
+| `storyteller_writer` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `tokenomics_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `ui_designer` | You are the **UI Designer**, a senior frontend engineer and data visualization specialist. You have deep expertise in ECharts configuration, |
+| `unified_allocator` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `unified_causal_reviewer` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+<!-- END AUTO-GENERATED: mcp-personas -->
 
 ## Tier 1 — Top-level orchestrator
 
@@ -77,6 +117,8 @@ Consulted by the dispatcher or a workflow lead when the topic matches their scop
 | `marketing_analyst` | external-audience framing, investor updates, grant narratives | No SQL; framing + compliance rules |
 | `esg_analyst` | validator energy, carbon intensity, Scope 2, efficiency | ESG module, `crawlers_data.ember_electricity_data` |
 | `statistical_reviewer` | methodology challenge, sample-size review, p-hacking check | Bonferroni, approximate CIs, IQR outlier handling |
+| `chain_forensics` | on-chain incident forensics, exploit tracing, address-set sweeps | the bulk [RPC scan toolkit](advanced/rpc-scans.md): `rpc_scan_logs`, `rpc_scan_traces`, `rpc_find_block`, `rpc_get_code` |
+| `grafana_architect` | mixed-audience Grafana dashboard composition | `preview_grafana_dashboard`, `validate_grafana_dashboard`, `publish_grafana_dashboard` (see [Grafana Publishing](advanced/grafana-publishing.md)) |
 
 ### Storyteller sub-phase personas
 
@@ -137,7 +179,7 @@ Five MCP prompts are currently registered for slash-command access:
 - `adopt_persona_ui_designer`
 - `adopt_persona_reality_checker`
 
-All 23 personas are reachable via `get_agent_persona(role)`.
+All 29 personas are reachable via `get_agent_persona(role)`.
 
 ## Testing discipline
 
