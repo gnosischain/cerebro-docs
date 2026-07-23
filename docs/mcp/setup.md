@@ -77,9 +77,28 @@ If `cerebro-mcp` is not on your PATH, use the full path to the executable or inv
 }
 ```
 
-### Hosted Endpoint (SSE)
+### Hosted Endpoint (Streamable HTTP)
 
-Connect to the team-hosted instance at `mcp.analytics.gnosis.io`:
+Connect to the team-hosted instance at `mcp.analytics.gnosis.io`. If your deployment runs the current image (which starts with `cerebro-mcp --http`), the recommended endpoint is the Streamable HTTP path `/mcp`:
+
+```json
+{
+  "mcpServers": {
+    "cerebro": {
+      "url": "https://mcp.analytics.gnosis.io/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-token>"
+      }
+    }
+  }
+}
+```
+
+If the client cannot set custom headers (for example, a native connector UI that only accepts a URL), append the token as a query parameter instead: `https://mcp.analytics.gnosis.io/mcp?token=<your-token>`. The Bearer header remains the preferred path -- query tokens can leak into access logs.
+
+### Hosted Endpoint (Legacy SSE)
+
+Deployments still running the SSE-only transport (`cerebro-mcp --sse`), and current-image deployments during migration (`--http` dual-serves both), also accept the legacy `/sse` endpoint:
 
 ```json
 {
@@ -134,11 +153,13 @@ Add the following to `.vscode/mcp.json` in your workspace, or to your user-level
 
 ### Hosted Endpoint
 
+Use the Streamable HTTP endpoint `/mcp` if your deployment runs the current image; use the legacy `/sse` path for SSE-only deployments:
+
 ```json
 {
   "servers": {
     "cerebro": {
-      "url": "https://mcp.analytics.gnosis.io/sse",
+      "url": "https://mcp.analytics.gnosis.io/mcp",
       "headers": {
         "Authorization": "Bearer <your-token>"
       }
@@ -193,11 +214,13 @@ You can also add instructions to your project's `CLAUDE.md` file to guide Claude
 
 ### Hosted Endpoint
 
+Use the Streamable HTTP endpoint `/mcp` if your deployment runs the current image; use the legacy `/sse` path for SSE-only deployments:
+
 ```json
 {
   "mcpServers": {
     "cerebro": {
-      "url": "https://mcp.analytics.gnosis.io/sse",
+      "url": "https://mcp.analytics.gnosis.io/mcp",
       "headers": {
         "Authorization": "Bearer <your-token>"
       }
@@ -206,24 +229,66 @@ You can also add instructions to your project's `CLAUDE.md` file to guide Claude
 }
 ```
 
-## Running as an SSE Server
+## Running a Remote Server
+
+The server selects its transport from command-line flags, with precedence `--http` > `--sse` > stdio (no flag).
+
+### Streamable HTTP (Recommended)
 
 To host your own remote instance:
 
 ```bash
-cerebro-mcp --sse
-# Default: http://127.0.0.1:8000
+cerebro-mcp --http
+# Serves the MCP Streamable HTTP endpoint at /mcp
+# and dual-serves the legacy /sse + /messages/ routes from the same process
 ```
 
-Configure the server with environment variables:
+Streamable HTTP is the modern, load-balancer-friendly MCP transport: a single `/mcp` endpoint, no long-lived idle stream for a proxy to reap, and -- with `STREAMABLE_HTTP_STATELESS` on (the default) -- no per-pod session affinity requirement, so requests can land on any replica. It is also the transport Claude Desktop's native remote connector speaks, removing the need for the `mcp-remote` bridge. Because `--http` dual-serves the legacy SSE routes, existing `/sse` clients keep working during migration -- a zero-downtime cutover rather than a hard switch.
+
+The published Docker image starts with `cerebro-mcp --http` by default.
+
+Client configuration points at the `/mcp` URL:
+
+```json
+{
+  "mcpServers": {
+    "cerebro": {
+      "url": "https://your-host.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-token>"
+      }
+    }
+  }
+}
+```
+
+For clients that cannot set custom headers, `/mcp` additionally accepts the token as a query parameter: `https://your-host.example.com/mcp?token=<your-token>`. This is a fallback, not a replacement -- query tokens can leak into access logs, so prefer the Bearer header. The query-parameter fallback applies only to `/mcp`; the legacy `/sse` and `/messages/` routes require the header.
+
+### Legacy SSE
+
+To run the SSE-only transport (the previous remote default):
+
+```bash
+cerebro-mcp --sse
+# Serves /sse + /messages/ only
+```
+
+Use this only if a client cannot speak Streamable HTTP and you do not want the dual-serving `--http` mode; new deployments should prefer `--http`.
+
+### Server Environment Variables
+
+Both remote transports are configured with:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `FASTMCP_HOST` | `127.0.0.1` | Bind address |
+| `FASTMCP_HOST` | `0.0.0.0` | Bind address |
 | `FASTMCP_PORT` | `8000` | Bind port |
-| `MCP_AUTH_TOKEN` | _(unset)_ | Bearer token for authentication (disabled when unset) |
+| `MCP_AUTH_TOKEN` | _(unset)_ | Bearer token for authentication |
+| `ALLOW_INSECURE_REMOTE_TRANSPORT` | `false` | Allow a remote transport to start without `MCP_AUTH_TOKEN` |
+| `STREAMABLE_HTTP_STATELESS` | `true` | No server-side session between requests -- required for multi-replica deployments behind a load balancer. Set `false` only for a single replica that needs a persistent session |
+| `STREAMABLE_HTTP_JSON_RESPONSE` | `true` | Return plain JSON instead of an SSE-framed stream -- simplest and most proxy-friendly for request/response tool calls |
 
-When `MCP_AUTH_TOKEN` is set, all requests require an `Authorization: Bearer <token>` header. The `/health` endpoint bypasses authentication for Kubernetes liveness/readiness probes.
+`MCP_AUTH_TOKEN` is required for both remote transports: the server refuses to start without it unless `ALLOW_INSECURE_REMOTE_TRANSPORT=true`. When set, all requests require an `Authorization: Bearer <token>` header (or, on `/mcp` only, the `?token=` query parameter). The `/health` and `/metrics` endpoints bypass authentication for Kubernetes liveness/readiness probes and Prometheus scraping.
 
 ## Multi-tenant identity
 
@@ -246,7 +311,7 @@ If multiple humans share one Cerebro deployment, set `CEREBRO_OWNER` to identify
 }
 ```
 
-### SSE
+### Remote (Streamable HTTP or SSE)
 
 Send `X-Cerebro-Owner` per request:
 
@@ -254,7 +319,7 @@ Send `X-Cerebro-Owner` per request:
 {
   "mcpServers": {
     "cerebro": {
-      "url": "https://mcp.analytics.gnosis.io/sse",
+      "url": "https://mcp.analytics.gnosis.io/mcp",
       "headers": {
         "Authorization": "Bearer <your-token>",
         "X-Cerebro-Owner": "alice@gnosis.io"
@@ -362,13 +427,16 @@ Each flag gates the registration of a whole tool family — when off, the tools 
 | `CEREBRO_OWNER` | _(unset)_ | Caller identifier (hashed before persistence) |
 | `CEREBRO_OWNER_HASH_SALT` | _(unset)_ | Salt for SHA-256 owner hash; rotation = tenant reset |
 
-### SSE / auth
+### Remote transports / auth
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MCP_AUTH_TOKEN` | _(unset)_ | Bearer token for SSE authentication |
-| `FASTMCP_HOST` | `127.0.0.1` | SSE server bind address |
-| `FASTMCP_PORT` | `8000` | SSE server port |
+| `MCP_AUTH_TOKEN` | _(unset)_ | Bearer token for remote transport authentication (`--http` and `--sse`) |
+| `ALLOW_INSECURE_REMOTE_TRANSPORT` | `false` | Allow a remote transport to start without `MCP_AUTH_TOKEN` |
+| `STREAMABLE_HTTP_STATELESS` | `true` | Stateless Streamable HTTP sessions -- requests can land on any replica behind a load balancer |
+| `STREAMABLE_HTTP_JSON_RESPONSE` | `true` | Plain JSON responses on `/mcp` instead of an SSE-framed stream |
+| `FASTMCP_HOST` | `0.0.0.0` | Remote server bind address |
+| `FASTMCP_PORT` | `8000` | Remote server port |
 | `MCP_SECURITY_LOG_DIR` | `.cerebro/security_audit` | Audit JSONL directory |
 | `MCP_SECURITY_POLICY_MODE` | `log_only` | Future: `warn` / `enforce` |
 
@@ -391,7 +459,7 @@ GRANT SELECT ON system.columns TO mcp_reader;
 
 ### Token Rotation
 
-When using SSE transport with `MCP_AUTH_TOKEN`, rotate the token periodically:
+When using a remote transport (`--http` or `--sse`) with `MCP_AUTH_TOKEN`, rotate the token periodically:
 
 ```bash
 export MCP_AUTH_TOKEN=$(openssl rand -hex 32)
@@ -413,9 +481,10 @@ If the tools appear and respond, the connection is working correctly.
 |-------|------------|
 | `cerebro-mcp` command not found | Ensure the package is installed (`pip install -e .`) and on your PATH, or use the full path |
 | ClickHouse connection refused | Verify `CLICKHOUSE_HOST`, `CLICKHOUSE_PORT`, and `CLICKHOUSE_PASSWORD` in your `.env` or `env` block |
-| SSE connection timeout | Check `FASTMCP_HOST`/`FASTMCP_PORT` and ensure the server is running (`cerebro-mcp --sse`) |
+| Remote connection timeout | Check `FASTMCP_HOST`/`FASTMCP_PORT` and ensure the server is running (`cerebro-mcp --http`, or `--sse` for legacy SSE-only) |
 | Tools not appearing in Claude Desktop | Restart Claude Desktop after editing `claude_desktop_config.json` |
 | Bearer token rejected | Confirm `MCP_AUTH_TOKEN` matches between server and client `Authorization` header |
+| Client cannot set an `Authorization` header | On `/mcp` only, append `?token=<MCP_AUTH_TOKEN>` to the URL (query-parameter auth fallback) |
 
 ## Testing with MCP Inspector
 

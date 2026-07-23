@@ -1,6 +1,6 @@
 # click-runner
 
-click-runner is a modular Python toolkit for loading data into ClickHouse from various external sources. It supports SQL query execution, CSV ingestion via ClickHouse URL engine, and Parquet ingestion from S3 buckets.
+click-runner is a modular Python toolkit for loading data into ClickHouse from various external sources. It supports SQL query execution, CSV ingestion via ClickHouse URL engine, Parquet ingestion from S3 buckets, Google Drive CSV imports, and dedicated API ingestors for Mixpanel, CoW Protocol, Snapshot, and Discourse.
 
 ## Purpose
 
@@ -8,11 +8,16 @@ Not all data in the Gnosis Analytics pipeline comes from blockchain nodes. click
 
 - **Ember** -- global electricity generation data used for ESG carbon footprint calculations
 - **ProbeLab** -- daily peer-to-peer network metrics (agent versions, peer distributions, crawl statistics)
+- **Governance** -- Snapshot proposals, votes, and followers plus Discourse forum topics, posts, and users (feeds the [Governance Explorer](../../mcp/mini-apps/governance.md) mini-app)
+- **Mixpanel** -- product-analytics events and user profiles for Gnosis App and Gnosis Pay
+- **CoW Protocol** -- open orders and trade fees from the CoW API
+- **Gnosis Pay on Celo** -- card transfers and wallet events (`crawlers_data.celo_gpay_*`)
+- **Google Drive** -- ad-hoc CSV datasets shared via Drive
 - **Administrative queries** -- schema migrations, data maintenance, and custom SQL operations
 
 ## Ingestion Modes
 
-click-runner operates in three modes, selected via the `--ingestor` parameter:
+click-runner selects an ingestor via the `--ingestor` parameter: `query`, `csv`, `parquet`, `gdrive`, `dune-execute-only`, `mixpanel`, `mixpanel-profiles`, `cow`, `snapshot`, or `forum`.
 
 ### Query Mode
 
@@ -58,6 +63,74 @@ python run_queries.py --ingestor=parquet \
   --s3-path=assets/agent_semvers_avg_1d_data/{{DATE}}.parquet \
   --table-name=crawlers_data.probelab_agent_semvers_avg_1d \
   --mode=date --date=2025-04-13
+```
+
+### Google Drive Mode
+
+Imports a CSV file shared on Google Drive by its file ID.
+
+```bash
+python run_queries.py --ingestor=gdrive \
+  --create-table-sql=queries/new_source/create_table.sql \
+  --table-name=crawlers_data.my_table \
+  --file-id=<drive-file-id> --max-rows=1000000
+```
+
+### Mixpanel Modes
+
+Two ingestors cover Mixpanel: `mixpanel` exports raw events and `mixpanel-profiles` exports user profiles. Both write to the database configured via `MIXPANEL_DATABASE` (`mixpanel_raw_events`, `mixpanel_raw_profiles`, plus an ingestion-state watermark table).
+
+```bash
+# Daily incremental event export
+python run_queries.py --ingestor=mixpanel --mixpanel-mode=daily --mixpanel-region=EU
+
+# Historical backfill for a date range
+python run_queries.py --ingestor=mixpanel --mixpanel-mode=backfill \
+  --mixpanel-from-date=2026-01-01 --mixpanel-to-date=2026-06-30
+```
+
+`--mixpanel-region` selects the data-residency region (`US`, `EU`, `IN`); `--mixpanel-event-filter` restricts the export to a JSON array of event names.
+
+### CoW Mode
+
+Fetches open orders and trade fees from the CoW Protocol API for owner addresses read from a source table (`--cow-source-table`, e.g. `dbt.int_execution_cow_trades`). Tables land in the database configured via `COW_DATABASE`.
+
+| Mode | Behavior |
+|------|----------|
+| `daily` | Refresh orders for owners active in the last `--cow-lookback-days` (default 7) |
+| `backfill` | Fetch for all owners, optionally bounded by `--cow-backfill-from` |
+| `repair` | Re-fetch orders whose on-chain fills are missing from the target table |
+
+!!! warning "CoW API access requires TLS impersonation"
+    The CoW API sits behind a CloudFront WAF that blocks plain Python TLS clients by JA3 fingerprint, even with a valid `X-API-Key`. The ingestor uses `curl_cffi` with Chrome browser impersonation to make requests. Keep this dependency in place when extending the ingestor.
+
+### Snapshot Mode (Governance)
+
+Ingests Snapshot Hub GraphQL data — space metadata, proposals, votes, and followers — into the database configured via `GOVERNANCE_DATABASE` (`snapshot_space`, `snapshot_proposals`, `snapshot_votes`, `snapshot_follows`).
+
+```bash
+# Daily: refresh open + recently-closed proposals
+python run_queries.py --ingestor=snapshot --snapshot-mode=daily --snapshot-vote-refresh-days=5
+
+# Full backfill of all proposals and votes
+python run_queries.py --ingestor=snapshot --snapshot-mode=backfill
+```
+
+### Forum Mode (Governance)
+
+Crawls the Discourse forum JSON API into `forum_categories`, `forum_topics`, `forum_posts`, and `forum_users` in the same governance database. Daily mode processes topics bumped since the stored watermark; backfill crawls everything (bounded by `--forum-max-pages`, 30 topics per page).
+
+```bash
+python run_queries.py --ingestor=forum --forum-mode=daily
+```
+
+### Dune Execute-Only Mode
+
+Triggers execution of dedicated Dune queries without ingesting results (used to refresh Dune-side materializations):
+
+```bash
+python run_queries.py --ingestor=dune-execute-only \
+  --dune-execute-only-query-ids=123456,234567
 ```
 
 ## Configuration
@@ -165,21 +238,33 @@ click-runner/
 ├── ingestors/
 │   ├── base.py             # Abstract base ingestor
 │   ├── csv_ingestor.py     # CSV ingestion logic
-│   └── parquet_ingestor.py # Parquet/S3 ingestion logic
+│   ├── parquet_ingestor.py # Parquet/S3 ingestion logic
+│   ├── gdrive_ingestor.py  # Google Drive CSV imports
+│   ├── mixpanel_ingestor.py            # Mixpanel raw events
+│   ├── mixpanel_profiles_ingestor.py   # Mixpanel user profiles
+│   ├── cow_ingestor.py     # CoW API orders + fees
+│   ├── snapshot_ingestor.py# Snapshot governance data
+│   └── forum_ingestor.py   # Discourse forum data
 ├── utils/
 │   ├── s3.py               # S3 file discovery utilities
 │   ├── db.py               # ClickHouse connection helpers
 │   └── date.py             # Date parsing utilities
 ├── queries/
 │   ├── ember/              # Ember electricity data SQL
-│   └── probelab/           # ProbeLab metrics SQL
+│   ├── probelab/           # ProbeLab metrics SQL
+│   ├── governance/         # Snapshot + forum table DDL
+│   ├── celo_gpay/          # Gnosis Pay on Celo tables
+│   ├── mixpanel/           # Mixpanel raw event tables
+│   ├── mixpanel_profiles/  # Mixpanel profile tables
+│   ├── cow/                # CoW API tables
+│   └── dune/               # Dune imports
 ├── Dockerfile
 └── docker-compose.yml
 ```
 
 ## ClickHouse Table Schemas
 
-All tables are stored in the `crawlers_data` database.
+The legacy CSV/Parquet sources below land in the `crawlers_data` database. The newer API ingestors write to env-configured databases instead: governance tables via `GOVERNANCE_DATABASE`, Mixpanel tables via `MIXPANEL_DATABASE`, and CoW tables via `COW_DATABASE`; Celo Gnosis Pay tables land in `crawlers_data.celo_gpay_*`.
 
 ??? note "Table: `crawlers_data.dune_labels`"
     **Engine:** MergeTree

@@ -12,8 +12,11 @@ Interactive React + ECharts mini-apps that render inline in any MCP-aware host (
 | [Contract Explorer](contract-explorer.md) | `ui://cerebro/contract_explorer` | `open_contract_explorer` | Inspect any EVM contract via RPC: ABI, read calls, decoded txs |
 | [Model Lineage](model-lineage.md) | `ui://cerebro/model_lineage` | `open_model_lineage` | dbt-Explorer-style DAG view with layer toggle + column-level lineage |
 | [Data Catalog](data-catalog.md) | `ui://cerebro/data_catalog` | `open_data_catalog` | OpenMetadata-style search-first catalog over models / metrics / glossary |
+| [CoW Explorer](cow-explorer.md) | `ui://cerebro/cow_explorer` | `open_cow_explorer` | CoW Protocol trades, settlements, and order-book data from `cow_db` |
+| [Governance Explorer](governance.md) | `ui://cerebro/governance` | `open_governance` | Snapshot proposals/votes + Discourse forum activity (off-chain signaling) |
+| [Report Studio](report-studio.md) | `ui://cerebro/report_studio` | `open_report_studio` | Browse the report archive and compose reports from session charts |
 
-The Report Renderer (`ui://cerebro/report`, entry `generate_report`) shares the same plumbing — covered on the [Reports](../reports.md) page.
+The Report Renderer (`ui://cerebro/report`, entry `generate_report`) shares the same plumbing — report generation is covered on the [Reports](../reports.md) page, and archive management/composition on the [Report Studio](report-studio.md) page.
 
 ## Shared plumbing
 
@@ -65,6 +68,9 @@ Then open any of:
 - `http://localhost:5173/contract-explorer.html`    — Contract Explorer
 - `http://localhost:5173/model-lineage.html`        — Model Lineage
 - `http://localhost:5173/data-catalog.html`         — Data Catalog
+- `http://localhost:5173/cow-explorer.html`         — CoW Explorer
+- `http://localhost:5173/governance.html`           — Governance Explorer
+- `http://localhost:5173/report-studio.html`        — Report Studio
 
 (Or `make dev` from the repo root.)
 
@@ -78,10 +84,10 @@ Every mini-app is also served as a plain browser URL by the SSE server — no MC
 - `POST /app/{app_id}/api/tool/{tool_name}` — the HTTP fallback the frontend uses for follow-up tool calls (`expand_*`, `load_*`, …). Returns the same `{structuredContent, isError, content}` shape as the ext-apps bridge.
 - `GET /app/{app_id}/assets/{path}` — hashed, immutable build assets for split-bundle apps.
 
-Valid `app_id` values: `portfolio`, `graph_explorer`, `metric_lab`, `contract_explorer`, `model_lineage`, `data_catalog`. When `MCP_AUTH_TOKEN` is set, both routes accept it as an `Authorization: Bearer` header or a `?token=` query param (mirroring the `/reports/{id}` auth); the served page embeds the presented token so in-app tool calls and cross-app links stay authenticated. See `src/cerebro_mcp/tools/visualization/web_apps.py`.
+Valid `app_id` values: `portfolio`, `graph_explorer`, `metric_lab`, `contract_explorer`, `model_lineage`, `data_catalog`, `cow_explorer`, `governance`, `report_studio`. When `MCP_AUTH_TOKEN` is set, both routes accept it as an `Authorization: Bearer` header or a `?token=` query param (mirroring the `/reports/{id}` auth); the served page embeds the presented token so in-app tool calls and cross-app links stay authenticated. See `src/cerebro_mcp/tools/visualization/web_apps.py`.
 
 ## See also
 
 - [Tools](../tools.md) — full tool reference
-- [Portfolio](portfolio.md), [Graph Explorer](graph-explorer.md), [Metric Lab](metric-lab.md), [Contract Explorer](contract-explorer.md), [Model Lineage](model-lineage.md), [Data Catalog](data-catalog.md)
+- [Portfolio](portfolio.md), [Graph Explorer](graph-explorer.md), [Metric Lab](metric-lab.md), [Contract Explorer](contract-explorer.md), [Model Lineage](model-lineage.md), [Data Catalog](data-catalog.md), [CoW Explorer](cow-explorer.md), [Governance Explorer](governance.md), [Report Studio](report-studio.md)
 - [Reports](../reports.md) — the Report Renderer mini-app

@@ -2,7 +2,7 @@
 
 The data ingestion layer is responsible for extracting raw blockchain data from various sources and loading it into ClickHouse. Each indexer is purpose-built for a specific data source and runs as an independent containerized service.
 
-This section covers all ingestion components: the execution-layer and consensus-layer indexers, the era file parser for historical backfills, the click-runner for external data sources, and the network crawlers that capture P2P topology.
+This section covers all ingestion components: the execution-layer and consensus-layer indexers, the era file parser for historical backfills, the click-runner for external data sources, the CoW Protocol indexer, the RPC state indexer for verified historical contract state, and the network crawlers that capture P2P topology.
 
 ## Pipeline Architecture
 
@@ -12,7 +12,9 @@ graph LR
         EL[Execution Layer<br/>RPC Node]
         CL[Consensus Layer<br/>Beacon Node]
         P2P[P2P Network<br/>DHT Peers]
-        EXT[External<br/>Ember, ProbeLab]
+        EXT[External<br/>Ember, ProbeLab, Snapshot]
+        COWAPI[CoW Protocol API]
+        ARC[Archive RPC Node]
     end
 
     subgraph Indexers
@@ -20,6 +22,8 @@ graph LR
         BEACON[beacon-indexer]
         ERA[era-parser]
         CR[click-runner]
+        COWIDX[cow-indexer]
+        RPCSI[rpc-state-indexer]
         NEB[nebula]
         IPC[ip-crawler]
     end
@@ -42,6 +46,9 @@ graph LR
     CL --> BEACON
     CL --> ERA
     EXT --> CR
+    EL --> COWIDX
+    COWAPI --> COWIDX
+    ARC --> RPCSI
     P2P --> NEB
     NEB --> IPC
 
@@ -49,6 +56,8 @@ graph LR
     BEACON --> CH
     ERA --> CH
     CR --> CH
+    COWIDX --> CH
+    RPCSI --> CH
     NEB --> CH
     IPC --> CH
 
@@ -67,7 +76,9 @@ graph LR
 | [cryo-indexer](cryo-indexer.md) | Execution layer RPC | `execution` | Python + Cryo (Rust) | Blocks, transactions, logs, traces, state diffs |
 | [beacon-indexer](beacon-indexer.md) | Beacon node REST API | `consensus` | Python | Validators, attestations, sync committees |
 | [era-parser](era-parser.md) | Era archive files | `consensus` | Python | Historical beacon chain bulk loading |
-| [click-runner](click-runner.md) | CSV/Parquet/SQL | Various | Python | External data ingestion (Ember, ProbeLab) |
+| [click-runner](click-runner.md) | CSV/Parquet/SQL/APIs | Various | Python | External data ingestion (Ember, ProbeLab, Snapshot, Discourse, Mixpanel, Celo GPay) |
+| [cow-indexer](cow-indexer.md) | EVM RPC + CoW API | `cow_db` | Python | Multi-chain CoW Protocol events, settlements, order-book history |
+| [rpc-state-indexer](rpc-state-indexer.md) | Archive EVM RPC | `rpc_indexer` | Python | Verified day-end contract state as an independent cross-check |
 
 ## Supporting Components
 

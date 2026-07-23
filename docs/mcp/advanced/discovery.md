@@ -1,6 +1,6 @@
 # Finding Tools: find, list, and Lean Core
 
-With 160+ tools registered, "which tool do I use?" is itself a routing problem. Cerebro solves it with three mechanisms: a single semantic front door (`find`), a unified listing tool (`list`), and an opt-in lean-core surface that trims what is *advertised* without changing what is *callable*.
+With 190+ tools registered, "which tool do I use?" is itself a routing problem. Cerebro solves it with three mechanisms: a single semantic front door (`find`), a unified listing tool (`list`), and an opt-in lean-core surface that trims what is *advertised* without changing what is *callable*.
 
 ## `find` — the single front door
 

@@ -40,7 +40,7 @@ Model catalogs, API endpoints, and dashboard metrics are auto-generated from liv
 python scripts/update_docs.py                  # regenerate from dbt manifest
 python scripts/update_docs.py --dry-run        # preview changes
 
-DUNE_API_KEY=xxx python scripts/sync_dune_queries.py   # sync 1,288 Dune queries
+DUNE_API_KEY=xxx python scripts/sync_dune_queries.py   # sync the Dune query archive
 python scripts/sync_dune_queries.py --cache dune_cache.json  # use cached data
 ```
 

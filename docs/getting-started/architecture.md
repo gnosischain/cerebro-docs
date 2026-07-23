@@ -16,8 +16,11 @@ flowchart TD
         CL[Gnosis Chain CL Nodes] --> BI[beacon-indexer]
         ERA_SRC[Era File Archives] --> ERA[era-parser]
         P2P_NET[P2P Network] --> NEB[nebula]
-        EXT["External Sources\nEmber · ProbeLab · Dune"] --> CR[click-runner]
+        EXT["External Sources\nEmber · ProbeLab · Dune\nSnapshot · Discourse · Mixpanel"] --> CR[click-runner]
         NEB --> IPC[ip-crawler]
+        COW_API[CoW Protocol API] --> COWIDX[cow-indexer]
+        EL --> COWIDX
+        ARC[Archive EL Nodes] --> RPCSI[rpc-state-indexer]
     end
     subgraph L2["Data Storage Layer"]
         CH[(ClickHouse Cloud)]
@@ -36,6 +39,8 @@ flowchart TD
     ERA --> CH
     IPC --> CH
     CR --> CH
+    COWIDX --> CH
+    RPCSI --> CH
     CH <--> DBT
     DSG -.-> DBT
     DBT --> API
@@ -53,23 +58,30 @@ The data acquisition layer is responsible for extracting raw blockchain data fro
 
 **P2P network data** is gathered by `nebula`, a DHT crawler that discovers and monitors peers on the Gnosis Chain network. It records peer sessions, agent strings, supported protocols, and connection metadata. The `ip-crawler` service then enriches this peer data with geolocation information, mapping IP addresses to geographic coordinates, ISP names, and autonomous system numbers.
 
-**External data** is ingested by `click-runner`, which runs scheduled import jobs pulling data from third-party providers such as Ember (energy and carbon data), ProbeLab (network performance metrics), and Dune Analytics (cross-chain metrics).
+**External data** is ingested by `click-runner`, which runs scheduled import jobs pulling data from third-party providers such as Ember (energy and carbon data), ProbeLab (network performance metrics), and Dune Analytics (cross-chain metrics). Recent additions cover governance data (Snapshot proposals and votes, Discourse forum activity), Mixpanel product-analytics events and profiles, Google Drive CSV imports, CoW Protocol open orders, and Gnosis Pay activity on Celo.
+
+**CoW Protocol data** is indexed by `cow-indexer`, a standalone multi-chain indexer that reads canonical CoW contract events directly from execution-layer JSON-RPC, enriches discovered orders and settlements through the public CoW API, and can import authoritative off-chain order-book history from export bundles. It writes canonical tables to the `cow_db` database with reorg reconciliation, independent of the dbt pipeline. See [CoW Protocol Indexer](../data-pipeline/ingestion/cow-indexer.md).
+
+**Verified historical state** is captured by `rpc-state-indexer`, which reads contract state (ERC-20 balances and supply, Aave/Spark aToken scaled balances, pool reserves) at exact UTC day-end anchor blocks via archive JSON-RPC and publishes only verified, complete snapshots through views in the `rpc_indexer` database. It deliberately takes no input from dbt so it can serve as an independent cross-check of warehouse balances. See [RPC State Indexer](../data-pipeline/ingestion/rpc-state-indexer.md).
 
 ## Layer 2: Data Storage
 
 All data converges into a centralized **ClickHouse Cloud** cluster. ClickHouse is a column-oriented database optimized for online analytical processing (OLAP) workloads, capable of scanning billions of rows per second for aggregation queries.
 
-The cluster is organized into five databases, each corresponding to a data domain:
+The cluster is organized into databases, each corresponding to a data domain:
 
 | Database | Contents | Primary Sources |
 |----------|----------|-----------------|
 | `execution` | Blocks, transactions, logs, traces, contracts | cryo-indexer |
 | `consensus` | Validators, attestations, proposals, slots, epochs, blobs | beacon-indexer, era-parser |
 | `crawlers_data` | Energy data, network metrics, cross-chain analytics | click-runner |
+| `governance_db` | Snapshot proposals/votes, Discourse forum topics/posts | click-runner |
 | `nebula` | Peer sessions, DHT crawl results, agent strings | nebula, ip-crawler |
+| `cow_db` | CoW Protocol trades, settlements, order-book history | cow-indexer |
+| `rpc_indexer` | Verified day-end contract state (published views only) | rpc-state-indexer |
 | `dbt` | Transformed models, materialized views, API-facing tables | dbt-cerebro |
 
-Raw data lands in the source databases (`execution`, `consensus`, `crawlers_data`, `nebula`) and is transformed by dbt into the `dbt` database where it becomes available for serving.
+Raw data lands in the source databases (`execution`, `consensus`, `crawlers_data`, `governance_db`, `nebula`, `cow_db`) and is transformed by dbt into the `dbt` database where it becomes available for serving. The `rpc_indexer` database is the exception: it is written only by rpc-state-indexer and consumed read-only as an independent cross-check.
 
 ## Layer 3: Data Analysis & Modeling
 

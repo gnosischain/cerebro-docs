@@ -8,7 +8,7 @@ description: Extend the Gnosis Analytics platform with new endpoints, models, an
 This guide is for developers who want to extend the Gnosis Analytics platform. The platform is designed to be metadata-driven, meaning most extensions require only SQL and configuration changes -- no application code modifications.
 
 !!! tip "New here?"
-    If you're just getting started with the platform, begin with the [Getting Started](../getting-started/index.md) section for a quick overview, your first API call, and an architecture walkthrough.
+    If you're just getting started with the platform, begin with the [Quick Start](../getting-started/quickstart.md) for your first API call, then the [Architecture](../getting-started/architecture.md) walkthrough.
 
 ## What You Can Do
 

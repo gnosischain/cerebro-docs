@@ -1,6 +1,6 @@
 # dbt Model Catalog
 
-The Gnosis Analytics data platform is powered by **dbt-cerebro**, a dbt project that transforms raw Gnosis Chain data into approximately **1,200 curated models** organized across 14 thematic modules. These models are materialized in a ClickHouse Cloud warehouse and serve as the backbone for both the Cerebro MCP server and the metrics dashboard.
+The Gnosis Analytics data platform is powered by **dbt-cerebro**, a dbt project that transforms raw Gnosis Chain data into approximately **1,200 curated models** organized across 14 thematic modules. These models are materialized in a ClickHouse Cloud warehouse and serve as the backbone for both the Cerebro MCP server and the metrics dashboard. Models tagged for API exposure become REST endpoints automatically — see the [Endpoint Catalog](../api/catalog/index.md) for the endpoint-side view of the same data.
 
 ## Naming Convention
 
@@ -33,18 +33,19 @@ Models are organized into four layers, each building on the previous one. Always
 ## Module Overview
 
 <!-- BEGIN AUTO-GENERATED: models-summary -->
+<!-- generated: 2026-07-23 -->
 | Module | Models | Description |
 |--------|:------:|-------------|
 | [Bridges](bridges.md) | ~17 | -- |
 | [Celo (Gnosis Pay)](celo.md) | ~48 | -- |
 | [Consensus](consensus.md) | ~88 | -- |
-| [Contracts](contracts.md) | ~101 | -- |
+| [Contracts](contracts.md) | ~102 | -- |
 | [Crawlers](crawlers.md) | ~16 | -- |
 | [ESG](esg.md) | ~16 | -- |
-| [Execution](execution.md) | ~676 | -- |
+| [Execution](execution.md) | ~722 | -- |
 | [Web Analytics (Mixpanel/GA)](mixpanel_ga.md) | ~59 | -- |
 | [MMM (Marketing Mix)](mmm.md) | ~7 | -- |
-| [MTA (Attribution)](mta.md) | ~26 | -- |
+| [MTA (Attribution)](mta.md) | ~27 | -- |
 | [P2P Network](p2p.md) | ~25 | -- |
 | [ProbeLab](probelab.md) | ~5 | -- |
 | [Quarterly Data](quarterly_data.md) | ~27 | -- |

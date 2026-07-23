@@ -1,6 +1,6 @@
 # Cerebro MCP Server
 
-Cerebro MCP is a [Model Context Protocol](https://modelcontextprotocol.io/) server that connects AI assistants to Gnosis Chain's on-chain analytics infrastructure. It exposes 160+ tools that query a ClickHouse data warehouse, traverse ~1,200 dbt models, drive seven interactive surfaces, and orchestrate multi-phase analytical workflows — all over a single MCP connection.
+Cerebro MCP is a [Model Context Protocol](https://modelcontextprotocol.io/) server that connects AI assistants to Gnosis Chain's on-chain analytics infrastructure. It exposes 190+ tools that query a ClickHouse data warehouse, traverse ~1,200 dbt models, drive ten interactive surfaces, and orchestrate multi-phase analytical workflows — all over a single MCP connection.
 
 !!! tip "New to Cerebro?"
     Start with the [Setup Guide](setup.md), then the [Usage Guide](advanced/usage-guide.md) for an end-to-end tour. For the dispatcher pattern (the front door for non-trivial requests) see [Cerebro Dispatcher](dispatcher.md).
@@ -15,13 +15,13 @@ The Model Context Protocol (MCP) is an open standard that lets AI hosts (Claude 
 |---|---|
 | [Setup](setup.md) | Install, configure, connect Claude Desktop / VS Code / Claude Code. Multi-tenant `CEREBRO_OWNER` env. |
 | [Available Tools](tools.md) | Categorised reference of every MCP tool. |
-| [Agent Fleet](agents.md) | The 29-persona library loadable via `get_agent_persona`. |
+| [Agent Fleet](agents.md) | The 35-persona library loadable via `get_agent_persona`. |
 | [Cerebro Dispatcher](dispatcher.md) | Top-level intent triage + binding dispatch manifest. |
 | [Report Generation](reports.md) | `generate_report`, `generate_research_report`, `generate_case_study_report`, gates. |
 | [Security & Audit](security.md) | Tool risk classes, JSONL audit log, multi-tenant identity. |
 | [Observability](observability.md) | Prometheus metrics, structured logs, Grafana dashboard. |
 | **[Workflows](workflows/index.md)** | Research projects, storyteller, sandboxes, resumable workflows. |
-| **[Mini-Apps](mini-apps/index.md)** | Seven interactive surfaces (Report Renderer, Portfolio, Graph Explorer, Metric Lab, Contract Explorer, Model Lineage, Data Catalog). |
+| **[Mini-Apps](mini-apps/index.md)** | Ten interactive surfaces (Report Renderer, Portfolio, Graph Explorer, Metric Lab, Contract Explorer, Model Lineage, Data Catalog, CoW Explorer, Governance Explorer, Report Studio). |
 | **[Advanced](advanced/index.md)** | Hybrid search internals, event log, quality gates, multi-tenant, semantic metrics, full usage guide. |
 | [MMM](mmm.md) / [MMM User Guide](mmm-user-guide.md) | Marketing-mix modeling SOP and prompt recipes. |
 
@@ -29,10 +29,10 @@ The Model Context Protocol (MCP) is an open standard that lets AI hosts (Claude 
 
 ```mermaid
 flowchart TB
-    H[MCP Host<br/>Claude Desktop / VS Code / Claude Code] -- stdio / SSE --> S
+    H[MCP Host<br/>Claude Desktop / VS Code / Claude Code] -- stdio / HTTP / SSE --> S
     subgraph S[cerebro-mcp - FastMCP]
       direction TB
-      T[Tool Registry<br/>160+ tools] --> CH[ClickHouse Client]
+      T[Tool Registry<br/>190+ tools] --> CH[ClickHouse Client]
       T --> D[dbt Manifest<br/>BM25 + networkx]
       T --> ES[(Event Log<br/>SQLite WAL)]
       T --> RS[(Research Store<br/>JSON)]
@@ -52,13 +52,14 @@ The server multiplexes four persistence layers:
 ## At a glance
 
 <!-- BEGIN AUTO-GENERATED: mcp-at-a-glance -->
+<!-- generated: 2026-07-23 -->
 | Surface | Count |
 |---------|:-----:|
-| Static MCP tools | 159 |
+| Static MCP tools | 192 |
 | Dynamic YAML tools | 7 |
 | Core (lean) tool surface | 18 |
-| Agent personas | 29 |
-| Interactive mini-app surfaces | 7 |
+| Agent personas | 35 |
+| Interactive mini-app surfaces | 10 |
 | Feature-gated families | `CUSTOM_TOOLS_ENABLED`, `DASHBOARD_BUILDER_ENABLED`, `GRAFANA_TOOLS_ENABLED`, `LEAN_CORE_ENABLED`, `RPC_SCAN_ENABLED`, `SANDBOX_ENABLED`, `SEMANTIC_ENABLED`, `WORKFLOW_RESUME_TOOLS_ENABLED` |
 <!-- END AUTO-GENERATED: mcp-at-a-glance -->
 
@@ -72,22 +73,28 @@ Local-only. Claude Desktop / Claude Code spawn `cerebro-mcp` as a subprocess and
 cerebro-mcp
 ```
 
-### SSE / HTTP (remote)
+### Streamable HTTP (remote, recommended)
 
-For team deployments. Starts a uvicorn server.
+For team deployments. Serves the MCP Streamable HTTP endpoint at `/mcp` and dual-serves the legacy `/sse` endpoint from the same server.
 
 ```bash
-cerebro-mcp --sse
+cerebro-mcp --http
 # Defaults to 0.0.0.0:8000 — bind via FASTMCP_HOST / FASTMCP_PORT
 ```
 
-The hosted team instance is at `mcp.analytics.gnosis.io` with bearer-token auth.
+### SSE (remote, legacy)
+
+```bash
+cerebro-mcp --sse
+```
+
+The hosted team instance is at `mcp.analytics.gnosis.io` with bearer-token auth. See [Setup](setup.md) for client configuration and the transport environment variables.
 
 ## Capability summary
 
 ### Discovery & query
 
-- 6 ClickHouse databases, ~1,200 dbt models across 8 modules (execution, consensus, bridges, p2p, contracts, ESG, probelab, crawlers).
+- ~1,200 dbt models across 14 modules (execution, consensus, bridges, p2p, contracts, ESG, probelab, crawlers, celo, mixpanel_ga, mta, mmm, quarterly_data, revenue).
 - Unified discovery: the `find(query, mode)` router answers "what do I use for X?" in one call with a pre-filled `recommended_action`; `list(kind=...)` unifies the listing family; the opt-in lean core (`LEAN_CORE_ENABLED` + `load_tools`) trims the advertised surface to ~18 everyday tools. See [Finding Tools](advanced/discovery.md).
 - Hybrid BM25 + RRF search (`search_models`, `discover_models`) — `hit@1` improved 4× over the legacy ranker (see [Hybrid Search](advanced/hybrid-search.md)).
 - Data Catalog: OpenMetadata-style search + entity profiles over models, metrics, and glossary terms, with Elementary-backed run/test health. See [Data Catalog](mini-apps/data-catalog.md).
@@ -113,7 +120,7 @@ The hosted team instance is at `mcp.analytics.gnosis.io` with bearer-token auth.
 
 ### Mini-apps
 
-Seven React + ECharts interactive surfaces that render inline in MCP-aware hosts: Report Renderer, Portfolio, Graph Explorer, Metric Lab, Contract Explorer, Model Lineage, Data Catalog. Each is also delivered as a standalone web app at `GET /app/{app_id}` on the SSE server. See [Mini-Apps](mini-apps/index.md).
+Ten React + ECharts interactive surfaces that render inline in MCP-aware hosts: Report Renderer, Portfolio, Graph Explorer, Metric Lab, Contract Explorer, Model Lineage, Data Catalog, CoW Explorer, Governance Explorer, Report Studio. Each is also delivered as a standalone web app at `GET /app/{app_id}` on the HTTP/SSE server. See [Mini-Apps](mini-apps/index.md).
 
 ### Safety
 
