@@ -24,6 +24,7 @@ import os
 import re
 import sys
 from collections import defaultdict
+from datetime import date
 from pathlib import Path
 
 try:
@@ -262,6 +263,12 @@ def get_granularity_from_name(name: str) -> str:
 # Marker-based file editing
 # ---------------------------------------------------------------------------
 
+# Freshness stamp emitted as the first line inside every marker block.
+# update_file compares stamp-stripped text so a date-only difference never
+# dirties a file (keeps repeated runs idempotent).
+STAMP_RE = re.compile(r"<!-- generated: \d{4}-\d{2}-\d{2} -->\n")
+
+
 def replace_marker_content(text: str, marker_id: str, new_content: str) -> str:
     """Replace content between BEGIN/END markers. Return updated text."""
     begin = MARKER_BEGIN.format(marker_id)
@@ -270,9 +277,10 @@ def replace_marker_content(text: str, marker_id: str, new_content: str) -> str:
         re.escape(begin) + r"\n.*?" + re.escape(end),
         re.DOTALL,
     )
-    replacement = f"{begin}\n{new_content}\n{end}"
+    stamp = f"<!-- generated: {date.today().isoformat()} -->\n"
+    replacement = f"{begin}\n{stamp}{new_content}\n{end}"
     if pattern.search(text):
-        return pattern.sub(replacement, text)
+        return pattern.sub(replacement.replace("\\", "\\\\"), text)
     # Markers not found -- do nothing
     return text
 
@@ -287,6 +295,13 @@ def update_file(filepath: Path, marker_id: str, new_content: str,
     updated = replace_marker_content(original, marker_id, new_content)
 
     if updated == original:
+        return False
+    # Ignore date-only differences (stamp refresh without content change),
+    # but still write when THIS marker's block has no stamp yet (initial
+    # adoption). Files may hold several marker blocks, so scope the check.
+    block_stamped = f"{MARKER_BEGIN.format(marker_id)}\n<!-- generated: " in original
+    if (block_stamped
+            and STAMP_RE.sub("", updated) == STAMP_RE.sub("", original)):
         return False
 
     if dry_run:
@@ -964,9 +979,12 @@ def generate_catalog_pages(catalog: dict, dry_run: bool = False) -> int:
             else:
                 filepath.write_text(template, encoding="utf-8")
                 print(f"  Created catalog page: {filepath.name}")
+            # Indent is coupled to the nesting depth of "Endpoint Catalog" in
+            # mkdocs.yml (tab > section > entry = 6 spaces). Keep in lockstep
+            # with the nav layout; the section title must stay unique in the file.
             _add_nav_entry(
                 "Endpoint Catalog",
-                f"        - {display}: api/catalog/{cat}.md",
+                f"      - {display}: api/catalog/{cat}.md",
                 "api/catalog/",
                 dry_run,
             )
@@ -1247,6 +1265,9 @@ def _add_nav_entry(section_match: str, entry_line: str, path_fragment: str,
 
 def _add_to_nav(slug: str, display_name: str, dry_run: bool = False) -> None:
     """Add a new module page to mkdocs.yml nav under 'dbt Model Catalog'."""
+    # Indent is coupled to the nesting depth of "dbt Model Catalog" in
+    # mkdocs.yml (tab > section > entry = 6 spaces). Keep in lockstep with
+    # the nav layout; the section title must stay unique in the file.
     _add_nav_entry(
         "dbt Model Catalog",
         f"      - {display_name}: models/{slug}.md",
@@ -1493,7 +1514,7 @@ def generate_mcp_at_a_glance(info: dict) -> str:
         f"| Dynamic YAML tools | {len(info['custom_tools'])} |",
         f"| Core (lean) tool surface | {len(info['core_tool_names'])} |",
         f"| Agent personas | {len(info['personas'])} |",
-        "| Interactive mini-app surfaces | 7 |",
+        f"| Interactive mini-app surfaces | {len(info.get('ui_surfaces', [])) or '--'} |",
         f"| Feature-gated families | {', '.join(f'`{g}`' for g in gates)} |",
     ])
 

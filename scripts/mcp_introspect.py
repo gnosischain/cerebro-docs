@@ -415,13 +415,24 @@ def extract_custom_tools(mcp_repo: Path) -> list[dict]:
 # Agent personas — _VALID_ROLES + prompts/agents/<role>.md one-liners
 # ---------------------------------------------------------------------------
 
+_MD_LINK_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+
+# Shared-include preamble lines (e.g. "apply every rule in
+# _shared_quality_rules.md") are boilerplate, not persona summaries, and
+# their targets are agent-internal files that don't exist in the docs.
+_PERSONA_BOILERPLATE_MARKERS = ("_shared_quality_rules", "_forensic_standards")
+
+
 def _persona_one_liner(prompt_file: Path) -> str:
-    """First non-empty, non-heading line of a persona prompt, truncated to 140 chars."""
+    """First substantive line of a persona prompt (headings and shared-include
+    boilerplate skipped, markdown links flattened), truncated to 140 chars."""
     for line in prompt_file.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue
-        return stripped[:140]
+        if any(marker in stripped for marker in _PERSONA_BOILERPLATE_MARKERS):
+            continue
+        return _MD_LINK_RE.sub(r"\1", stripped)[:140]
     return ""
 
 
@@ -461,6 +472,26 @@ def extract_personas(mcp_repo: Path) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Mini-app surfaces — distinct ui://cerebro/<slug> resource URIs
+# ---------------------------------------------------------------------------
+
+_UI_URI_RE = re.compile(r"ui://cerebro/([a-z_]+)")
+
+# The bare chart canvas is an inline rendering surface, not a mini-app;
+# the docs count mini-apps + the Report Renderer.
+_NON_APP_SURFACES = {"visualization"}
+
+
+def extract_ui_surfaces(mcp_repo: Path) -> list[str]:
+    """Distinct mini-app resource slugs found under tools/ (sorted)."""
+    slugs: set[str] = set()
+    tools_dir = mcp_repo / "src" / "cerebro_mcp" / "tools"
+    for py in tools_dir.rglob("*.py"):
+        slugs.update(_UI_URI_RE.findall(py.read_text(encoding="utf-8")))
+    return sorted(slugs - _NON_APP_SURFACES)
+
+
+# ---------------------------------------------------------------------------
 # Top-level convenience
 # ---------------------------------------------------------------------------
 
@@ -474,6 +505,7 @@ def introspect(mcp_repo: Path) -> dict:
     gates = extract_feature_gates(mcp_repo)
     custom_tools = extract_custom_tools(mcp_repo)
     personas = extract_personas(mcp_repo)
+    ui_surfaces = extract_ui_surfaces(mcp_repo)
 
     for tool in tools:
         meta = tool_meta.get(tool["name"], {})
@@ -488,6 +520,7 @@ def introspect(mcp_repo: Path) -> dict:
         "tools": tools,
         "custom_tools": custom_tools,
         "personas": personas,
+        "ui_surfaces": ui_surfaces,
         "core_tool_names": sorted(core_names),
         "warnings": list(WARNINGS),
     }
