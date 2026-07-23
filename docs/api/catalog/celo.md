@@ -1,6 +1,7 @@
 # Celo API Endpoints
 
 <!-- BEGIN AUTO-GENERATED: api-catalog-celo -->
+<!-- generated: 2026-07-23 -->
 _33 endpoints across 24 resources. Generated from the dbt manifest — edits inside this block will be overwritten. Regenerate with `python scripts/update_docs.py --only api`._
 
 ## celo_gpay_active_users

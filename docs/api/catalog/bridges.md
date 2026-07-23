@@ -1,6 +1,7 @@
 # Bridges API Endpoints
 
 <!-- BEGIN AUTO-GENERATED: api-catalog-bridges -->
+<!-- generated: 2026-07-23 -->
 _12 endpoints across 10 resources. Generated from the dbt manifest — edits inside this block will be overwritten. Regenerate with `python scripts/update_docs.py --only api`._
 
 ## bridges_count

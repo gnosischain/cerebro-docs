@@ -1,7 +1,8 @@
 # MTA API Endpoints
 
 <!-- BEGIN AUTO-GENERATED: api-catalog-mta -->
-_6 endpoints across 2 resources. Generated from the dbt manifest — edits inside this block will be overwritten. Regenerate with `python scripts/update_docs.py --only api`._
+<!-- generated: 2026-07-23 -->
+_7 endpoints across 3 resources. Generated from the dbt manifest — edits inside this block will be overwritten. Regenerate with `python scripts/update_docs.py --only api`._
 
 ## gnosis_app_attribution
 
@@ -97,6 +98,38 @@ API view passthrough over `fct_execution_gnosis_app_attribution_30d`. Tier1 endp
 
     ```bash
     curl "https://api.analytics.gnosis.io/v1/mta/gnosis_app_attribution/rolling_180d/7d" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## gnosis_app_funnel_summary
+
+Cumulative conversion funnel per funnel/step: the number of distinct users who reached at least each step. Point-in-time snapshot backing the "Conversion Funnel" chart.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/mta/gnosis_app_funnel_summary/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/mta/gnosis_app_funnel_summary/latest`"
+    Cumulative conversion funnel per funnel/step: the number of distinct users who reached at least each step. Point-in-time snapshot backing the "Conversion Funnel" chart.
+
+    Model: `api_execution_gnosis_app_funnel_summary` — table `dbt.api_execution_gnosis_app_funnel_summary`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Snapshot date the funnel counts were computed (today, UTC). |
+    | `funnel_name` | `String` | Name of the conversion funnel. |
+    | `level` | `UInt8` | Funnel step index (0-based windowFunnel level). |
+    | `step_label` | `String` | Human-readable step label (e.g. 'Step 1'). |
+    | `n_users` | `UInt64` | Distinct users who reached at least this step. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/mta/gnosis_app_funnel_summary/latest" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 

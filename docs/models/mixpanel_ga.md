@@ -1,6 +1,7 @@
 # Web Analytics (Mixpanel/GA) Module
 
 <!-- BEGIN AUTO-GENERATED: models-mixpanel_ga -->
+<!-- generated: 2026-07-23 -->
 **Events**
 
 | Model | Layer | Description |

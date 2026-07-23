@@ -27,6 +27,7 @@ The crawler pipeline fetches Ember data periodically and loads it into the `craw
 ## Model Categories
 
 <!-- BEGIN AUTO-GENERATED: models-esg -->
+<!-- generated: 2026-07-23 -->
 **Carbon**
 
 | Model | Layer | Description |

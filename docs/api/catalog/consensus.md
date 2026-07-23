@@ -1,10 +1,8 @@
 # Consensus API Endpoints
 
 <!-- BEGIN AUTO-GENERATED: api-catalog-consensus -->
-_35 endpoints across 27 resources. Generated from the dbt manifest — edits inside this block will be overwritten. Regenerate with `python scripts/update_docs.py --only api`._
-
-!!! warning "5 additional model(s) not live"
-    5 more model(s) in this category declare `api:` tags but their `meta.api` metadata fails validation, so the live API skips them. See the generator log for the model names; the fix belongs in the dbt model.
+<!-- generated: 2026-07-23 -->
+_40 endpoints across 31 resources. Generated from the dbt manifest — edits inside this block will be overwritten. Regenerate with `python scripts/update_docs.py --only api`._
 
 ## attestations
 
@@ -584,7 +582,6 @@ The api_consensus_info_apy_latest model provides the most recent annual percenta
 |------|---------|------|---------|------------|------|
 | `/v1/consensus/validators_apy/latest` | GET | tier0 | -- | -- | -- |
 | `/v1/consensus/validators_apy/daily` | GET, POST | tier1 | `date_from`, `date_to` | limit/offset (envelope) | date DESC |
-| `/v1/consensus/validators_apy/daily` | GET, POST | tier1 | `date_from`, `date_to` | limit/offset (envelope) | date DESC |
 
 ??? info "`GET /v1/consensus/validators_apy/latest`"
     The api_consensus_info_apy_latest model provides the most recent annual percentage yield (APY) data from consensus sources, enabling analysis of current yield trends.
@@ -641,7 +638,78 @@ The api_consensus_info_apy_latest model provides the most recent annual percenta
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
-??? info "`GET/POST /v1/consensus/validators_apy/daily`"
+## validators_apy_distribution
+
+This view provides daily distribution metrics of validator APYs, enabling analysis of validator performance variability over time.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/consensus/validators_apy_distribution/daily` | GET | tier1 | -- | -- | -- |
+| `/v1/consensus/validators_apy_distribution/last_30d` | GET | tier0 | -- | -- | -- |
+
+??? info "`GET /v1/consensus/validators_apy_distribution/daily`"
+    This view provides daily distribution metrics of validator APYs, enabling analysis of validator performance variability over time.
+
+    Model: `api_consensus_validators_apy_dist_daily` — table `dbt.api_consensus_validators_apy_dist_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | The specific day for which the APY distribution data is recorded. |
+    | `q05` | `Float64` | The 5th percentile of validator APYs on the given date, indicating the lower tail of the distribution. |
+    | `q10` | `Float64` | The 10th percentile of validator APYs, representing the lower decile of the distribution. |
+    | `q25` | `Float64` | The 25th percentile (first quartile) of validator APYs, marking the lower quartile boundary. |
+    | `q50` | `Float64` | The median validator APY for the date, dividing the distribution into two equal halves. |
+    | `q75` | `Float64` | The 75th percentile (third quartile) of validator APYs, indicating the upper quartile boundary. |
+    | `q90` | `Float64` | The 90th percentile of validator APYs, representing the upper decile of the distribution. |
+    | `q95` | `Float64` | The 95th percentile of validator APYs, indicating the upper tail of the distribution. |
+    | `average` | `Float64` | The mean validator APY for the date, providing an overall average across validators. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/consensus/validators_apy_distribution/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+??? info "`GET /v1/consensus/validators_apy_distribution/last_30d`"
+    This view provides a distribution of validator APYs over the last 30 days, enabling analysis of APY variability and trends within the validator set.
+
+    Model: `api_consensus_validators_apy_dist_last_30_days` — table `dbt.api_consensus_validators_apy_dist_last_30_days`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | The specific date for which the APY distribution data is aggregated. |
+    | `q05` | `Float64` | The 5th percentile of validator APYs, indicating the lower bound of the APY distribution. |
+    | `q10` | `Float64` | The 10th percentile of validator APYs, representing the lower tail of the distribution. |
+    | `q25` | `Float64` | The 25th percentile (first quartile) of validator APYs, marking the lower quartile boundary. |
+    | `q50` | `Float64` | The median APY value, dividing the distribution into two equal halves. |
+    | `q75` | `Float64` | The 75th percentile (third quartile) of validator APYs, indicating the upper quartile boundary. |
+    | `q90` | `Float64` | The 90th percentile of validator APYs, representing the upper tail of the distribution. |
+    | `q95` | `Float64` | The 95th percentile of validator APYs, capturing the highest APYs within the distribution. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/consensus/validators_apy_distribution/last_30d"
+    ```
+
+## validators_apy_income_dist
+
+Public API view — SELECT * FROM int_consensus_validators_apy_dist_income_daily. Filter/pagination metadata in model config.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/consensus/validators_apy_income_dist/daily` | GET, POST | tier1 | `date_from`, `date_to` | limit/offset (envelope) | date DESC |
+
+??? info "`GET/POST /v1/consensus/validators_apy_income_dist/daily`"
     Public API view — SELECT * FROM int_consensus_validators_apy_dist_income_daily. Filter/pagination metadata in model config.
 
     Model: `api_consensus_validators_apy_dist_income_daily` — table `dbt.api_consensus_validators_apy_dist_income_daily`
@@ -677,89 +745,19 @@ The api_consensus_info_apy_latest model provides the most recent annual percenta
     **Example**
 
     ```bash
-    curl "https://api.analytics.gnosis.io/v1/consensus/validators_apy/daily?date_from=2026-01-01" \
+    curl "https://api.analytics.gnosis.io/v1/consensus/validators_apy_income_dist/daily?date_from=2026-01-01" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
-## validators_apy_dististribution
-
-This view provides a distribution of validator APYs over the last 30 days, enabling analysis of APY variability and trends within the validator set.
-
-| Path | Methods | Tier | Filters | Pagination | Sort |
-|------|---------|------|---------|------------|------|
-| `/v1/consensus/validators_apy_dististribution/last_30d` | GET | tier0 | -- | -- | -- |
-
-??? info "`GET /v1/consensus/validators_apy_dististribution/last_30d`"
-    This view provides a distribution of validator APYs over the last 30 days, enabling analysis of APY variability and trends within the validator set.
-
-    Model: `api_consensus_validators_apy_dist_last_30_days` — table `dbt.api_consensus_validators_apy_dist_last_30_days`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `date` | `Date` | The specific date for which the APY distribution data is aggregated. |
-    | `q05` | `Float64` | The 5th percentile of validator APYs, indicating the lower bound of the APY distribution. |
-    | `q10` | `Float64` | The 10th percentile of validator APYs, representing the lower tail of the distribution. |
-    | `q25` | `Float64` | The 25th percentile (first quartile) of validator APYs, marking the lower quartile boundary. |
-    | `q50` | `Float64` | The median APY value, dividing the distribution into two equal halves. |
-    | `q75` | `Float64` | The 75th percentile (third quartile) of validator APYs, indicating the upper quartile boundary. |
-    | `q90` | `Float64` | The 90th percentile of validator APYs, representing the upper tail of the distribution. |
-    | `q95` | `Float64` | The 95th percentile of validator APYs, capturing the highest APYs within the distribution. |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/consensus/validators_apy_dististribution/last_30d"
-    ```
-
-## validators_apy_distribution
-
-This view provides daily distribution metrics of validator APYs, enabling analysis of validator performance variability over time.
-
-| Path | Methods | Tier | Filters | Pagination | Sort |
-|------|---------|------|---------|------------|------|
-| `/v1/consensus/validators_apy_distribution/daily` | GET | tier1 | -- | -- | -- |
-
-??? info "`GET /v1/consensus/validators_apy_distribution/daily`"
-    This view provides daily distribution metrics of validator APYs, enabling analysis of validator performance variability over time.
-
-    Model: `api_consensus_validators_apy_dist_daily` — table `dbt.api_consensus_validators_apy_dist_daily`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `date` | `Date` | The specific day for which the APY distribution data is recorded. |
-    | `q05` | `Float64` | The 5th percentile of validator APYs on the given date, indicating the lower tail of the distribution. |
-    | `q10` | `Float64` | The 10th percentile of validator APYs, representing the lower decile of the distribution. |
-    | `q25` | `Float64` | The 25th percentile (first quartile) of validator APYs, marking the lower quartile boundary. |
-    | `q50` | `Float64` | The median validator APY for the date, dividing the distribution into two equal halves. |
-    | `q75` | `Float64` | The 75th percentile (third quartile) of validator APYs, indicating the upper quartile boundary. |
-    | `q90` | `Float64` | The 90th percentile of validator APYs, representing the upper decile of the distribution. |
-    | `q95` | `Float64` | The 95th percentile of validator APYs, indicating the upper tail of the distribution. |
-    | `average` | `Float64` | The mean validator APY for the date, providing an overall average across validators. |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/consensus/validators_apy_distribution/daily" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-## validators_balance_dististribution
+## validators_balance_distribution
 
 This view provides the distribution of validator balances over the last 30 days, summarized through various quantiles to analyze balance spread and trends.
 
 | Path | Methods | Tier | Filters | Pagination | Sort |
 |------|---------|------|---------|------------|------|
-| `/v1/consensus/validators_balance_dististribution/last_30d` | GET | tier0 | -- | -- | -- |
+| `/v1/consensus/validators_balance_distribution/last_30d` | GET | tier0 | -- | -- | -- |
 
-??? info "`GET /v1/consensus/validators_balance_dististribution/last_30d`"
+??? info "`GET /v1/consensus/validators_balance_distribution/last_30d`"
     This view provides the distribution of validator balances over the last 30 days, summarized through various quantiles to analyze balance spread and trends.
 
     Model: `api_consensus_validators_balance_dist_last_30_days` — table `dbt.api_consensus_validators_balance_dist_last_30_days`
@@ -782,7 +780,7 @@ This view provides the distribution of validator balances over the last 30 days,
     **Example**
 
     ```bash
-    curl "https://api.analytics.gnosis.io/v1/consensus/validators_balance_dististribution/last_30d"
+    curl "https://api.analytics.gnosis.io/v1/consensus/validators_balance_distribution/last_30d"
     ```
 
 ## validators_balances
@@ -852,40 +850,33 @@ This view provides daily distribution percentiles of validator balances in GNO, 
 
 ## validators_explorer
 
-Balance-distribution histogram across co-validators sharing a withdrawal credential. Light view over fct_consensus_validators_status_latest (~558k rows); the API prunes by withdrawal_credentials before the bucketing runs so the query is cheap even without a physical index on credentials. Bucket e...
+Public API view — SELECT * FROM fct_consensus_validators_explorer_latest. Requires withdrawal_credentials filter; see model config.
 
 | Path | Methods | Tier | Filters | Pagination | Sort |
 |------|---------|------|---------|------------|------|
-| `/v1/consensus/validators_explorer/latest` | GET, POST | tier1 | `withdrawal_credentials` | limit/offset (envelope) | bucket_order ASC |
-| `/v1/consensus/validators_explorer/daily` | GET, POST | tier1 | `withdrawal_credentials`, `date_from`, `date_to` | limit/offset (envelope) | date DESC |
+| `/v1/consensus/validators_explorer/latest` | GET, POST | tier1 | `withdrawal_credentials` | limit/offset (envelope) | -- |
 | `/v1/consensus/validators_explorer/daily` | GET, POST | tier1 | `withdrawal_credentials`, `date_from`, `date_to` | limit/offset (envelope) | date DESC |
 
 ??? info "`GET/POST /v1/consensus/validators_explorer/latest`"
-    Balance-distribution histogram across co-validators sharing a withdrawal credential. Light view over fct_consensus_validators_status_latest (~558k rows); the API prunes by withdrawal_credentials before the bucketing runs so the query is cheap even without a physical index on credentials. Bucket e...
+    Public API view — SELECT * FROM fct_consensus_validators_explorer_latest. Requires withdrawal_credentials filter; see model config.
 
-    Model: `api_consensus_validators_explorer_balance_dist` — table `dbt.api_consensus_validators_explorer_balance_dist`
+    Model: `api_consensus_validators_explorer_latest` — table `dbt.api_consensus_validators_explorer_latest`
 
     **Declared filters**
 
     | Parameter | Operator | Column | Type | Notes |
     |-----------|----------|--------|------|-------|
-    | `withdrawal_credentials` | `=` | `withdrawal_credentials` | string | Withdrawal credential (32-byte hex) — returns balance histogram across co-validators; case: lower |
+    | `withdrawal_credentials` | `=` | `withdrawal_credentials` | string | Withdrawal credential (32-byte hex) — aggregates KPIs across every validator sharing this credential; case: lower |
 
     **Filter policy:** At least one filter required. Must provide one of: `withdrawal_credentials`.
 
-    **Pagination:** `limit`/`offset` — default 16, max 64; response: envelope `{items, pagination}`
-
-    **Sort:** `bucket_order ASC`
+    **Pagination:** `limit`/`offset` — default 100, max 1000; response: envelope `{items, pagination}`
 
     **Columns**
 
     | Column | Type | Description |
     |--------|------|-------------|
-    | `withdrawal_credentials` | `String` | Lowercased withdrawal credentials whose co-validators are bucketed (the required API filter). |
-    | `bucket` | `String` | Label for the balance bucket ('<1', '1-16', '16-32', '32-48', '48-64', '64-128', '128-256', '>=256'). |
-    | `bucket_order` | `UInt8` | Integer ordering key for the bucket (0-7) so downstream charts keep bars in ascending balance order. |
-    | `validator_count` | `UInt64` | Number of validators under this credential falling in the balance bucket. |
-    | `balance_gno_total` | `Float64` | Total balance in GNO across the validators in this credential-and-bucket. |
+    | `withdrawal_credentials` | `String` | Lowercased withdrawal credentials — the per-operator grouping key; one row per credential. |
     | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
 
     **Example**
@@ -939,7 +930,15 @@ Balance-distribution histogram across co-validators sharing a withdrawal credent
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
-??? info "`GET/POST /v1/consensus/validators_explorer/daily`"
+## validators_explorer_apy_dist
+
+Public API view — SELECT * FROM int_consensus_validators_explorer_apy_dist_daily. Requires withdrawal_credentials filter; see model config.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/consensus/validators_explorer_apy_dist/daily` | GET, POST | tier1 | `withdrawal_credentials`, `date_from`, `date_to` | limit/offset (envelope) | date DESC |
+
+??? info "`GET/POST /v1/consensus/validators_explorer_apy_dist/daily`"
     Public API view — SELECT * FROM int_consensus_validators_explorer_apy_dist_daily. Requires withdrawal_credentials filter; see model config.
 
     Model: `api_consensus_validators_explorer_apy_dist_daily` — table `dbt.api_consensus_validators_explorer_apy_dist_daily`
@@ -979,7 +978,94 @@ Balance-distribution histogram across co-validators sharing a withdrawal credent
     **Example**
 
     ```bash
-    curl "https://api.analytics.gnosis.io/v1/consensus/validators_explorer/daily?date_from=2026-01-01" \
+    curl "https://api.analytics.gnosis.io/v1/consensus/validators_explorer_apy_dist/daily?date_from=2026-01-01" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## validators_explorer_balance_dist
+
+Balance-distribution histogram across co-validators sharing a withdrawal credential. Light view over fct_consensus_validators_status_latest (~558k rows); the API prunes by withdrawal_credentials before the bucketing runs so the query is cheap even without a physical index on credentials. Bucket e...
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/consensus/validators_explorer_balance_dist/latest` | GET, POST | tier1 | `withdrawal_credentials` | limit/offset (envelope) | bucket_order ASC |
+
+??? info "`GET/POST /v1/consensus/validators_explorer_balance_dist/latest`"
+    Balance-distribution histogram across co-validators sharing a withdrawal credential. Light view over fct_consensus_validators_status_latest (~558k rows); the API prunes by withdrawal_credentials before the bucketing runs so the query is cheap even without a physical index on credentials. Bucket e...
+
+    Model: `api_consensus_validators_explorer_balance_dist` — table `dbt.api_consensus_validators_explorer_balance_dist`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `withdrawal_credentials` | `=` | `withdrawal_credentials` | string | Withdrawal credential (32-byte hex) — returns balance histogram across co-validators; case: lower |
+
+    **Filter policy:** At least one filter required. Must provide one of: `withdrawal_credentials`.
+
+    **Pagination:** `limit`/`offset` — default 16, max 64; response: envelope `{items, pagination}`
+
+    **Sort:** `bucket_order ASC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `withdrawal_credentials` | `String` | Lowercased withdrawal credentials whose co-validators are bucketed (the required API filter). |
+    | `bucket` | `String` | Label for the balance bucket ('<1', '1-16', '16-32', '32-48', '48-64', '64-128', '128-256', '>=256'). |
+    | `bucket_order` | `UInt8` | Integer ordering key for the bucket (0-7) so downstream charts keep bars in ascending balance order. |
+    | `validator_count` | `UInt64` | Number of validators under this credential falling in the balance bucket. |
+    | `balance_gno_total` | `Float64` | Total balance in GNO across the validators in this credential-and-bucket. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/consensus/validators_explorer_balance_dist/latest?withdrawal_credentials=VALUE" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## validators_explorer_members
+
+Public API view — SELECT * FROM fct_consensus_validators_explorer_members_table. Requires withdrawal_credentials filter; see model config.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/consensus/validators_explorer_members/latest` | GET, POST | tier1 | `withdrawal_credentials` | limit/offset (envelope) | validator_index ASC |
+
+??? info "`GET/POST /v1/consensus/validators_explorer_members/latest`"
+    Public API view — SELECT * FROM fct_consensus_validators_explorer_members_table. Requires withdrawal_credentials filter; see model config.
+
+    Model: `api_consensus_validators_explorer_members_table` — table `dbt.api_consensus_validators_explorer_members_table`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `withdrawal_credentials` | `=` | `withdrawal_credentials` | string | Withdrawal credential (32-byte hex) — returns every validator sharing this credential; case: lower |
+
+    **Filter policy:** At least one filter required. Must provide one of: `withdrawal_credentials`.
+
+    **Pagination:** `limit`/`offset` — default 100, max 5000; response: envelope `{items, pagination}`
+
+    **Sort:** `validator_index ASC` — user-sortable via `sort_by`: `validator_index`, `balance_gno`, `consensus_income_amount_30d_gno`, `proposed_blocks_count_lifetime`, `total_income_estimated_gno`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `balance_gno` | `Float64` | End-of-day validator balance in GNO. |
+    | `consensus_income_amount_30d_gno` | `Float64` | Sum of consensus income over the trailing 30 days, in GNO. |
+    | `proposed_blocks_count_lifetime` | `UInt64` | Lifetime count of blocks proposed by the validator. |
+    | `total_income_estimated_gno` | `Float64` | balance_gno + cumulative_withdrawals_gno − cumulative_deposits_gno (effective) − cumulative_consolidation_inflow_gno + cumulative_consolidation_outflow_gno. ... |
+    | `validator_index` | `UInt64` | Beacon-chain validator index. Unique per date (see model-level unique_key). |
+    | `withdrawal_credentials` | `String` | Lowercased withdrawal credentials the validator sits under — the Validator Explorer's operator grouping key. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/consensus/validators_explorer_members/latest?withdrawal_credentials=VALUE" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
@@ -1027,6 +1113,122 @@ Public API view — SELECT * FROM fct_consensus_validators_income_total_daily. F
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
+## validators_performance
+
+Public API view — one row per validator with latest snapshot fields plus 30-day and lifetime aggregates.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/consensus/validators_performance/latest` | GET, POST | tier1 | `validator_index`, `pubkey`, `withdrawal_credentials`, `withdrawal_address` | limit/offset (envelope) | validator_index ASC |
+| `/v1/consensus/validators_performance/daily` | GET, POST | tier1 | `validator_index`, `pubkey`, `withdrawal_credentials`, `withdrawal_address`, `date_from`, `date_to` | limit/offset (envelope) | date DESC, validator_index ASC |
+
+??? info "`GET/POST /v1/consensus/validators_performance/latest`"
+    Public API view — one row per validator with latest snapshot fields plus 30-day and lifetime aggregates.
+
+    Model: `api_consensus_validators_performance_latest` — table `dbt.api_consensus_validators_performance_latest`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `validator_index` | `IN` | `validator_index` | string_list | Validator index / indices; max_items: 200 |
+    | `pubkey` | `IN` | `pubkey` | string_list | Validator public key(s); case: lower; max_items: 200 |
+    | `withdrawal_credentials` | `IN` | `withdrawal_credentials` | string_list | Withdrawal credential value(s); case: lower; max_items: 200 |
+    | `withdrawal_address` | `IN` | `withdrawal_address` | string_list | 20-byte withdrawal address(es); case: lower; max_items: 200 |
+
+    **Filter policy:** At least one filter required. Must provide one of: `validator_index`, `pubkey`, `withdrawal_credentials`, `withdrawal_address`.
+
+    **Pagination:** `limit`/`offset` — default 100, max 5000; response: envelope `{items, pagination}`
+
+    **Sort:** `validator_index ASC` — user-sortable via `sort_by`: `validator_index`, `balance_gno`, `effective_balance_gno`, `total_income_estimated_gno`, `consensus_income_amount_30d_gno`, `proposer_reward_total_30d_gno`, `proposed_blocks_count_lifetime`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `effective_balance_gno` | `Float64` | End-of-day effective balance in real GNO (the 1-GNO-step stake used in the reward-cap formula; the spec's 32-mGNO step equals 1 GNO). |
+    | `pubkey` | `String` | Lowercased validator public key. |
+    | `withdrawal_address` | `Nullable(String)` | 20-byte withdrawal address derived from credentials when prefix is 0x01 or 0x02; NULL otherwise. |
+    | `withdrawal_credentials` | `String` | Lowercased withdrawal credentials. |
+    | `validator_index` | `UInt64` | Beacon-chain validator index. |
+    | `latest_date` | `DateTime64` | Date of the validator's most recent income row (max date in int_consensus_validators_income_daily). |
+    | `balance_gno` | `Float64` | Validator balance at the latest date, in GNO. |
+    | `consensus_income_amount_30d_gno` | `Float64` | Sum of consensus income over the trailing 30 days for the validator, in GNO. |
+    | `proposer_reward_total_30d_gno` | `Float64` | Sum of proposer rewards over the trailing 30 days for the validator, in GNO. |
+    | `proposed_blocks_count_lifetime` | `UInt64` | Total number of blocks proposed by the validator over its lifetime. |
+    | `total_income_estimated_gno` | `Float64` | Lifetime estimated consensus income for the validator, in GNO. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/consensus/validators_performance/latest?validator_index=VALUE1,VALUE2" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+??? info "`GET/POST /v1/consensus/validators_performance/daily`"
+    Public API view joining daily income and proposer-reward facts at (date, validator_index). Filterable by validator_index, pubkey, withdrawal_credentials, withdrawal_address, date_from, date_to.
+
+    Model: `api_consensus_validators_performance_daily` — table `dbt.api_consensus_validators_performance_daily`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `validator_index` | `IN` | `validator_index` | string_list | Validator index / indices; max_items: 200 |
+    | `pubkey` | `IN` | `pubkey` | string_list | Validator public key(s); case: lower; max_items: 200 |
+    | `withdrawal_credentials` | `IN` | `withdrawal_credentials` | string_list | Withdrawal credential value(s); case: lower; max_items: 200 |
+    | `withdrawal_address` | `IN` | `withdrawal_address` | string_list | 20-byte withdrawal address(es) (derived from 0x01/0x02 credentials); case: lower; max_items: 200 |
+    | `date_from` | `>=` | `date` | date | Inclusive lower bound on date |
+    | `date_to` | `<=` | `date` | date | Inclusive upper bound on date |
+
+    **Filter policy:** At least one filter required. Must provide one of: `validator_index`, `pubkey`, `withdrawal_credentials`, `withdrawal_address`.
+
+    **Pagination:** `limit`/`offset` — default 100, max 5000; response: envelope `{items, pagination}`
+
+    **Sort:** `date DESC`, `validator_index ASC` — user-sortable via `sort_by`: `date`, `validator_index`, `balance_gno`, `consensus_income_amount_gno`, `apy`, `proposer_reward_total_gno`, `proposed_blocks_count`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `DateTime64` | Day of the income fact (start-of-day UTC timestamp). Grain is one row per (date, validator_index). |
+    | `validator_index` | `UInt64` | Beacon-chain validator index. |
+    | `status` | `String` | Validator lifecycle status at end of day (from int_consensus_validators_snapshots_daily). |
+    | `pubkey` | `String` | Lowercased validator public key. |
+    | `withdrawal_credentials` | `String` | Lowercased withdrawal credentials. |
+    | `withdrawal_address` | `Nullable(String)` | 20-byte withdrawal address derived from credentials when prefix is 0x01 or 0x02; NULL otherwise. |
+    | `balance_gno` | `Float64` | End-of-day validator balance in GNO. |
+    | `balance_prev_gno` | `Float64` | Previous-day balance in GNO. |
+    | `effective_balance_gno` | `Float64` | End-of-day effective balance in GNO. |
+    | `deposits_amount_gno` | `Float64` | Raw reported deposit amount for the date, in GNO. Post-Pectra this is a request amount that the beacon chain may credit gradually via the pending-deposits qu... |
+    | `deposits_count` | `UInt64` | Number of deposit events recorded for the validator on the date. |
+    | `withdrawals_amount_gno` | `Float64` | Total amount withdrawn from the validator on the date, in GNO. |
+    | `withdrawals_count` | `UInt64` | Number of withdrawal events for the validator on the date. |
+    | `consolidation_inflow_gno` | `Float64` | Consolidation amount received (target role) on the date, in GNO. |
+    | `consolidation_outflow_gno` | `Float64` | Consolidation amount transferred out (source role) on the date, in GNO. |
+    | `consensus_income_amount_gno` | `Float64` | Spec-bounded consensus income on the date, in GNO — balance delta minus effective deposit credits, plus withdrawals, net of consolidations (see int_consensus... |
+    | `daily_rate` | `Nullable(Float64)` | consensus_income_amount_gno / NULLIF(balance_prev_gno + effective_deposits_credited_gno + consolidation_inflow_gno, 0). |
+    | `apy` | `Float64` | Annualized percent yield computed from daily_rate. |
+    | `cumulative_deposits_gno` | `Float64` | Running sum of effective deposit credits for the validator, in GNO. |
+    | `cumulative_withdrawals_gno` | `Float64` | Running sum of withdrawal amounts for the validator, in GNO. |
+    | `cumulative_consolidation_inflow_gno` | `Float64` | Running sum of consolidation inflows for the validator, in GNO. |
+    | `cumulative_consolidation_outflow_gno` | `Float64` | Running sum of consolidation outflows for the validator, in GNO. |
+    | `total_income_estimated_gno` | `Float64` | Lifetime estimated consensus income in GNO — balance + cumulative withdrawals − effective cumulative deposits − cumulative consolidation inflow + cumulative ... |
+    | `proposed_blocks_count` | `UInt64` | Blocks proposed by the validator on the date (0 if none). |
+    | `proposer_reward_total_gno` | `Float64` | Total proposer reward earned on the date, in GNO (0 if none). |
+    | `proposer_reward_attestations_gno` | `Float64` | Proposer-reward component from included attestations, in real GNO (source gwei-of-mGNO / 1e9 / 32). |
+    | `proposer_reward_sync_aggregate_gno` | `Float64` | Proposer-reward component from sync-aggregate inclusion, in real GNO (source gwei-of-mGNO / 1e9 / 32). |
+    | `proposer_reward_proposer_slashings_gno` | `Float64` | Proposer-reward component from included proposer slashings, in real GNO (source gwei-of-mGNO / 1e9 / 32). |
+    | `proposer_reward_attester_slashings_gno` | `Float64` | Proposer-reward component from included attester slashings, in real GNO (source gwei-of-mGNO / 1e9 / 32). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/consensus/validators_performance/daily?date_from=2026-01-01" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
 ## validators_search
 
 Dropdown source for the Validator Explorer tab. Grain is one row per WITHDRAWAL_CREDENTIALS (not per validator) — on Gnosis today this is ~3,400 rows vs 558k at validator-grain, so the dashboard can load the full list in a single request (a few hundred KB on the wire) without 30s timeouts. Collap...
@@ -1066,11 +1268,59 @@ Dropdown source for the Validator Explorer tab. Grain is one row per WITHDRAWAL_
 
 ## validators_status
 
-The api_consensus_validators_status_daily model provides a daily summary of validator statuses, excluding ongoing active and withdrawal completed states, to monitor validator health and transitions over time.
+The api_consensus_validators_status_latest model provides the latest validator-level consensus status snapshot and supports filtered lookup by withdrawal credentials or validator pubkey.
 
 | Path | Methods | Tier | Filters | Pagination | Sort |
 |------|---------|------|---------|------------|------|
+| `/v1/consensus/validators_status/latest` | GET, POST | tier1 | `withdrawal_credentials`, `pubkey`, `validator_index`, `withdrawal_address` | limit/offset (envelope) | validator_index ASC |
 | `/v1/consensus/validators_status/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET/POST /v1/consensus/validators_status/latest`"
+    The api_consensus_validators_status_latest model provides the latest validator-level consensus status snapshot and supports filtered lookup by withdrawal credentials or validator pubkey.
+
+    Model: `api_consensus_validators_status_latest` — table `dbt.api_consensus_validators_status_latest`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `withdrawal_credentials` | `IN` | `withdrawal_credentials` | string_list | Withdrawal credential value(s); case: lower; max_items: 200 |
+    | `pubkey` | `IN` | `pubkey` | string_list | Validator public key(s); case: lower; max_items: 200 |
+    | `validator_index` | `IN` | `validator_index` | string_list | Validator index / indices; max_items: 200 |
+    | `withdrawal_address` | `IN` | `withdrawal_address` | string_list | 20-byte withdrawal address(es) (derived from 0x01/0x02 credentials); case: lower; max_items: 200 |
+
+    **Filter policy:** At least one filter required. Must provide one of: `withdrawal_credentials`, `pubkey`, `validator_index`, `withdrawal_address`.
+
+    **Pagination:** `limit`/`offset` — default 100, max 5000; response: envelope `{items, pagination}`
+
+    **Sort:** `validator_index ASC` — user-sortable via `sort_by`: `validator_index`, `balance`, `effective_balance`, `status`, `activation_epoch`, `exit_epoch`, `withdrawable_epoch`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `slot` | `UInt64` | The most recent consensus slot included in the validator snapshot. |
+    | `validator_index` | `UInt32` | Unique numerical identifier assigned to each validator. |
+    | `balance` | `UInt64` | The current validator balance in Gwei at the latest slot. |
+    | `status` | `String` | The current validator lifecycle status at the latest slot. |
+    | `pubkey` | `String` | Lowercased validator public key for exact-match API filtering. |
+    | `withdrawal_credentials` | `String` | Lowercased withdrawal credentials for exact-match API filtering. |
+    | `withdrawal_address` | `Nullable(String)` | 20-byte withdrawal address derived from credentials when prefix is 0x01 or 0x02; NULL for 0x00 BLS credentials. |
+    | `effective_balance` | `UInt64` | The effective validator balance used for consensus calculations. |
+    | `slashed` | `UInt8` | Indicator showing whether the validator has been slashed. |
+    | `activation_eligibility_epoch` | `UInt64` | Epoch when the validator became eligible for activation. |
+    | `activation_epoch` | `UInt64` | Epoch when the validator entered the active validator set. |
+    | `exit_epoch` | `UInt64` | Epoch when the validator exited the active validator set. |
+    | `withdrawable_epoch` | `UInt64` | Epoch when the validator balance becomes withdrawable. |
+    | `slot_timestamp` | `DateTime64` | Timestamp corresponding to the latest consensus slot in the snapshot. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/consensus/validators_status/latest?withdrawal_credentials=VALUE1,VALUE2" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
 
 ??? info "`GET /v1/consensus/validators_status/daily`"
     The api_consensus_validators_status_daily model provides a daily summary of validator statuses, excluding ongoing active and withdrawal completed states, to monitor validator health and transitions over time.

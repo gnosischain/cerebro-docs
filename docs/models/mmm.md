@@ -1,6 +1,7 @@
 # MMM (Marketing Mix) Module
 
 <!-- BEGIN AUTO-GENERATED: models-mmm -->
+<!-- generated: 2026-07-23 -->
 **Mmm**
 
 | Model | Layer | Description |

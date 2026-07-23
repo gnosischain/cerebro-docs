@@ -40,39 +40,46 @@ Personas are **guidance, not automation**. The server does not run an internal L
 The authoritative role list is `_VALID_ROLES` in `src/cerebro_mcp/tools/governance/agents.py`; every role maps to a prompt file in `src/cerebro_mcp/prompts/agents/`.
 
 <!-- BEGIN AUTO-GENERATED: mcp-personas -->
-29 personas are registered (`get_agent_persona` accepts these roles):
+<!-- generated: 2026-07-23 -->
+35 personas are registered (`get_agent_persona` accepts these roles):
 
 | Role | Focus |
 |------|-------|
-| `analytics_reporter` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `bridge_security_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `cerebro_dispatcher` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `chain_forensics` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `defi_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `esg_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `forecasting_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `gnosis_research_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `analytics_reporter` | You are the **Data Science Lead**, a senior data scientist and quantitative analyst specializing in Gnosis Chain on-chain data. You possess |
+| `bridge_security_analyst` | You are the **Bridge Security Analyst**, an expert in cross-chain bridge mechanics, flow analysis, and anomaly detection on Gnosis Chain. Yo |
+| `cerebro_dispatcher` | You are the **Cerebro Dispatcher**, the top-level triage and routing agent for the Cerebro MCP platform. Every non-trivial user request star |
+| `chain_forensics` | You are the Chain Forensics Analyst: the persona for on-chain incident investigation, exploit attribution, and any question that requires re |
+| `chain_state_analyst` | You are the **Chain State Analyst**: the fast path for point-in-time reads from the chain itself — current balances, supply, owner/paused/al |
+| `cow_analyst` | You are the **CoW Protocol Analyst**: the specialist for CoW Protocol internals — solver competitions, batch auctions, order lifecycle, sett |
+| `dao_governance_analyst` | You are the **DAO Governance Analyst**: the specialist for GnosisDAO off-chain signaling and community discussion — Snapshot proposals and v |
+| `defi_analyst` | You are the **DeFi Protocol Analyst**, an expert in decentralized finance mechanics on Gnosis Chain. You understand lending protocols (Aave |
+| `esg_analyst` | You are the **ESG Analyst**, an expert in environmental sustainability metrics for Gnosis Chain. You quantify energy consumption, carbon foo |
+| `forecasting_analyst` | You are the **Forecasting Analyst**, a time-series specialist who uses ClickHouse native functions to decompose trends, detect seasonality, |
+| `forensic_reviewer` | You are the **Forensic Reviewer**: the accuracy gate between a forensic agent's output and a human investigator. You are invoked after `chai |
+| `gnosis_research_analyst` | Use semantic planning as the default evidence engine for analytical work. |
 | `grafana_architect` | You build Grafana dashboards that work for **two audiences**: engineers (who |
-| `growth_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `marketing_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `mmm_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `mmm_causal_reviewer` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `mmm_simulator` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `mta_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `network_health_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `growth_analyst` | You are the **Growth Analyst**, a product analytics specialist who measures user acquisition, activation, retention, and engagement on Gnosi |
+| `marketing_analyst` | You are the **Marketing Analyst**, an expert in framing Gnosis Chain ecosystem data for external audiences -- blog posts, investor updates, |
+| `mmm_analyst` | You are the **MMM Analyst**, a Marketing Mix Modeling specialist adapted for on-chain incentive attribution on Gnosis Chain. You translate t |
+| `mmm_causal_reviewer` | You are the **MMM Causal Reviewer**, a gate agent that enforces the three causal-DAG checkpoints from Chapter 3 of the Hakuhodo Marketing Mi |
+| `mmm_simulator` | You are the **MMM Simulator**, the prescription-layer agent in the MMM workflow. Given fitted response-curve parameters (β, r, λ) per media |
+| `mta_analyst` | You are the **MTA Analyst**, a Multi-Touch Attribution specialist for Cerebro MCP. You measure how observed user / app touchpoints precede c |
+| `network_health_analyst` | You are the **Network Health Analyst**, an expert in Gnosis Chain's peer-to-peer network, client diversity, geographic distribution, and inf |
+| `pattern_forensics` | You are the **Pattern Forensics Analyst**: the pattern hunter. Your unit of work is a **population** — addresses or transactions over a wind |
 | `reality_checker` | You are the **Reality Checker**, a senior quality assurance engineer specialized in data validation and report integrity. You are the final |
-| `statistical_reviewer` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `statistical_reviewer` | You are the **Statistical Reviewer**, a methodology specialist who ensures every analytical claim meets minimum statistical rigor. You revie |
 | `storyteller_accessibility` | You are the **Accessibility & Tone Agent**. Final cross-cutting check before handoff. You block on hard accessibility failures; you flag ton |
 | `storyteller_context` | You are the **Context Agent**. Your only job is to produce a `context_brief` that names the audience, the required action, the delivery mech |
-| `storyteller_critic` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `storyteller_narrative` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `storyteller_orchestrator` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `storyteller_critic` | You are the **Critic Agent**. You are adversarial. You read the finished story as a stranger would and decide whether it is ready to ship. Y |
+| `storyteller_narrative` | You are the **Narrative Agent**. You turn a context brief and a pile of candidate findings into a single governing takeaway, a short prose s |
+| `storyteller_orchestrator` | You are the **Storyteller Orchestrator**. You own the multi-agent data storytelling pipeline that turns analysis into a decision-shaping art |
 | `storyteller_visual_designer` | You are the **Visual Designer Agent**. One `visual_spec` per storyboard scene. Relationship-first. One focal element per scene. Everything n |
-| `storyteller_writer` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `tokenomics_analyst` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `storyteller_writer` | You are the **Writer Agent**. You produce the words — chart titles, annotations, prose, scene transitions — and assemble the final story ada |
+| `tokenomics_analyst` | You are the **Tokenomics Analyst**, an expert in GNO token economics, validator staking mechanics, and supply distribution analysis. You und |
+| `transaction_forensics` | The standards' §4 truncation table (evidence panels, Flows node budget, Timeline sign inversion), §6 reproducibility rules, and the "mini-ap |
 | `ui_designer` | You are the **UI Designer**, a senior frontend engineer and data visualization specialist. You have deep expertise in ECharts configuration, |
-| `unified_allocator` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
-| `unified_causal_reviewer` | Before producing any analysis, query, chart, or narrative, you MUST apply every rule in [`_shared_quality_rules.md`](_shared_quality_rules.m |
+| `unified_allocator` | You are the **Unified Allocator**, the prescription-layer agent for unified MMM + MTA measurement. You convert passing MMM + MTA evidence in |
+| `unified_causal_reviewer` | You are the **Unified Causal Reviewer**, a hard gate that reconciles MMM and MTA outputs before any unified-measurement report or recommenda |
 <!-- END AUTO-GENERATED: mcp-personas -->
 
 ## Tier 1 — Top-level orchestrator

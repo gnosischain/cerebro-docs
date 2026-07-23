@@ -1,6 +1,7 @@
 # Quarterly Data Module
 
 <!-- BEGIN AUTO-GENERATED: models-quarterly_data -->
+<!-- generated: 2026-07-23 -->
 **Data**
 
 | Model | Layer | Description |

@@ -1,6 +1,7 @@
 # Crawlers Data API Endpoints
 
 <!-- BEGIN AUTO-GENERATED: api-catalog-crawlers_data -->
+<!-- generated: 2026-07-23 -->
 _1 endpoints across 1 resources. Generated from the dbt manifest — edits inside this block will be overwritten. Regenerate with `python scripts/update_docs.py --only api`._
 
 ## gno_supply

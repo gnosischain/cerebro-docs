@@ -249,20 +249,22 @@ In addition to auto-generated data endpoints, the API provides built-in system r
 The summary table below is generated from the dbt manifest. For a searchable catalog of every endpoint, use the [Metrics Explorer](explorer.md); for a per-category reference with columns and filters, see the [Endpoint Catalog](catalog/index.md).
 
 <!-- BEGIN AUTO-GENERATED: api-endpoints -->
+<!-- generated: 2026-07-23 -->
 | Category | Endpoints | Resources | Catalog |
 |----------|:---------:|:---------:|---------|
 | Bridges | 12 | 10 | [catalog/bridges.md](catalog/bridges.md) |
 | Celo | 33 | 24 | [catalog/celo.md](catalog/celo.md) |
-| Consensus | 35 | 27 | [catalog/consensus.md](catalog/consensus.md) |
+| Consensus | 40 | 31 | [catalog/consensus.md](catalog/consensus.md) |
 | Crawlers Data | 1 | 1 | [catalog/crawlers_data.md](catalog/crawlers_data.md) |
 | ESG | 9 | 9 | [catalog/esg.md](catalog/esg.md) |
-| Execution | 292 | 234 | [catalog/execution.md](catalog/execution.md) |
+| Execution | 339 | 290 | [catalog/execution.md](catalog/execution.md) |
 | MMM | 1 | 1 | [catalog/mmm.md](catalog/mmm.md) |
-| MTA | 6 | 2 | [catalog/mta.md](catalog/mta.md) |
+| MTA | 7 | 3 | [catalog/mta.md](catalog/mta.md) |
 | P2P | 9 | 7 | [catalog/p2p.md](catalog/p2p.md) |
 | Quarterly Data | 24 | 24 | [catalog/quarterly_data.md](catalog/quarterly_data.md) |
+| Revenue | 28 | 14 | [catalog/revenue.md](catalog/revenue.md) |
 
-422 endpoints total. Browse them interactively in the [Metrics Explorer](explorer.md) or per category in the [Endpoint Catalog](catalog/index.md).
+503 endpoints total. Browse them interactively in the [Metrics Explorer](explorer.md) or per category in the [Endpoint Catalog](catalog/index.md).
 <!-- END AUTO-GENERATED: api-endpoints -->
 
 ## Next Steps

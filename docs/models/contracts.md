@@ -38,6 +38,7 @@ Protocol-Specific Models (int_contracts_balancer_swaps_daily, etc.)
 ## Model Categories
 
 <!-- BEGIN AUTO-GENERATED: models-contracts -->
+<!-- generated: 2026-07-23 -->
 **Atoken**
 
 | Model | Layer | Description |
@@ -283,6 +284,7 @@ contract. This model is decoded from `execution.trace... |
 | `contracts_circles_v2_ReferralsModule_events` | CONTRACTS | Decoded event logs for the Circles v2 ReferralsModule contract. |
 | `contracts_circles_v2_StandardTreasury_calls` | CONTRACTS | Decoded function calls for the Circles v2 StandardTreasury contract. |
 | `contracts_circles_v2_StandardTreasury_events` | CONTRACTS | Decoded event logs for the Circles v2 StandardTreasury contract. |
+| `contracts_circles_v2_score_policy_events` | CONTRACTS | Decoded events from the OffchainScoreBasedMintPolicy singleton (0x450d68272e43c4cab7cbc7faa37893a50fae9569): Personal... |
 
 **V3**
 

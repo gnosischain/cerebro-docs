@@ -36,6 +36,7 @@ Gnosis Chain shares the Ethereum Beacon Chain specification with several key dif
 ## Model Categories
 
 <!-- BEGIN AUTO-GENERATED: models-consensus -->
+<!-- generated: 2026-07-23 -->
 **Attestations**
 
 | Model | Layer | Description |

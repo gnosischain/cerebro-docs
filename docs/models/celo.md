@@ -1,6 +1,7 @@
 # Celo (Gnosis Pay) Module
 
 <!-- BEGIN AUTO-GENERATED: models-celo -->
+<!-- generated: 2026-07-23 -->
 **Gpay**
 
 | Model | Layer | Description |

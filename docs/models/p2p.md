@@ -35,6 +35,7 @@ The Nebula crawler periodically discovers and visits nodes on the Gnosis Chain n
 ## Model Categories
 
 <!-- BEGIN AUTO-GENERATED: models-p2p -->
+<!-- generated: 2026-07-23 -->
 **Clients**
 
 | Model | Layer | Description |

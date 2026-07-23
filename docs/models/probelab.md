@@ -16,6 +16,7 @@ ProbeLab crawlers perform IP-level analysis to classify nodes by:
 ## Model Categories
 
 <!-- BEGIN AUTO-GENERATED: models-probelab -->
+<!-- generated: 2026-07-23 -->
 **Clients**
 
 | Model | Layer | Description |

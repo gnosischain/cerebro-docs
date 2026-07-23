@@ -1,10 +1,8 @@
 # Execution API Endpoints
 
 <!-- BEGIN AUTO-GENERATED: api-catalog-execution -->
-_292 endpoints across 234 resources. Generated from the dbt manifest — edits inside this block will be overwritten. Regenerate with `python scripts/update_docs.py --only api`._
-
-!!! warning "14 additional model(s) not live"
-    14 more model(s) in this category declare `api:` tags but their `meta.api` metadata fails validation, so the live API skips them. See the generator log for the model names; the fix belongs in the dbt model.
+<!-- generated: 2026-07-23 -->
+_339 endpoints across 290 resources. Generated from the dbt manifest — edits inside this block will be overwritten. Regenerate with `python scripts/update_docs.py --only api`._
 
 ## account_balance_history
 
@@ -47,6 +45,94 @@ Simple API view for Account Portfolio balance history.
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
+## account_counterparty_graph
+
+Simple API view for Account Portfolio counterparty graph rows.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/account_counterparty_graph/latest` | GET, POST | tier1 | `source`, `edge_type` | limit/offset (envelope) | weight DESC |
+
+??? info "`GET/POST /v1/execution/account_counterparty_graph/latest`"
+    Simple API view for Account Portfolio counterparty graph rows.
+
+    Model: `api_execution_account_counterparty_graph` — table `dbt.api_execution_account_counterparty_graph`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `source` | `=` | `source` | string | case: lower |
+    | `edge_type` | `=` | `edge_type` | string | -- |
+
+    **Filter policy:** At least one filter required. Must provide one of: `source`.
+
+    **Pagination:** `limit`/`offset` — default 60, max 250; response: envelope `{items, pagination}`
+
+    **Sort:** `weight DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `edge_type` | `String` | Kind of relationship the edge represents. |
+    | `weight` | `UInt64` | Edge weight — aggregated interaction count (or 1 for structural relations). |
+    | `source` | `Nullable(String)` | -- |
+    | `target` | `Nullable(String)` | -- |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/account_counterparty_graph/latest?source=VALUE" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## account_linked_entities
+
+Simple API view for direct linked entities.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/account_linked_entities/latest` | GET, POST | tier1 | `root_address`, `relation`, `entity_type` | limit/offset (envelope) | last_seen_at DESC |
+
+??? info "`GET/POST /v1/execution/account_linked_entities/latest`"
+    Simple API view for direct linked entities.
+
+    Model: `api_execution_account_linked_entities_latest` — table `dbt.api_execution_account_linked_entities_latest`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `root_address` | `IN` | `root_address` | string_list | case: lower; max_items: 20 |
+    | `relation` | `=` | `relation` | string | -- |
+    | `entity_type` | `=` | `entity_type` | string | -- |
+
+    **Filter policy:** At least one filter required. Must provide one of: `root_address`.
+
+    **Pagination:** `limit`/`offset` — default 100, max 5000; response: envelope `{items, pagination}`
+
+    **Sort:** `last_seen_at DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `entity_type` | `String` | Type of linked entity ('safe', 'safe_owner', 'gpay_wallet', 'validator_credential'). |
+    | `last_seen_at` | `DateTime` | Most recent timestamp evidencing the link (became-owner / last module event / slot timestamp). |
+    | `relation` | `String` | Relationship of the entity to root_address. |
+    | `root_address` | `Nullable(String)` | -- |
+    | `entity_id` | `Nullable(String)` | -- |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/account_linked_entities/latest?root_address=VALUE1,VALUE2" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
 ## account_profile
 
 Simple API view over the latest Account Portfolio profile fact.
@@ -81,6 +167,47 @@ Simple API view over the latest Account Portfolio profile fact.
 
     ```bash
     curl "https://api.analytics.gnosis.io/v1/execution/account_profile/latest?address=VALUE1,VALUE2" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## account_recent_transactions
+
+Recent production-backed token movement rows for Account Portfolio transaction tables.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/account_recent_transactions/daily` | GET, POST | tier1 | `address`, `counterparty` | limit/offset (envelope) | date DESC |
+
+??? info "`GET/POST /v1/execution/account_recent_transactions/daily`"
+    Recent production-backed token movement rows for Account Portfolio transaction tables.
+
+    Model: `api_execution_account_recent_transactions` — table `dbt.api_execution_account_recent_transactions`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `address` | `IN` | `address` | string_list | case: lower; max_items: 20 |
+    | `counterparty` | `=` | `counterparty` | string | case: lower |
+
+    **Filter policy:** At least one filter required. Must provide one of: `address`.
+
+    **Pagination:** `limit`/`offset` — default 100, max 1000; response: envelope `{items, pagination}`
+
+    **Sort:** `date DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `counterparty` | `Nullable(String)` | Counterparty address of the movement (other side of the transfer). |
+    | `address` | `Nullable(String)` | -- |
+    | `date` | `Date` | -- |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/account_recent_transactions/daily?address=VALUE1,VALUE2" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
@@ -129,6 +256,137 @@ Reverse lookup — given an address, list every Safe it currently owns, enriched
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
+## account_search
+
+Simple API view over Account Portfolio search index.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/account_search/latest` | GET, POST | tier1 | `search_key`, `address`, `result_type` | limit/offset (envelope) | -- |
+
+??? info "`GET/POST /v1/execution/account_search/latest`"
+    Simple API view over Account Portfolio search index.
+
+    Model: `api_execution_account_search_index` — table `dbt.api_execution_account_search_index`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `search_key` | `=` | `search_key` | string | case: lower |
+    | `address` | `=` | `address` | string | case: lower |
+    | `result_type` | `=` | `result_type` | string | -- |
+
+    **Filter policy:** At least one filter required. Must provide one of: `search_key`.
+
+    **Pagination:** `limit`/`offset` — default 20, max 100; response: envelope `{items, pagination}`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `address` | `String` | Resolved account address for the search result (lowercase). |
+    | `search_key` | `Nullable(String)` | -- |
+    | `result_type` | `String` | -- |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/account_search/latest?search_key=VALUE" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## account_token_balances
+
+Simple API view for latest Account Portfolio token balances.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/account_token_balances/latest` | GET, POST | tier1 | `address`, `symbol` | limit/offset (envelope) | balance_usd DESC |
+
+??? info "`GET/POST /v1/execution/account_token_balances/latest`"
+    Simple API view for latest Account Portfolio token balances.
+
+    Model: `api_execution_account_token_balances_latest` — table `dbt.api_execution_account_token_balances_latest`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `address` | `IN` | `address` | string_list | case: lower; max_items: 20 |
+    | `symbol` | `=` | `symbol` | string | -- |
+
+    **Filter policy:** At least one filter required. Must provide one of: `address`.
+
+    **Pagination:** `limit`/`offset` — default 100, max 5000; response: envelope `{items, pagination}`
+
+    **Sort:** `balance_usd DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `balance_usd` | `Float64` | Balance multiplied by the daily token price in USD. Null when no price is available for that (date, symbol). |
+    | `symbol` | `String` | The token's symbol, serving as a human-readable identifier. |
+    | `address` | `Nullable(String)` | -- |
+    | `token_address` | `String` | -- |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/account_token_balances/latest?address=VALUE1,VALUE2" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## account_token_movements
+
+Simple API view for Account Portfolio token movements.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/account_token_movements/daily` | GET, POST | tier1 | `address`, `counterparty`, `symbol`, `direction`, `start_date`, `end_date` | limit/offset (envelope) | date DESC |
+
+??? info "`GET/POST /v1/execution/account_token_movements/daily`"
+    Simple API view for Account Portfolio token movements.
+
+    Model: `api_execution_account_token_movements_daily` — table `dbt.api_execution_account_token_movements_daily`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `address` | `IN` | `address` | string_list | case: lower; max_items: 20 |
+    | `counterparty` | `=` | `counterparty` | string | case: lower |
+    | `symbol` | `=` | `symbol` | string | -- |
+    | `direction` | `=` | `direction` | string | -- |
+    | `start_date` | `>=` | `date` | date | -- |
+    | `end_date` | `<=` | `date` | date | -- |
+
+    **Filter policy:** At least one filter required. Must provide one of: `address`.
+
+    **Pagination:** `limit`/`offset` — default 250, max 5000; response: envelope `{items, pagination}`
+
+    **Sort:** `date DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `counterparty` | `Nullable(String)` | Counterparty address of the movement (other side of the transfer). |
+    | `date` | `Date` | Movement date (daily grain). |
+    | `symbol` | `String` | Token symbol of the moved asset. |
+    | `address` | `Nullable(String)` | -- |
+    | `direction` | `String` | -- |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/account_token_movements/daily?start_date=2026-01-01" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
 ## account_transaction_summary
 
 Simple API view for Account Portfolio transaction/activity summary.
@@ -163,6 +421,48 @@ Simple API view for Account Portfolio transaction/activity summary.
 
     ```bash
     curl "https://api.analytics.gnosis.io/v1/execution/account_transaction_summary/latest?address=VALUE1,VALUE2" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## account_validators
+
+Account-facing validator member view filterable by withdrawal address or credential.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/account_validators/latest` | GET, POST | tier1 | `withdrawal_address`, `withdrawal_credentials` | limit/offset (envelope) | validator_index ASC |
+
+??? info "`GET/POST /v1/execution/account_validators/latest`"
+    Account-facing validator member view filterable by withdrawal address or credential.
+
+    Model: `api_execution_account_validators_latest` — table `dbt.api_execution_account_validators_latest`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `withdrawal_address` | `IN` | `withdrawal_address` | string_list | case: lower; max_items: 20 |
+    | `withdrawal_credentials` | `=` | `withdrawal_credentials` | string | case: lower |
+
+    **Filter policy:** At least one filter required. Must provide one of: `withdrawal_address`, `withdrawal_credentials`.
+
+    **Pagination:** `limit`/`offset` — default 100, max 5000; response: envelope `{items, pagination}`
+
+    **Sort:** `validator_index ASC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `withdrawal_credentials` | `String` | Lowercased withdrawal credentials the validator sits under — the Validator Explorer's operator grouping key. |
+    | `validator_index` | `UInt32` | -- |
+    | `withdrawal_address` | `Nullable(String)` | -- |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/account_validators/latest?withdrawal_address=VALUE1,VALUE2" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
@@ -243,6 +543,42 @@ Per-address merge view over `fct_execution_address_resolver`. Collapses the per-
 
     ```bash
     curl "https://api.analytics.gnosis.io/v1/execution/address_resolver/latest?address=VALUE" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## address_search
+
+Lightweight dropdown source for the Account Portfolio tab's global filter. Two columns (address + display_name), `allow_unfiltered: true` so LabelSelector loads the full list in one request and substring-matches client-side.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/address_search/latest` | GET, POST | tier1 | -- | limit/offset (envelope) | connected_validator_count DESC, connected_safe_count DESC |
+
+??? info "`GET/POST /v1/execution/address_search/latest`"
+    Lightweight dropdown source for the Account Portfolio tab's global filter. Two columns (address + display_name), `allow_unfiltered: true` so LabelSelector loads the full list in one request and substring-matches client-side.
+
+    Model: `api_execution_address_search` — table `dbt.api_execution_address_search`
+
+    **Filter policy:** Unfiltered requests allowed.
+
+    **Pagination:** `limit`/`offset` — default 10000, max 50000; response: envelope `{items, pagination}`
+
+    **Sort:** `connected_validator_count DESC`, `connected_safe_count DESC` — user-sortable via `sort_by`: `address`, `display_name`, `connected_validator_count`, `connected_safe_count`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `connected_safe_count` | `UInt64` | Number of Safes this address currently owns (0 if not an owner). |
+    | `connected_validator_count` | `UInt64` | Number of validators whose withdrawal_address is this address (0 if none). |
+    | `address` | `Nullable(String)` | -- |
+    | `display_name` | `String` | -- |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/address_search/latest" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
@@ -1169,6 +1505,38 @@ Time-series of Circles v2 backing-lifecycle events, by stage.
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
+## circles_v2_balance_cohorts
+
+Daily wealth distribution: distinct CRC holders bucketed by balance tier (0-1 / 1-10 / 10-100 / 100-1k / 1k-10k / 10k-100k / 100k+). Passthrough over int_execution_circles_v2_balance_cohorts_daily, excluding the current incomplete day.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_balance_cohorts/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_balance_cohorts/daily`"
+    Daily wealth distribution: distinct CRC holders bucketed by balance tier (0-1 / 1-10 / 10-100 / 100-1k / 1k-10k / 10k-100k / 100k+). Passthrough over int_execution_circles_v2_balance_cohorts_daily, excluding the current incomplete day.
+
+    Model: `api_execution_circles_v2_balance_cohorts_daily` — table `dbt.api_execution_circles_v2_balance_cohorts_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar date (current incomplete day excluded). |
+    | `balance_bucket` | `String` | Balance range bucket label (e.g. '0-1', '1-10', '100k+'). |
+    | `holder_count` | `UInt64` | Number of distinct holders in this bucket. |
+    | `total_balance` | `Float64` | Sum of nominal balances in this bucket in CRC. |
+    | `total_demurraged_balance` | `Nullable(Float64)` | Sum of demurrage-adjusted balances in this bucket in CRC. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_balance_cohorts/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
 ## circles_v2_economically_active_avatars
 
 Weekly economically active Circles avatars (ecosystem-wide, circles-first definition) by earning_kind, with the in-app-tx subset. The Gnosis App WEAU (in-app filtered) lives at api:gnosis_app_weekly_economically_active_users.
@@ -1200,6 +1568,430 @@ Weekly economically active Circles avatars (ecosystem-wide, circles-first defini
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
+## circles_v2_gcrc_cashback
+
+Weekly Circles v2 gCRC cashback distribution: distinct recipient count and total gCRC amount sent from the cashback wallet to app users (weeks meeting the >= 1 gCRC threshold). The latest incomplete week is excluded.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_gcrc_cashback/weekly` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_gcrc_cashback/weekly`"
+    Weekly Circles v2 gCRC cashback distribution: distinct recipient count and total gCRC amount sent from the cashback wallet to app users (weeks meeting the >= 1 gCRC threshold). The latest incomplete week is excluded.
+
+    Model: `api_execution_circles_v2_gcrc_cashback_weekly` — table `dbt.api_execution_circles_v2_gcrc_cashback_weekly`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `week` | `Date` | Start-of-week date (UTC, Monday start) for the cashback aggregation. |
+    | `n_recipients` | `UInt64` | Distinct recipients that received gCRC cashback that week. |
+    | `amount` | `Float64` | Total gCRC amount distributed as cashback that week. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_gcrc_cashback/weekly" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_gcrc_cashback_cumulative
+
+Cumulative Circles v2 gCRC cashback over time, one row per week: the running total gCRC distributed and the running count of distinct lifetime recipients (each recipient counted in the week they first received cashback).
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_gcrc_cashback_cumulative/weekly` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_gcrc_cashback_cumulative/weekly`"
+    Cumulative Circles v2 gCRC cashback over time, one row per week: the running total gCRC distributed and the running count of distinct lifetime recipients (each recipient counted in the week they first received cashback).
+
+    Model: `api_execution_circles_v2_gcrc_cashback_cumulative` — table `dbt.api_execution_circles_v2_gcrc_cashback_cumulative`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `week` | `Date` | Week start (Monday, UTC). |
+    | `cumulative_amount` | `Float64` | Running total gCRC cashback distributed through the end of this week. |
+    | `cumulative_recipients` | `UInt64` | Running count of distinct lifetime cashback recipients, each counted in the week they first received cashback. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_gcrc_cashback_cumulative/weekly" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_gcrc_cashback_recipients_ranking
+
+Top 100 lifetime recipients of Circles v2 gCRC cashback, ranked by total amount received, enriched with each recipient's avatar profile (display name and preview image).
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_gcrc_cashback_recipients_ranking/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_gcrc_cashback_recipients_ranking/latest`"
+    Top 100 lifetime recipients of Circles v2 gCRC cashback, ranked by total amount received, enriched with each recipient's avatar profile (display name and preview image).
+
+    Model: `api_execution_circles_v2_gcrc_cashback_recipients_ranking` — table `dbt.api_execution_circles_v2_gcrc_cashback_recipients_ranking`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Date the snapshot was generated (today, UTC). |
+    | `rank` | `UInt64` | Rank by total cashback received (1 = highest). |
+    | `address` | `String` | Recipient avatar address. |
+    | `display_name` | `String` | Human-readable display name, falling back to the address when no profile name exists. |
+    | `preview_image_url` | `Nullable(String)` | Avatar preview image URL, if available. |
+    | `total_amount` | `Float64` | Total gCRC cashback received across all weeks. |
+    | `n_weeks` | `UInt64` | Number of distinct weeks the recipient received cashback. |
+    | `last_week` | `Date` | Most recent week (UTC week start) the recipient received cashback. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_gcrc_cashback_recipients_ranking/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_gcrc_cashback_total
+
+Lifetime (single-row) Circles v2 gCRC cashback totals for KPI tiles: the cumulative cashback amount distributed and the number of distinct recipients across all completed weeks.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_gcrc_cashback_total/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_gcrc_cashback_total/latest`"
+    Lifetime (single-row) Circles v2 gCRC cashback totals for KPI tiles: the cumulative cashback amount distributed and the number of distinct recipients across all completed weeks.
+
+    Model: `api_execution_circles_v2_gcrc_cashback_total` — table `dbt.api_execution_circles_v2_gcrc_cashback_total`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Snapshot date the totals were computed (today, UTC). |
+    | `total_amount` | `Float64` | Cumulative gCRC cashback amount distributed across all completed weeks. |
+    | `total_recipients` | `UInt64` | Distinct addresses that received gCRC cashback across all completed weeks. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_gcrc_cashback_total/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_group_collateral
+
+Per-group daily member-CRC collateral (native units).
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_group_collateral/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_group_collateral/daily`"
+    Per-group daily member-CRC collateral (native units).
+
+    Model: `api_execution_circles_v2_group_collateral_daily` — table `dbt.api_execution_circles_v2_group_collateral_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC). |
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `collateral` | `Float64` | Member-CRC collateral held by the group at end-of-day (native units, summed across all backing token ids). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_collateral/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_group_explorer_profile
+
+One row per Circles v2 group: identity, on-chain handlers, and snapshot KPIs (members, supply, wrapped %, collateral, 7d mints, holders). Backs the Group Explorer identity header and KPI tiles.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_group_explorer_profile/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_group_explorer_profile/latest`"
+    One row per Circles v2 group: identity, on-chain handlers, and snapshot KPIs (members, supply, wrapped %, collateral, 7d mints, holders). Backs the Group Explorer identity header and KPI tiles.
+
+    Model: `api_execution_circles_v2_group_explorer_profile` — table `dbt.api_execution_circles_v2_group_explorer_profile`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `as_of_date` | `Date` | Snapshot date the row was materialized (UTC). |
+    | `display_name` | `String` | Group display name from metadata or on-chain fallback. |
+    | `preview_image_url` | `Nullable(String)` | Group avatar preview image URL from metadata. |
+    | `registered_at` | `DateTime` | Most recent on-chain registration timestamp for the group. |
+    | `invited_by` | `Nullable(String)` | Address that invited the group per metadata. |
+    | `owner` | `Nullable(String)` | Current group owner address. |
+    | `treasury_address` | `Nullable(String)` | Current treasury handler address. |
+    | `service` | `Nullable(String)` | Current service handler address. |
+    | `mint_handler` | `Nullable(String)` | Current mint handler address. |
+    | `redemption_handler` | `Nullable(String)` | Current redemption handler address. |
+    | `n_members` | `UInt64` | Current group member count. |
+    | `supply` | `Float64` | Current group token supply in native units. |
+    | `wrapped_pct` | `Float64` | Share of supply held as ERC-20 wrapper. |
+    | `collateral_total` | `Float64` | Latest total member-CRC collateral in native units. |
+    | `mints_7d` | `Float64` | Group-token minted in the last 7 days in native units. |
+    | `holders_count` | `UInt64` | Distinct holders of the group token. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_explorer_profile/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_group_holders
+
+Holders of a group's token, resolving both native ERC-1155 and ERC-20 wrapper legs (wrapper mapped back to group via the wrapper registry).
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_group_holders/snapshot` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_group_holders/snapshot`"
+    Holders of a group's token, resolving both native ERC-1155 and ERC-20 wrapper legs (wrapper mapped back to group via the wrapper registry).
+
+    Model: `api_execution_circles_v2_group_holders` — table `dbt.api_execution_circles_v2_group_holders`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Snapshot date the holder list was computed (today() UTC). |
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `holder` | `String` | Lowercased holder avatar address. |
+    | `display_name` | `String` | Holder display name from IPFS metadata or on-chain name or address fallback. |
+    | `balance` | `Float64` | Holder total group-token balance in native units summing the native and wrapper legs. |
+    | `is_wrapped` | `UInt8` | 1 if any of the holder balance is held via an ERC-20 wrapper. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_holders/snapshot" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_group_member_scores
+
+Latest on-chain score per (score-based group, member), from the OffchainScoreBasedMintPolicy PersonalMinted event. One row per member per group; score is the value at the member's most recent mint.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_group_member_scores/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_group_member_scores/latest`"
+    Latest on-chain score per (score-based group, member), from the OffchainScoreBasedMintPolicy PersonalMinted event. One row per member per group; score is the value at the member's most recent mint.
+
+    Model: `api_execution_circles_v2_group_member_scores` — table `dbt.api_execution_circles_v2_group_member_scores`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Date the snapshot was computed (query date |
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `member` | `String` | Member (minter) avatar address |
+    | `score` | `UInt64` | Member's off-chain trust score at their latest mint. |
+    | `last_mint_at` | `DateTime` | Timestamp of the member's latest score-based mint. |
+    | `last_mint_amount` | `Float64` | Group tokens minted at the latest mint (CRC). |
+    | `n_mints` | `UInt64` | Number of score-based mints by this member in this group. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_member_scores/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_group_members
+
+Members of a group (trustees on its outgoing trust list) with profile and join date; is_mutual flags reciprocal trust.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_group_members/snapshot` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_group_members/snapshot`"
+    Members of a group (trustees on its outgoing trust list) with profile and join date; is_mutual flags reciprocal trust.
+
+    Model: `api_execution_circles_v2_group_members` — table `dbt.api_execution_circles_v2_group_members`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Snapshot date the row was materialized (constant today()). |
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `member` | `String` | Lowercased member avatar address. |
+    | `display_name` | `String` | Member IPFS metadata name, else on-chain name, else the address. |
+    | `preview_image_url` | `Nullable(String)` | Member profile preview image URL from IPFS metadata, if any. |
+    | `member_since` | `DateTime` | Timestamp the member's trust edge became valid (join date). |
+    | `is_mutual` | `UInt8` | 1 when the member also trusts the group back (reciprocal trust). |
+    | `score` | `Nullable(UInt64)` | Member's latest on-chain mint score for score-based groups, else null. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_members/snapshot" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_group_mints
+
+Per-group daily group-token mints vs collateral redemptions (distinct tokens/units, labelled in the kind column).
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_group_mints/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_group_mints/daily`"
+    Per-group daily group-token mints vs collateral redemptions (distinct tokens/units, labelled in the kind column).
+
+    Model: `api_execution_circles_v2_group_mints_daily` — table `dbt.api_execution_circles_v2_group_mints_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC). |
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `kind` | `String` | Series label distinguishing group-token mints from collateral redemptions. |
+    | `amount` | `Float64` | Summed amount for that day/group/kind (native CRC units, 1e18-scaled). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_mints/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_group_score_distribution
+
+Count of members per score bucket, per score-based group. Buckets carry a bucket_rank for stable ordering in charts.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_group_score_distribution/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_group_score_distribution/latest`"
+    Count of members per score bucket, per score-based group. Buckets carry a bucket_rank for stable ordering in charts.
+
+    Model: `api_execution_circles_v2_group_score_distribution` — table `dbt.api_execution_circles_v2_group_score_distribution`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Date the snapshot was computed (UTC). |
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `score_bucket` | `String` | Score range bucket label (0-24 / 25-49 / 50-74 / 75-99 / 100-149 / 150+). |
+    | `bucket_rank` | `UInt8` | Ordinal rank of the bucket for chart ordering. |
+    | `n_members` | `UInt64` | Number of members in this score bucket. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_score_distribution/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_group_search
+
+(group_address, display_name) lookup backing the Group Explorer global filter. One row per Circles v2 Group avatar.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_group_search/snapshot` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_group_search/snapshot`"
+    (group_address, display_name) lookup backing the Group Explorer global filter. One row per Circles v2 Group avatar.
+
+    Model: `api_execution_circles_v2_group_search` — table `dbt.api_execution_circles_v2_group_search`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Snapshot date the lookup was materialised (today() at build time). |
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `display_name` | `String` | IPFS metadata name, else on-chain name, else the address. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_search/snapshot" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_group_size
+
+Per-group daily member count, from historical trust intervals.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_group_size/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_group_size/daily`"
+    Per-group daily member count, from historical trust intervals.
+
+    Model: `api_execution_circles_v2_group_size_daily` — table `dbt.api_execution_circles_v2_group_size_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `date` | `Date` | Calendar day (UTC). |
+    | `n_members` | `UInt64` | Number of members (trustees) in the group that day. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_size/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
 ## circles_v2_group_size_distribution
 
 Histogram of Circles v2 group sizes (members per group).
@@ -1228,6 +2020,37 @@ Histogram of Circles v2 group sizes (members per group).
 
     ```bash
     curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_size_distribution/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_group_supply
+
+Per-group daily token supply, split native ERC-1155 vs ERC-20 wrapper (wrapper level = prefix-sum of wrapper supply deltas).
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_group_supply/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_group_supply/daily`"
+    Per-group daily token supply, split native ERC-1155 vs ERC-20 wrapper (wrapper level = prefix-sum of wrapper supply deltas).
+
+    Model: `api_execution_circles_v2_group_supply_daily` — table `dbt.api_execution_circles_v2_group_supply_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `date` | `Date` | Calendar day (UTC). |
+    | `supply` | `Float64` | Nominal (non-demurraged) group token supply that day (native CRC units, 1e18-scaled). |
+    | `supply_demurraged` | `Float64` | Demurraged group token supply that day (native CRC units, 1e18-scaled). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_group_supply/daily" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
@@ -2039,6 +2862,389 @@ Peer-to-peer transfer velocity (mint/burn/wrap/unwrap excluded).
 
     ```bash
     curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_p2p_velocity/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_pool_explorer_liquidity
+
+Daily count of liquidity events (Mint = 'Add', Burn = 'Remove') per Uniswap V3 Circles pool, deduped on (transaction_hash, log_index) so each add/remove event counts once. One row per day, pool, and event kind.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_pool_explorer_liquidity/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_pool_explorer_liquidity/daily`"
+    Daily count of liquidity events (Mint = 'Add', Burn = 'Remove') per Uniswap V3 Circles pool, deduped on (transaction_hash, log_index) so each add/remove event counts once. One row per day, pool, and event kind.
+
+    Model: `api_execution_circles_v2_pool_explorer_liquidity_daily` — table `dbt.api_execution_circles_v2_pool_explorer_liquidity_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC) of the liquidity events, derived from block_timestamp. |
+    | `pool_address` | `String` | Lowercase 0x-prefixed address of the Uniswap V3 Circles liquidity pool. |
+    | `event_kind` | `String` | Liquidity event kind: 'Add' for Mint events, 'Remove' otherwise (Burn). |
+    | `n_events` | `UInt64` | Distinct count of liquidity events that day for the pool and event kind, deduped on (transaction_hash, log_index). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pool_explorer_liquidity/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_pool_explorer_liquidity_events
+
+Individual liquidity events (Mint mapped to Add, Burn to Remove) for the main Uniswap V3 Circles pools, one row per event, with each token amount added/removed, the USD value of the event, and the LP (position owner). Prices are resolved via daily ASOF carry-forward (CRC legs from the crc20 price...
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_pool_explorer_liquidity_events/snapshot` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_pool_explorer_liquidity_events/snapshot`"
+    Individual liquidity events (Mint mapped to Add, Burn to Remove) for the main Uniswap V3 Circles pools, one row per event, with each token amount added/removed, the USD value of the event, and the LP (position owner). Prices are resolved via daily ASOF carry-forward (CRC legs from the crc20 price...
+
+    Model: `api_execution_circles_v2_pool_explorer_liquidity_events` — table `dbt.api_execution_circles_v2_pool_explorer_liquidity_events`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `pool_address` | `String` | Lowercase 0x pool contract address of the Uniswap V3 Circles pool the event belongs to. |
+    | `ts` | `DateTime` | Block timestamp of the liquidity event (UTC); serves as the freshness column. |
+    | `tx_hash` | `String` | Transaction hash of the liquidity event. |
+    | `event_kind` | `String` | Liquidity action: 'Add' for Mint events, 'Remove' for Burn events. |
+    | `token0_symbol` | `String` | Human-readable symbol of pool token0 (sDAI, EURe, s-gCRC, s-CBG, or an address prefix fallback). |
+    | `amount0` | `Float64` | Amount of token0 added or removed in the event, scaled to whole units (divided by 1e18). |
+    | `token1_symbol` | `String` | Human-readable symbol of pool token1 (sDAI, EURe, s-gCRC, s-CBG, or an address prefix fallback). |
+    | `amount1` | `Float64` | Amount of token1 added or removed in the event, scaled to whole units (divided by 1e18). |
+    | `amount_usd` | `Float64` | Total USD value of the event across both token legs, using ASOF carry-forward prices (0 when unpriced). |
+    | `lp` | `String` | Lowercase 0x address of the liquidity provider (position owner) for the event. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pool_explorer_liquidity_events/snapshot" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_pool_explorer_swaps
+
+Daily swap activity per main Circles DEX pool tracked in the Pool Explorer: number of swaps, total USD volume, and distinct trader count, scoped to the curated set of liquidity pools.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_pool_explorer_swaps/daily` | GET | tier1 | -- | -- | -- |
+| `/v1/execution/circles_v2_pool_explorer_swaps/snapshot` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_pool_explorer_swaps/daily`"
+    Daily swap activity per main Circles DEX pool tracked in the Pool Explorer: number of swaps, total USD volume, and distinct trader count, scoped to the curated set of liquidity pools.
+
+    Model: `api_execution_circles_v2_pool_explorer_swaps_daily` — table `dbt.api_execution_circles_v2_pool_explorer_swaps_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day of the swap activity (UTC), derived from block_timestamp. |
+    | `pool_address` | `String` | Lower-cased liquidity pool contract address. |
+    | `n_swaps` | `UInt64` | Number of swaps executed in the pool that day. |
+    | `volume_usd` | `Float64` | Total swap volume in USD for the pool that day. |
+    | `n_traders` | `UInt64` | Distinct traders (taker, falling back to tx sender) that day. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pool_explorer_swaps/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+??? info "`GET /v1/execution/circles_v2_pool_explorer_swaps/snapshot`"
+    Individual recent swaps executed on the main Circles v2 DEX pools, scoped to the curated liquidity pools for the Pool Explorer swaps table. One row per trade with the pool, timestamp, transaction hash, tokens and amounts on each side, USD value, and the trader address.
+
+    Model: `api_execution_circles_v2_pool_explorer_swaps` — table `dbt.api_execution_circles_v2_pool_explorer_swaps`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `pool_address` | `String` | Lower-cased address of the Circles DEX pool the swap occurred in. |
+    | `ts` | `DateTime` | Block timestamp of the swap (UTC); serves as the freshness column. |
+    | `tx_hash` | `String` | Transaction hash of the swap. |
+    | `token_sold` | `String` | Symbol of the token sold (input side) in the swap. |
+    | `amount_sold` | `Float64` | Amount of the token sold (input side). |
+    | `token_bought` | `String` | Symbol of the token bought (output side) in the swap. |
+    | `amount_bought` | `Float64` | Amount of the token bought (output side). |
+    | `amount_usd` | `Nullable(Float64)` | USD value of the swap; null when no price is available. |
+    | `trader` | `String` | Trader address, taken as the taker if present else the transaction sender. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pool_explorer_swaps/snapshot" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_pool_search
+
+Point-in-time (pool_address, display_name) lookup of Circles v2 liquidity pools that backs the Pool Explorer filter dropdown. Returns one row per known pool with its lowercased contract address and human-readable label.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_pool_search/snapshot` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_pool_search/snapshot`"
+    Point-in-time (pool_address, display_name) lookup of Circles v2 liquidity pools that backs the Pool Explorer filter dropdown. Returns one row per known pool with its lowercased contract address and human-readable label.
+
+    Model: `api_execution_circles_v2_pool_search` — table `dbt.api_execution_circles_v2_pool_search`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Snapshot date the lookup was generated (today(), UTC). |
+    | `pool_address` | `String` | Lowercased Circles liquidity pool contract address. |
+    | `display_name` | `String` | Human-readable pool label shown in the Pool Explorer dropdown. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pool_search/snapshot" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_pools
+
+One row per main Circles DEX pool: latest TVL plus trailing-7d volume, trades, distinct traders and fees. Backs the Liquidity KPI tiles and pools leaderboard.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_pools/latest` | GET | tier1 | -- | -- | -- |
+| `/v1/execution/circles_v2_pools/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_pools/latest`"
+    One row per main Circles DEX pool: latest TVL plus trailing-7d volume, trades, distinct traders and fees. Backs the Liquidity KPI tiles and pools leaderboard.
+
+    Model: `api_execution_circles_v2_pools_latest` — table `dbt.api_execution_circles_v2_pools_latest`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (query date |
+    | `pool_address` | `String` | Pool contract address (lowercase). |
+    | `pool` | `String` | Human-readable pool label (token pair). |
+    | `protocol` | `Nullable(String)` | DEX protocol (Uniswap V3). |
+    | `tvl_usd` | `Nullable(Float64)` | Most recent daily TVL in USD. |
+    | `volume_7d` | `Float64` | Trailing-7d trading volume in USD. |
+    | `trades_7d` | `UInt64` | Trailing-7d swap count. |
+    | `traders_7d` | `UInt64` | Trailing-7d distinct traders (deduplicated across days). |
+    | `fees_7d` | `Float64` | Trailing-7d fees in USD. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pools/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+??? info "`GET /v1/execution/circles_v2_pools/daily`"
+    Daily liquidity/market metrics for the main Circles DEX pools (seed circles_liquidity_pools), one row per (date, pool). Sourced from int_execution_pools_metrics_daily; current incomplete day excluded.
+
+    Model: `api_execution_circles_v2_pools_daily` — table `dbt.api_execution_circles_v2_pools_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC). |
+    | `pool` | `String` | Human-readable pool label (token pair). |
+    | `pool_address` | `String` | Pool contract address (lowercase). |
+    | `protocol` | `String` | DEX protocol (Uniswap V3). |
+    | `tvl_usd` | `Nullable(Float64)` | Total value locked in USD. |
+    | `volume_usd` | `Float64` | Daily trading volume in USD. |
+    | `fees_usd` | `Float64` | Daily accrued fees in USD. |
+    | `swap_count` | `UInt64` | Number of Swap events on this pool on this day. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pools/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_pools_reserves
+
+Latest per-(pool, token) reserve, token USD price and TVL for the main Circles DEX pools. Emits two rows per pool (one per leg), backing the pool-reserves card.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_pools_reserves/latest` | GET | tier1 | -- | -- | -- |
+| `/v1/execution/circles_v2_pools_reserves/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_pools_reserves/latest`"
+    Latest per-(pool, token) reserve, token USD price and TVL for the main Circles DEX pools. Emits two rows per pool (one per leg), backing the pool-reserves card.
+
+    Model: `api_execution_circles_v2_pools_reserves_latest` — table `dbt.api_execution_circles_v2_pools_reserves_latest`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `as_of_date` | `Date` | Freshness date the row was materialized (today, UTC). |
+    | `pool` | `String` | Human-readable pool label. |
+    | `pool_address` | `String` | On-chain address of the DEX pool contract. |
+    | `token_address` | `String` | On-chain address of the reserve token (one of the pool's two legs). |
+    | `token_symbol` | `String` | Symbol of the reserve token. |
+    | `reserve` | `Float64` | Latest reserve amount held for this token in the pool. |
+    | `price_usd` | `Float64` | Latest USD price of the reserve token. |
+    | `tvl_usd` | `Float64` | Latest USD value of this token's reserve (reserve x price). |
+    | `as_of` | `Date` | Most recent source date the latest reserve/price/TVL values were observed. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pools_reserves/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+??? info "`GET /v1/execution/circles_v2_pools_reserves/daily`"
+    Daily USD total value locked (TVL) per main Circles DEX pool, computed as the sum of both token legs' USD value. Backs the reserves-over-time chart and the latest-TVL used by the KPI and leaderboard.
+
+    Model: `api_execution_circles_v2_pools_reserves_daily` — table `dbt.api_execution_circles_v2_pools_reserves_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC). |
+    | `pool` | `String` | Human-readable pool label. |
+    | `pool_address` | `String` | Pool contract address. |
+    | `tvl_usd` | `Float64` | Total value locked in the pool that day in USD (sum of both token legs, rounded to 2 decimals). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pools_reserves/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_pools_reserves_token
+
+Daily per-(pool, token) reserve balance and USD valuation for the main Circles DEX pools (Uniswap V3 and Balancer V3). Base model behind the TVL rollup, the reserves-over-time chart and the reserves card; prices come from a daily ASOF carry-forward and the current incomplete day is excluded.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_pools_reserves_token/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_pools_reserves_token/daily`"
+    Daily per-(pool, token) reserve balance and USD valuation for the main Circles DEX pools (Uniswap V3 and Balancer V3). Base model behind the TVL rollup, the reserves-over-time chart and the reserves card; prices come from a daily ASOF carry-forward and the current incomplete day is excluded.
+
+    Model: `api_execution_circles_v2_pools_reserves_token_daily` — table `dbt.api_execution_circles_v2_pools_reserves_token_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC). |
+    | `pool` | `String` | Human-readable pool label. |
+    | `pool_address` | `String` | Pool contract address (lowercased, 0x-prefixed). |
+    | `token_address` | `String` | Reserve token contract address (lowercased). |
+    | `token_symbol` | `String` | Human-readable token symbol (sDAI/EURe/s-gCRC/s-CBG, or the address prefix as fallback). |
+    | `reserve` | `Float64` | Token reserve balance held by the pool that day (native token units). |
+    | `price_usd` | `Nullable(Float64)` | ASOF carry-forward USD price for the token, falling back to the earliest observed price; may be null when the token is unpriced. |
+    | `tvl_usd` | `Nullable(Float64)` | USD value of the reserve (reserve * price_usd); null when the token leg is unpriced. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pools_reserves_token/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_pools_traders
+
+Daily distinct traders and trade count per main Circles DEX pool. A trader is the swap taker (Swap recipient), falling back to the tx signer.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_pools_traders/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_pools_traders/daily`"
+    Daily distinct traders and trade count per main Circles DEX pool. A trader is the swap taker (Swap recipient), falling back to the tx signer.
+
+    Model: `api_execution_circles_v2_pools_traders_daily` — table `dbt.api_execution_circles_v2_pools_traders_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC). |
+    | `pool` | `String` | Human-readable pool label (token pair). |
+    | `pool_address` | `String` | Pool contract address (lowercase). |
+    | `distinct_traders` | `UInt64` | Distinct traders active in the pool that day. |
+    | `trades` | `UInt64` | Number of swaps in the pool that day. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_pools_traders/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## circles_v2_score_mints
+
+Daily score-based mint activity per group: mint count, distinct minters, average member score at mint, and total group tokens minted. Current incomplete day excluded.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/circles_v2_score_mints/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/circles_v2_score_mints/daily`"
+    Daily score-based mint activity per group: mint count, distinct minters, average member score at mint, and total group tokens minted. Current incomplete day excluded.
+
+    Model: `api_execution_circles_v2_score_mints_daily` — table `dbt.api_execution_circles_v2_score_mints_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `group_address` | `String` | Lowercased group avatar address. |
+    | `date` | `Date` | Calendar day (UTC). |
+    | `n_mints` | `UInt64` | Number of score-based mints that day. |
+    | `n_minters` | `UInt64` | Distinct minters that day. |
+    | `avg_score` | `Float64` | Average member score at mint that day. |
+    | `amount` | `Float64` | Total group tokens minted that day (CRC). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/circles_v2_score_mints/daily" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
@@ -2957,103 +4163,15 @@ KPI view of currently-active lenders on Gnosis (Aave V3, SparkLend). "Active len
     curl "https://api.analytics.gnosis.io/v1/execution/execution_lending_lenders_count/latest"
     ```
 
-## execution_pools
+## execution_pools_fee_apr
 
-Daily TVL time series per (token, pool) decomposed into the contribution of each pool side. Sourced from fct_execution_pools_tvl_token_daily. Drives the per-token TVL stacked-area chart.
+API view for fee APR (7D trailing) time series by token and pool label (Uniswap V3/Swapr V3 only). Uses accrued fees from Swap + Flash (gross; independent of Collect/claims).
 
 | Path | Methods | Tier | Filters | Pagination | Sort |
 |------|---------|------|---------|------------|------|
-| `/v1/execution/execution_pools/daily` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/daily` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/daily` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/daily` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/daily` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/daily` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/daily` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/daily` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/snapshot` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/snapshot` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/snapshot` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/execution_pools/snapshot` | GET | tier1 | -- | -- | -- |
+| `/v1/execution/execution_pools_fee_apr/daily/7d` | GET | tier1 | -- | -- | -- |
 
-??? info "`GET /v1/execution/execution_pools/daily`"
-    Daily TVL time series per (token, pool) decomposed into the contribution of each pool side. Sourced from fct_execution_pools_tvl_token_daily. Drives the per-token TVL stacked-area chart.
-
-    Model: `api_execution_pools_tvl_token_daily` — table `dbt.api_execution_pools_tvl_token_daily`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `date` | `Date` | Calendar day (UTC) of the TVL time series. |
-    | `token` | `String` | Reference token symbol (renamed from ref_token). |
-    | `label` | `String` | Pool display name. |
-    | `series` | `String` | Series identifier for stacking (typically the side of the pool the TVL is denominated in). |
-    | `tvl_usd` | `Float64` | Component TVL in USD for this row. |
-    | `tvl_in_token0` | `Nullable(Float64)` | Pool TVL portion attributable to token0 (native units). |
-    | `tvl_in_token1` | `Nullable(Float64)` | Pool TVL portion attributable to token1 (native units). |
-    | `token0_symbol` | `String` | Symbol of the pool's token0. |
-    | `token1_symbol` | `String` | Symbol of the pool's token1. |
-    | `token_amount` | `Nullable(Float64)` | Token-side balance for the reference token on this date. |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/daily" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/execution_pools/daily`"
-    API view for net APR (fee APR plus LVR) time series by token and pool label, with fee APR and LVR components.
-
-    Model: `api_execution_pools_net_apr_daily` — table `dbt.api_execution_pools_net_apr_daily`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `date` | `Date` | Calendar day (UTC) of the APR time series. |
-    | `token` | `String` | Token symbol the pool is grouped under. |
-    | `label` | `String` | Pool display name. |
-    | `fee_apr_7d` | `Float64` | 7-day trailing fee APR (annualized, %). |
-    | `lvr_apr_7d` | `Float64` | Annualised 7-day Loss Versus Rebalancing (%). Always <= 0 (negative = loss). |
-    | `net_apr_7d` | `Float64` | Net APR (fee_apr_7d + lvr_apr_7d), the estimated real return after LVR cost. |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/daily" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/execution_pools/daily`"
-    API view for daily fee revenue (USD) by token and pool, sourced from fct_execution_pools_daily.
-
-    Model: `api_execution_pools_fees_usd_daily` — table `dbt.api_execution_pools_fees_usd_daily`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `date` | `Date` | Calendar day (UTC) of the fee revenue time series. |
-    | `token` | `String` | Token symbol the pool is grouped under. |
-    | `label` | `String` | Pool display name. |
-    | `value` | `Float64` | Daily gross fee revenue in USD. |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/daily" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/execution_pools/daily`"
+??? info "`GET /v1/execution/execution_pools_fee_apr/daily/7d`"
     API view for fee APR (7D trailing) time series by token and pool label (Uniswap V3/Swapr V3 only). Uses accrued fees from Swap + Flash (gross; independent of Collect/claims).
 
     Model: `api_execution_pools_fee_apr_7d_daily` — table `dbt.api_execution_pools_fee_apr_7d_daily`
@@ -3073,11 +4191,74 @@ Daily TVL time series per (token, pool) decomposed into the contribution of each
     **Example**
 
     ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/daily" \
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_fee_apr/daily/7d" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
-??? info "`GET /v1/execution/execution_pools/daily`"
+## execution_pools_fees_usd
+
+API view for daily fee revenue (USD) by token and pool, sourced from fct_execution_pools_daily.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/execution_pools_fees_usd/daily` | GET | tier1 | -- | -- | -- |
+| `/v1/execution/execution_pools_fees_usd/snapshot/7d` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/execution_pools_fees_usd/daily`"
+    API view for daily fee revenue (USD) by token and pool, sourced from fct_execution_pools_daily.
+
+    Model: `api_execution_pools_fees_usd_daily` — table `dbt.api_execution_pools_fees_usd_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC) of the fee revenue time series. |
+    | `token` | `String` | Token symbol the pool is grouped under. |
+    | `label` | `String` | Pool display name. |
+    | `value` | `Float64` | Daily gross fee revenue in USD. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_fees_usd/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+??? info "`GET /v1/execution/execution_pools_fees_usd/snapshot/7d`"
+    Per-token total LP fees over the last 7 days (snapshot) with 7-day-prior change. Sourced from fct_execution_pools_snapshots filtered to metric='Fees_7D'.
+
+    Model: `api_execution_pools_fees_7d` — table `dbt.api_execution_pools_fees_7d`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `token` | `String` | Token symbol the snapshot is aggregated for. |
+    | `value` | `Float64` | 7-day total fees in USD for the token. |
+    | `change_pct` | `Nullable(Float64)` | Percent change vs the previous 7-day window. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_fees_usd/snapshot/7d" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## execution_pools_lp_activity
+
+API view for daily LP activity (Mint/Burn event counts) per pool per token, unpivoted into one row per event type for the BarChart seriesField. Reuses pool labels and top-pool filtering from fct_execution_pools_daily.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/execution_pools_lp_activity/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/execution_pools_lp_activity/daily`"
     API view for daily LP activity (Mint/Burn event counts) per pool per token, unpivoted into one row per event type for the BarChart seriesField. Reuses pool labels and top-pool filtering from fct_execution_pools_daily.
 
     Model: `api_execution_pools_lp_activity_daily` — table `dbt.api_execution_pools_lp_activity_daily`
@@ -3097,170 +4278,7 @@ Daily TVL time series per (token, pool) decomposed into the contribution of each
     **Example**
 
     ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/daily" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/execution_pools/daily`"
-    API view for pool TVL (USD) time series by token and pool label.
-
-    Model: `api_execution_pools_tvl_daily` — table `dbt.api_execution_pools_tvl_daily`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `date` | `Date` | Calendar day (UTC) of the TVL time series. |
-    | `token` | `String` | Token symbol the pool is grouped under. |
-    | `label` | `String` | Pool display name. |
-    | `tvl_type` | `String` | Constant metric label ("TVL (USD)") used as the chart series name. |
-    | `value` | `Float64` | Pool TVL in USD on this date. |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/daily" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/execution_pools/daily`"
-    API view for daily swap event count by token and pool, sourced from fct_execution_pools_daily.
-
-    Model: `api_execution_pools_swap_count_daily` — table `dbt.api_execution_pools_swap_count_daily`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `date` | `Date` | Calendar day (UTC) of the swap-count time series. |
-    | `token` | `String` | Token symbol the pool is grouped under. |
-    | `label` | `String` | Pool display name. |
-    | `value` | `UInt64` | Number of Swap events on this pool on this day. |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/daily" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/execution_pools/daily`"
-    API view for daily trading volume (USD) by token and pool, sourced from fct_execution_pools_daily.
-
-    Model: `api_execution_pools_volume_daily` — table `dbt.api_execution_pools_volume_daily`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `date` | `Date` | Calendar day (UTC) of the volume time series. |
-    | `token` | `String` | Token symbol the pool is grouped under. |
-    | `label` | `String` | Pool display name. |
-    | `volume_type` | `String` | Constant metric label ("Volume (USD)") used as the chart series name. |
-    | `value` | `Float64` | Daily gross trading volume in USD. |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/daily" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/execution_pools/snapshot`"
-    Latest TVL snapshot per token across all tracked DEX pools with 7-day change. Sourced from fct_execution_pools_snapshots filtered to metric='TVL_Latest'.
-
-    Model: `api_execution_pools_tvl_latest` — table `dbt.api_execution_pools_tvl_latest`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `token` | `String` | Token symbol the snapshot is aggregated for. |
-    | `value` | `Float64` | Latest TVL in USD. |
-    | `change_pct` | `Nullable(Float64)` | Percent change in TVL vs 7 days ago. |
-    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/snapshot" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/execution_pools/snapshot`"
-    Latest-day TVL breakdown per (token, pool) for the pools dashboard's drill-down chart. One row per pool with positive TVL on the latest available date (excluding today, which may be partial). Sourced from fct_execution_pools_daily.
-
-    Model: `api_execution_pools_tvl_by_pool_latest` — table `dbt.api_execution_pools_tvl_by_pool_latest`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `token` | `String` | Reference token symbol used to group pools. |
-    | `label` | `String` | Pool display name (combines symbols, protocol, address suffix). |
-    | `value` | `Float64` | Pool TVL in USD on the latest available date. |
-    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/snapshot" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/execution_pools/snapshot`"
-    API view for 7-day total trading volume per token (snapshot from fct_execution_pools_snapshots).
-
-    Model: `api_execution_pools_volume_7d` — table `dbt.api_execution_pools_volume_7d`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `token` | `String` | Token symbol the snapshot is aggregated for. |
-    | `value` | `Float64` | Total trading volume (USD) over the last 7 days. |
-    | `change_pct` | `Float64` | Percentage change vs prior 7-day window. |
-    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/snapshot" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/execution_pools/snapshot`"
-    Per-token total LP fees over the last 7 days (snapshot) with 7-day-prior change. Sourced from fct_execution_pools_snapshots filtered to metric='Fees_7D'.
-
-    Model: `api_execution_pools_fees_7d` — table `dbt.api_execution_pools_fees_7d`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `token` | `String` | Token symbol the snapshot is aggregated for. |
-    | `value` | `Float64` | 7-day total fees in USD for the token. |
-    | `change_pct` | `Nullable(Float64)` | Percent change vs the previous 7-day window. |
-    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools/snapshot" \
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_lp_activity/daily" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
@@ -3292,6 +4310,365 @@ API view for unique LP provider count over the last 7 days per token.
 
     ```bash
     curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_lps_count/last_7d" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## execution_pools_net_apr
+
+API view for net APR (fee APR plus LVR) time series by token and pool label, with fee APR and LVR components.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/execution_pools_net_apr/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/execution_pools_net_apr/daily`"
+    API view for net APR (fee APR plus LVR) time series by token and pool label, with fee APR and LVR components.
+
+    Model: `api_execution_pools_net_apr_daily` — table `dbt.api_execution_pools_net_apr_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC) of the APR time series. |
+    | `token` | `String` | Token symbol the pool is grouped under. |
+    | `label` | `String` | Pool display name. |
+    | `fee_apr_7d` | `Float64` | 7-day trailing fee APR (annualized, %). |
+    | `lvr_apr_7d` | `Float64` | Annualised 7-day Loss Versus Rebalancing (%). Always <= 0 (negative = loss). |
+    | `net_apr_7d` | `Float64` | Net APR (fee_apr_7d + lvr_apr_7d), the estimated real return after LVR cost. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_net_apr/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## execution_pools_swap_count
+
+API view for daily swap event count by token and pool, sourced from fct_execution_pools_daily.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/execution_pools_swap_count/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/execution_pools_swap_count/daily`"
+    API view for daily swap event count by token and pool, sourced from fct_execution_pools_daily.
+
+    Model: `api_execution_pools_swap_count_daily` — table `dbt.api_execution_pools_swap_count_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC) of the swap-count time series. |
+    | `token` | `String` | Token symbol the pool is grouped under. |
+    | `label` | `String` | Pool display name. |
+    | `value` | `UInt64` | Number of Swap events on this pool on this day. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_swap_count/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## execution_pools_tvl_by_pool
+
+Latest-day TVL breakdown per (token, pool) for the pools dashboard's drill-down chart. One row per pool with positive TVL on the latest available date (excluding today, which may be partial). Sourced from fct_execution_pools_daily.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/execution_pools_tvl_by_pool/snapshot` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/execution_pools_tvl_by_pool/snapshot`"
+    Latest-day TVL breakdown per (token, pool) for the pools dashboard's drill-down chart. One row per pool with positive TVL on the latest available date (excluding today, which may be partial). Sourced from fct_execution_pools_daily.
+
+    Model: `api_execution_pools_tvl_by_pool_latest` — table `dbt.api_execution_pools_tvl_by_pool_latest`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `token` | `String` | Reference token symbol used to group pools. |
+    | `label` | `String` | Pool display name (combines symbols, protocol, address suffix). |
+    | `value` | `Float64` | Pool TVL in USD on the latest available date. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_tvl_by_pool/snapshot" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## execution_pools_tvl_token
+
+Daily TVL time series per (token, pool) decomposed into the contribution of each pool side. Sourced from fct_execution_pools_tvl_token_daily. Drives the per-token TVL stacked-area chart.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/execution_pools_tvl_token/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/execution_pools_tvl_token/daily`"
+    Daily TVL time series per (token, pool) decomposed into the contribution of each pool side. Sourced from fct_execution_pools_tvl_token_daily. Drives the per-token TVL stacked-area chart.
+
+    Model: `api_execution_pools_tvl_token_daily` — table `dbt.api_execution_pools_tvl_token_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC) of the TVL time series. |
+    | `token` | `String` | Reference token symbol (renamed from ref_token). |
+    | `label` | `String` | Pool display name. |
+    | `series` | `String` | Series identifier for stacking (typically the side of the pool the TVL is denominated in). |
+    | `tvl_usd` | `Float64` | Component TVL in USD for this row. |
+    | `tvl_in_token0` | `Nullable(Float64)` | Pool TVL portion attributable to token0 (native units). |
+    | `tvl_in_token1` | `Nullable(Float64)` | Pool TVL portion attributable to token1 (native units). |
+    | `token0_symbol` | `String` | Symbol of the pool's token0. |
+    | `token1_symbol` | `String` | Symbol of the pool's token1. |
+    | `token_amount` | `Nullable(Float64)` | Token-side balance for the reference token on this date. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_tvl_token/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## execution_pools_tvl_usd
+
+API view for pool TVL (USD) time series by token and pool label.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/execution_pools_tvl_usd/daily` | GET | tier1 | -- | -- | -- |
+| `/v1/execution/execution_pools_tvl_usd/snapshot` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/execution_pools_tvl_usd/daily`"
+    API view for pool TVL (USD) time series by token and pool label.
+
+    Model: `api_execution_pools_tvl_daily` — table `dbt.api_execution_pools_tvl_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC) of the TVL time series. |
+    | `token` | `String` | Token symbol the pool is grouped under. |
+    | `label` | `String` | Pool display name. |
+    | `tvl_type` | `String` | Constant metric label ("TVL (USD)") used as the chart series name. |
+    | `value` | `Float64` | Pool TVL in USD on this date. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_tvl_usd/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+??? info "`GET /v1/execution/execution_pools_tvl_usd/snapshot`"
+    Latest TVL snapshot per token across all tracked DEX pools with 7-day change. Sourced from fct_execution_pools_snapshots filtered to metric='TVL_Latest'.
+
+    Model: `api_execution_pools_tvl_latest` — table `dbt.api_execution_pools_tvl_latest`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `token` | `String` | Token symbol the snapshot is aggregated for. |
+    | `value` | `Float64` | Latest TVL in USD. |
+    | `change_pct` | `Nullable(Float64)` | Percent change in TVL vs 7 days ago. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_tvl_usd/snapshot" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## execution_pools_volume_usd
+
+API view for daily trading volume (USD) by token and pool, sourced from fct_execution_pools_daily.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/execution_pools_volume_usd/daily` | GET | tier1 | -- | -- | -- |
+| `/v1/execution/execution_pools_volume_usd/snapshot/7d` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/execution_pools_volume_usd/daily`"
+    API view for daily trading volume (USD) by token and pool, sourced from fct_execution_pools_daily.
+
+    Model: `api_execution_pools_volume_daily` — table `dbt.api_execution_pools_volume_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar day (UTC) of the volume time series. |
+    | `token` | `String` | Token symbol the pool is grouped under. |
+    | `label` | `String` | Pool display name. |
+    | `volume_type` | `String` | Constant metric label ("Volume (USD)") used as the chart series name. |
+    | `value` | `Float64` | Daily gross trading volume in USD. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_volume_usd/daily" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+??? info "`GET /v1/execution/execution_pools_volume_usd/snapshot/7d`"
+    API view for 7-day total trading volume per token (snapshot from fct_execution_pools_snapshots).
+
+    Model: `api_execution_pools_volume_7d` — table `dbt.api_execution_pools_volume_7d`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `token` | `String` | Token symbol the snapshot is aggregated for. |
+    | `value` | `Float64` | Total trading volume (USD) over the last 7 days. |
+    | `change_pct` | `Float64` | Percentage change vs prior 7-day window. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/execution_pools_volume_usd/snapshot/7d" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## gnosis_app_active_users_incl_gpay
+
+Gnosis App Daily Active Users (DAU), Gnosis-Pay-inclusive variant over fct_execution_gnosis_app_users_daily_incl_gpay. Daily-grain member of the active-users-incl-gpay resolution triplet. Latest incomplete day (today) excluded.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/gnosis_app_active_users_incl_gpay/daily` | GET | tier1 | `start_date`, `end_date` | -- | date DESC |
+| `/v1/execution/gnosis_app_active_users_incl_gpay/weekly` | GET | tier1 | `start_date`, `end_date` | -- | week DESC |
+| `/v1/execution/gnosis_app_active_users_incl_gpay/monthly` | GET | tier1 | `start_date`, `end_date` | -- | month DESC |
+
+??? info "`GET /v1/execution/gnosis_app_active_users_incl_gpay/daily`"
+    Gnosis App Daily Active Users (DAU), Gnosis-Pay-inclusive variant over fct_execution_gnosis_app_users_daily_incl_gpay. Daily-grain member of the active-users-incl-gpay resolution triplet. Latest incomplete day (today) excluded.
+
+    Model: `api_execution_gnosis_app_active_users_incl_gpay_daily` — table `dbt.api_execution_gnosis_app_active_users_incl_gpay_daily`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `start_date` | `>=` | `date` | date | Inclusive start date |
+    | `end_date` | `<=` | `date` | date | Inclusive end date |
+
+    **Filter policy:** Unfiltered requests allowed.
+
+    **Pagination:** none (full result set, bare JSON array)
+
+    **Sort:** `date DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | Calendar date (UTC). Time-series grain. |
+    | `active_users` | `UInt64` | Distinct active Gnosis App users on this date, additionally including GA owners whose only activity was a Gnosis Pay card-wallet transaction. |
+    | `new_users` | `UInt64` | Users whose first-ever activity (onboarding) was on this date. |
+    | `returning_users` | `UInt64` | Active this date AND active in the prior 7 days. |
+    | `reactivated_users` | `UInt64` | Active this date, not active in the prior 30 days, but active earlier. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_active_users_incl_gpay/daily?start_date=2026-01-01" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+??? info "`GET /v1/execution/gnosis_app_active_users_incl_gpay/weekly`"
+    Gnosis App Weekly Active Users (WAU), Gnosis-Pay-inclusive variant over fct_execution_gnosis_app_users_weekly_incl_gpay. Resolution-suffixed twin of api_execution_gnosis_app_weekly_active_users_incl_gpay; weekly-grain member of the active-users-incl-gpay resolution triplet. Latest incomplete week...
+
+    Model: `api_execution_gnosis_app_active_users_incl_gpay_weekly` — table `dbt.api_execution_gnosis_app_active_users_incl_gpay_weekly`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `start_date` | `>=` | `week` | date | Inclusive start week |
+    | `end_date` | `<=` | `week` | date | Inclusive end week |
+
+    **Filter policy:** Unfiltered requests allowed.
+
+    **Pagination:** none (full result set, bare JSON array)
+
+    **Sort:** `week DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `week` | `Date` | Monday-aligned start of the week (UTC). Time-series grain. |
+    | `active_users` | `UInt64` | Distinct active Gnosis App users in the week, additionally including GA owners whose only activity was a Gnosis Pay card-wallet transaction. |
+    | `new_users` | `UInt64` | Users whose first-ever activity (onboarding) was this week. |
+    | `returning_users` | `UInt64` | Active this week AND active the previous week. |
+    | `reactivated_users` | `UInt64` | Active this week, not active in the prior 4 weeks, but active earlier. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_active_users_incl_gpay/weekly?start_date=2026-01-01" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+??? info "`GET /v1/execution/gnosis_app_active_users_incl_gpay/monthly`"
+    Gnosis App Monthly Active Users (MAU), Gnosis-Pay-inclusive variant over fct_execution_gnosis_app_users_monthly_incl_gpay. Monthly-grain member of the active-users-incl-gpay resolution triplet. Latest incomplete month excluded.
+
+    Model: `api_execution_gnosis_app_active_users_incl_gpay_monthly` — table `dbt.api_execution_gnosis_app_active_users_incl_gpay_monthly`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `start_date` | `>=` | `month` | date | Inclusive start month |
+    | `end_date` | `<=` | `month` | date | Inclusive end month |
+
+    **Filter policy:** Unfiltered requests allowed.
+
+    **Pagination:** none (full result set, bare JSON array)
+
+    **Sort:** `month DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `month` | `Date` | First day of the month (UTC). Time-series grain. |
+    | `active_users` | `UInt64` | Distinct active Gnosis App users in the month, additionally including GA owners whose only activity was a Gnosis Pay card-wallet transaction. |
+    | `new_users` | `UInt64` | Users whose first-ever activity (onboarding) was this month. |
+    | `returning_users` | `UInt64` | Active this month AND active the previous month. |
+    | `reactivated_users` | `UInt64` | Active this month, not active in the prior 2 months, but active earlier. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_active_users_incl_gpay/monthly?start_date=2026-01-01" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
@@ -3613,6 +4990,51 @@ FastAPI endpoint view of fct_execution_gnosis_app_gpay_topups_by_token_daily. Su
 
     ```bash
     curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_gpay_topups_by_token/daily?start_date=2026-01-01" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## gnosis_app_gpay_topups_cohort
+
+FastAPI view over fct_execution_gnosis_app_gpay_topups_cohort_monthly. Params: start_month, end_month.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/gnosis_app_gpay_topups_cohort/monthly` | GET | tier1 | `start_month`, `end_month` | -- | cohort_month DESC |
+
+??? info "`GET /v1/execution/gnosis_app_gpay_topups_cohort/monthly`"
+    FastAPI view over fct_execution_gnosis_app_gpay_topups_cohort_monthly. Params: start_month, end_month.
+
+    Model: `api_execution_gnosis_app_gpay_topups_cohort_monthly` — table `dbt.api_execution_gnosis_app_gpay_topups_cohort_monthly`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `start_month` | `>=` | `cohort_month` | date | Inclusive start cohort month |
+    | `end_month` | `<=` | `cohort_month` | date | Inclusive end cohort month |
+
+    **Filter policy:** Unfiltered requests allowed.
+
+    **Pagination:** none (full result set, bare JSON array)
+
+    **Sort:** `cohort_month DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `cohort_month` | `Date` | Month of the user's first top-up (cohort anchor). |
+    | `x` | `String` | Activity month as a string (toString(activity_month)); x-axis of the retention grid. |
+    | `y` | `String` | First-top-up cohort month as a string (toString(cohort_month)); y-axis of the retention grid. |
+    | `retention_pct` | `Float64` | Share of the first-top-up cohort still topping up in activity_month (users / initial_users x 100). |
+    | `value_abs` | `UInt64` | Distinct cohort users who topped up in this cell (renamed from users). |
+    | `amount_retention_pct` | `Nullable(Float64)` | Retained USD amount as a share of the cohort's initial amount (x100). |
+    | `value_usd` | `Nullable(Float64)` | USD amount (renamed from amount_usd). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_gpay_topups_cohort/monthly?start_month=2026-01-01" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
@@ -4782,6 +6204,97 @@ Distribution histogram of last-30d purchase counts per user (buckets 1/2/3/4-5/6
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
+## gnosis_app_retention
+
+FastAPI view over fct_execution_gnosis_app_retention_monthly. Params: start_month, end_month.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/gnosis_app_retention/monthly` | GET | tier1 | `start_month`, `end_month` | -- | cohort_month DESC |
+
+??? info "`GET /v1/execution/gnosis_app_retention/monthly`"
+    FastAPI view over fct_execution_gnosis_app_retention_monthly. Params: start_month, end_month.
+
+    Model: `api_execution_gnosis_app_retention_monthly` — table `dbt.api_execution_gnosis_app_retention_monthly`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `start_month` | `>=` | `cohort_month` | date | Inclusive start cohort month |
+    | `end_month` | `<=` | `cohort_month` | date | Inclusive end cohort month |
+
+    **Filter policy:** Unfiltered requests allowed.
+
+    **Pagination:** none (full result set, bare JSON array)
+
+    **Sort:** `cohort_month DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `cohort_month` | `Date` | Onboard month (toStartOfMonth of the first 'onboard' row); the cohort anchor. |
+    | `x` | `String` | Activity month as a string (toString(activity_month)); x-axis of the retention grid. |
+    | `y` | `String` | Onboard cohort month as a string (toString(cohort_month)); y-axis of the retention grid. |
+    | `retention_pct` | `Float64` | Share of the onboard cohort active in activity_month (users / initial_users x 100). |
+    | `value_abs` | `UInt64` | Distinct cohort users active in this cell (renamed from users). |
+    | `amount_retention_pct` | `Nullable(Float64)` | Activity USD as a share of the cohort's earliest activity-month USD (x100). |
+    | `value_usd` | `Nullable(Float64)` | USD amount transacted by the cohort in activity_month (renamed from amount_usd). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_retention/monthly?start_month=2026-01-01" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## gnosis_app_retention_by_action
+
+FastAPI view over fct_execution_gnosis_app_retention_by_action_monthly. Params: activity_kind, start_month, end_month.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/gnosis_app_retention_by_action/monthly` | GET | tier1 | `activity_kind`, `start_month`, `end_month` | -- | cohort_month DESC |
+
+??? info "`GET /v1/execution/gnosis_app_retention_by_action/monthly`"
+    FastAPI view over fct_execution_gnosis_app_retention_by_action_monthly. Params: activity_kind, start_month, end_month.
+
+    Model: `api_execution_gnosis_app_retention_by_action_monthly` — table `dbt.api_execution_gnosis_app_retention_by_action_monthly`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `activity_kind` | `=` | `activity_kind` | string | Activity kind to slice retention on |
+    | `start_month` | `>=` | `cohort_month` | date | Inclusive start cohort month |
+    | `end_month` | `<=` | `cohort_month` | date | Inclusive end cohort month |
+
+    **Filter policy:** Unfiltered requests allowed.
+
+    **Pagination:** none (full result set, bare JSON array)
+
+    **Sort:** `cohort_month DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `cohort_month` | `Date` | Onboard month (first 'onboard' row); shared across all activity_kinds. |
+    | `x` | `String` | Activity month as a string (toString(activity_month)); x-axis of the retention grid. |
+    | `y` | `String` | Onboard cohort month as a string (toString(cohort_month)); y-axis of the retention grid. |
+    | `activity_kind` | `String` | Type of activity the retention is sliced on (swap_filled / swap_signed / topup / marketplace_buy / token_offer_claim / circles_* / ...). |
+    | `retention_pct` | `Float64` | Share of the onboard cohort doing this action in activity_month (users / initial_users x 100). |
+    | `value_abs` | `UInt64` | Distinct cohort users doing this activity_kind in activity_month (renamed from users). |
+    | `initial_users` | `UInt64` | Onboard-cohort size = distinct users onboarded in cohort_month (retention denominator). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_retention_by_action/monthly?start_month=2026-01-01" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
 ## gnosis_app_swap_fees
 
 Daily CoW protocol fee revenue from GA swaps (filled trades, pro-rated to USD).
@@ -5323,6 +6836,94 @@ FastAPI view over fct_execution_gnosis_app_token_offer_claims_by_offer_daily. Pa
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
+## gnosis_app_token_offer_claims_cohort
+
+FastAPI view over fct_execution_gnosis_app_token_offer_claims_cohort_monthly. Params: start_month, end_month.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/gnosis_app_token_offer_claims_cohort/monthly` | GET | tier1 | `start_month`, `end_month` | -- | cohort_month DESC |
+
+??? info "`GET /v1/execution/gnosis_app_token_offer_claims_cohort/monthly`"
+    FastAPI view over fct_execution_gnosis_app_token_offer_claims_cohort_monthly. Params: start_month, end_month.
+
+    Model: `api_execution_gnosis_app_token_offer_claims_cohort_monthly` — table `dbt.api_execution_gnosis_app_token_offer_claims_cohort_monthly`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `start_month` | `>=` | `cohort_month` | date | Inclusive start cohort month |
+    | `end_month` | `<=` | `cohort_month` | date | Inclusive end cohort month |
+
+    **Filter policy:** Unfiltered requests allowed.
+
+    **Pagination:** none (full result set, bare JSON array)
+
+    **Sort:** `cohort_month DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `cohort_month` | `Date` | Month of the user's first activity (cohort anchor). |
+    | `x` | `String` | Activity month as a string (toString(activity_month)); x-axis of the retention grid. |
+    | `y` | `String` | First-claim cohort month as a string (toString(cohort_month)); y-axis of the retention grid. |
+    | `retention_pct` | `Float64` | Share of the first-claim cohort still claiming in activity_month (users / initial_users x 100). |
+    | `value_abs` | `UInt64` | Distinct cohort users in this cell (renamed from users). |
+    | `amount_retention_pct` | `Nullable(Float64)` | Retained USD amount as a share of the cohort's initial amount (x100). |
+    | `value_usd` | `Nullable(Float64)` | USD amount (renamed from amount_usd). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_token_offer_claims_cohort/monthly?start_month=2026-01-01" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## gnosis_app_user_activity
+
+Account-facing Gnosis App activity view.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/gnosis_app_user_activity/daily` | GET, POST | tier1 | `address`, `activity_kind`, `start_date`, `end_date` | limit/offset (envelope) | date DESC |
+
+??? info "`GET/POST /v1/execution/gnosis_app_user_activity/daily`"
+    Account-facing Gnosis App activity view.
+
+    Model: `api_execution_gnosis_app_user_activity_daily` — table `dbt.api_execution_gnosis_app_user_activity_daily`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `address` | `IN` | `address` | string_list | case: lower; max_items: 20 |
+    | `activity_kind` | `=` | `activity_kind` | string | -- |
+    | `start_date` | `>=` | `date` | date | -- |
+    | `end_date` | `<=` | `date` | date | -- |
+
+    **Filter policy:** At least one filter required. Must provide one of: `address`.
+
+    **Pagination:** `limit`/`offset` — default 200, max 5000; response: envelope `{items, pagination}`
+
+    **Sort:** `date DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `activity_kind` | `String` | See enum above. |
+    | `address` | `Nullable(String)` | -- |
+    | `date` | `Date` | -- |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_user_activity/daily?start_date=2026-01-01" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
 ## gnosis_app_user_profile
 
 Account-facing Gnosis App profile view from production current-user models.
@@ -5510,6 +7111,38 @@ Gnosis App Weekly Active Users (WAU) time-series over fct_execution_gnosis_app_u
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
+## gnosis_app_weekly_active_users_incl_gpay
+
+Gnosis App Weekly Active Users (WAU), Gnosis-Pay-inclusive variant of api_execution_gnosis_app_weekly_active_users: 'active' additionally counts any user-initiated Gnosis Pay card-wallet transaction (spend/withdrawal/off-ramp/fiat top-up) attributed to the safe's Gnosis App owner. Latest incomple...
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/gnosis_app_weekly_active_users_incl_gpay/weekly` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/gnosis_app_weekly_active_users_incl_gpay/weekly`"
+    Gnosis App Weekly Active Users (WAU), Gnosis-Pay-inclusive variant of api_execution_gnosis_app_weekly_active_users: 'active' additionally counts any user-initiated Gnosis Pay card-wallet transaction (spend/withdrawal/off-ramp/fiat top-up) attributed to the safe's Gnosis App owner. Latest incomple...
+
+    Model: `api_execution_gnosis_app_weekly_active_users_incl_gpay` — table `dbt.api_execution_gnosis_app_weekly_active_users_incl_gpay`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `week` | `Date` | Monday-aligned start of the week (UTC). Time-series grain. |
+    | `active_users` | `UInt64` | Distinct active Gnosis App users in the week, additionally including GA owners whose only activity was a Gnosis Pay card-wallet transaction. |
+    | `new_users` | `UInt64` | Users whose first-ever activity (onboarding) was this week. |
+    | `returning_users` | `UInt64` | Active this week AND active the previous week. |
+    | `reactivated_users` | `UInt64` | Active this week, not active in the prior 4 weeks, but active earlier. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_weekly_active_users_incl_gpay/weekly" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
 ## gnosis_app_weekly_economically_active_users
 
 Time-series view over fct_execution_gnosis_app_weekly_economically_active_users (latest week excluded).
@@ -5537,6 +7170,35 @@ Time-series view over fct_execution_gnosis_app_weekly_economically_active_users 
 
     ```bash
     curl "https://api.analytics.gnosis.io/v1/execution/gnosis_app_weekly_economically_active_users/weekly" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## gpay_accounts
+
+Daily time series of the cumulative number of deployed Gnosis Pay accounts.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/gpay_accounts/daily` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/gpay_accounts/daily`"
+    Daily time series of the cumulative number of deployed Gnosis Pay accounts.
+
+    Model: `api_execution_gpay_accounts_daily` — table `dbt.api_execution_gpay_accounts_daily`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | The calendar date (account deploy date). |
+    | `value` | `Float64` | The cumulative number of deployed Gnosis Pay accounts up to and including the date. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gpay_accounts/daily" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
@@ -6982,6 +8644,34 @@ Monthly cohort volume retention over time, formatted for time series visualizati
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
+## gpay_total_accounts
+
+All-time total count of deployed Gnosis Pay accounts (Safes that enabled a Gnosis Pay Zodiac module - Delay / Roles / Spender), including accounts that never made a payment. Migrated Safes from the June 2026 migration are collapsed to a single account. This is the true "accounts deployed" figure,...
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/gpay_total_accounts/all_time` | GET | tier0 | -- | -- | -- |
+
+??? info "`GET /v1/execution/gpay_total_accounts/all_time`"
+    All-time total count of deployed Gnosis Pay accounts (Safes that enabled a Gnosis Pay Zodiac module - Delay / Roles / Spender), including accounts that never made a payment. Migrated Safes from the June 2026 migration are collapsed to a single account. This is the true "accounts deployed" figure,...
+
+    Model: `api_execution_gpay_total_accounts` — table `dbt.api_execution_gpay_total_accounts`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `value` | `Float64` | The total number of deployed Gnosis Pay accounts. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gpay_total_accounts/all_time"
+    ```
+
 ## gpay_total_balance
 
 Current total balance across all Gnosis Pay wallets in USD.
@@ -7146,11 +8836,45 @@ Individual transaction-level activity for a specific Gnosis Pay user, filtered b
 
 ## gpay_user_balances
 
-Daily token balances for a specific Gnosis Pay user in native and USD values.
+Simple API view over latest Gnosis Pay wallet balances.
 
 | Path | Methods | Tier | Filters | Pagination | Sort |
 |------|---------|------|---------|------------|------|
+| `/v1/execution/gpay_user_balances/latest` | GET, POST | tier0 | `wallet_address`, `token` | limit/offset (envelope) | value_usd DESC |
 | `/v1/execution/gpay_user_balances/daily` | GET, POST | tier0 | `wallet_address`, `token`, `start_date`, `end_date` | limit/offset (list) | date DESC |
+
+??? info "`GET/POST /v1/execution/gpay_user_balances/latest`"
+    Simple API view over latest Gnosis Pay wallet balances.
+
+    Model: `api_execution_gpay_user_balances_latest` — table `dbt.api_execution_gpay_user_balances_latest`
+
+    **Declared filters**
+
+    | Parameter | Operator | Column | Type | Notes |
+    |-----------|----------|--------|------|-------|
+    | `wallet_address` | `IN` | `wallet_address` | string_list | case: lower; max_items: 20 |
+    | `token` | `=` | `token` | string | -- |
+
+    **Filter policy:** At least one filter required. Must provide one of: `wallet_address`.
+
+    **Pagination:** `limit`/`offset` — default 100, max 5000; response: envelope `{items, pagination}`
+
+    **Sort:** `value_usd DESC`
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `value_usd` | `Float64` | Total USD value of the wallet's holdings of the token at the latest snapshot date. |
+    | `wallet_address` | `Nullable(String)` | The Gnosis Pay Safe wallet address holding the balance. |
+    | `token` | `String` | The token symbol for the balance. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/gpay_user_balances/latest?wallet_address=VALUE1,VALUE2"
+    ```
 
 ??? info "`GET/POST /v1/execution/gpay_user_balances/daily`"
     Daily token balances for a specific Gnosis Pay user in native and USD values.
@@ -8248,36 +9972,6 @@ The api_execution_tokens_volume_daily model provides daily aggregated data on th
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
-## transactions_coun_per_project_top5
-
-This view aggregates the top 5 projects by transaction count on a monthly basis, enabling analysis of project activity trends over time.
-
-| Path | Methods | Tier | Filters | Pagination | Sort |
-|------|---------|------|---------|------------|------|
-| `/v1/execution/transactions_coun_per_project_top5/monthly` | GET | tier1 | -- | -- | -- |
-
-??? info "`GET /v1/execution/transactions_coun_per_project_top5/monthly`"
-    This view aggregates the top 5 projects by transaction count on a monthly basis, enabling analysis of project activity trends over time.
-
-    Model: `api_execution_transactions_by_project_monthly_top5` — table `dbt.api_execution_transactions_by_project_monthly_top5`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `date` | `Date` | The month and year of the transaction data, formatted as YYYY-MM. |
-    | `label` | `String` | The identifier or name of the project associated with the transaction count. |
-    | `value` | `Float64` | The number of transactions for the project during the specified month. |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/transactions_coun_per_project_top5/monthly" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
 ## transactions_count
 
 The api_execution_transactions_7d model provides a snapshot of the total number of API execution transactions and their percentage change over the last seven days, supporting operational and performance monitoring.
@@ -8387,6 +10081,36 @@ This view aggregates the top 20 API transaction counts per project within specif
 
     ```bash
     curl "https://api.analytics.gnosis.io/v1/execution/transactions_count_per_project_top20/in_ranges"
+    ```
+
+## transactions_count_per_project_top5
+
+This view aggregates the top 5 projects by transaction count on a monthly basis, enabling analysis of project activity trends over time.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/transactions_count_per_project_top5/monthly` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/transactions_count_per_project_top5/monthly`"
+    This view aggregates the top 5 projects by transaction count on a monthly basis, enabling analysis of project activity trends over time.
+
+    Model: `api_execution_transactions_by_project_monthly_top5` — table `dbt.api_execution_transactions_by_project_monthly_top5`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `date` | `Date` | The month and year of the transaction data, formatted as YYYY-MM. |
+    | `label` | `String` | The identifier or name of the project associated with the transaction count. |
+    | `value` | `Float64` | The number of transactions for the project during the specified month. |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/transactions_count_per_project_top5/monthly" \
+      -H "X-API-Key: YOUR_API_KEY"
     ```
 
 ## transactions_count_per_sector
@@ -9093,114 +10817,15 @@ This view aggregates daily transaction values for API executions on the xDai net
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
-## yields_overview
+## yields_opportunities
 
-Overview KPI card for total sDAI supply with 7-day change percentage.
+Thin API view over fct_execution_yields_opportunities_latest, sorted by yield_apr/yield_apy descending. Powers the yields opportunities table on the yields dashboard (lending markets and LP pools side-by-side).
 
 | Path | Methods | Tier | Filters | Pagination | Sort |
 |------|---------|------|---------|------------|------|
-| `/v1/execution/yields_overview/latest` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/yields_overview/latest` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/yields_overview/latest` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/yields_overview/latest` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/yields_overview/latest` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/yields_overview/latest` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/yields_overview/latest` | GET | tier1 | -- | -- | -- |
-| `/v1/execution/yields_overview/latest` | GET | tier1 | -- | -- | -- |
+| `/v1/execution/yields_opportunities/latest` | GET | tier1 | -- | -- | -- |
 
-??? info "`GET /v1/execution/yields_overview/latest`"
-    Overview KPI card for total sDAI supply with 7-day change percentage.
-
-    Model: `api_execution_yields_overview_sdai_supply` — table `dbt.api_execution_yields_overview_sdai_supply`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `value` | `Float64` | Total Savings xDAI (sDAI) supply (latest). |
-    | `change_pct` | `Nullable(Float64)` | Percent change vs the value 7 days earlier. |
-    | `label` | `Nullable(String)` | Optional display label for the metric. |
-    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview/latest" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/yields_overview/latest`"
-    Overview KPI card for the best lending supply APY currently available (with the token symbol as label) and 7-day change.
-
-    Model: `api_execution_yields_overview_lending_best_apy` — table `dbt.api_execution_yields_overview_lending_best_apy`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `value` | `Float64` | Best supply APY as a percentage. |
-    | `change_pct` | `Nullable(Float64)` | Percent change vs the value 7 days earlier. |
-    | `label` | `Nullable(String)` | Token symbol offering the best APY. |
-    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview/latest" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/yields_overview/latest`"
-    Overview KPI card for total Aave V3 lending TVL with 7-day change percentage.
-
-    Model: `api_execution_yields_overview_lending_tvl` — table `dbt.api_execution_yields_overview_lending_tvl`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `value` | `Float64` | Total Aave V3 lending TVL in USD (latest). |
-    | `change_pct` | `Float64` | Percent change vs the value 7 days earlier. |
-    | `label` | `String` | Optional display label for the metric. |
-    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview/latest" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/yields_overview/latest`"
-    Overview KPI card for total LP TVL across Uniswap V3, Swapr V3, Balancer V2/V3 on Gnosis with 7-day change.
-
-    Model: `api_execution_yields_overview_lp_tvl` — table `dbt.api_execution_yields_overview_lp_tvl`
-
-    **Legacy endpoint** — GET only, no query parameters, returns the full table.
-
-    **Columns**
-
-    | Column | Type | Description |
-    |--------|------|-------------|
-    | `value` | `Float64` | Total LP TVL in USD across all tracked DEX protocols (latest). |
-    | `change_pct` | `Nullable(Float64)` | Percent change vs the value 7 days earlier. |
-    | `label` | `Nullable(String)` | Optional display label for the metric. |
-    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
-
-    **Example**
-
-    ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview/latest" \
-      -H "X-API-Key: YOUR_API_KEY"
-    ```
-
-??? info "`GET /v1/execution/yields_overview/latest`"
+??? info "`GET /v1/execution/yields_opportunities/latest`"
     Thin API view over fct_execution_yields_opportunities_latest, sorted by yield_apr/yield_apy descending. Powers the yields opportunities table on the yields dashboard (lending markets and LP pools side-by-side).
 
     Model: `api_execution_yields_opportunities_latest` — table `dbt.api_execution_yields_opportunities_latest`
@@ -9234,14 +10859,22 @@ Overview KPI card for total sDAI supply with 7-day change percentage.
     **Example**
 
     ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview/latest" \
+    curl "https://api.analytics.gnosis.io/v1/execution/yields_opportunities/latest" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
-??? info "`GET /v1/execution/yields_overview/latest`"
-    Overview KPI card for Savings xDAI (sDAI) APY with 7-day change percentage.
+## yields_overview_lending_best_apy
 
-    Model: `api_execution_yields_overview_sdai_apy` — table `dbt.api_execution_yields_overview_sdai_apy`
+Overview KPI card for the best lending supply APY currently available (with the token symbol as label) and 7-day change.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/yields_overview_lending_best_apy/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/yields_overview_lending_best_apy/latest`"
+    Overview KPI card for the best lending supply APY currently available (with the token symbol as label) and 7-day change.
+
+    Model: `api_execution_yields_overview_lending_best_apy` — table `dbt.api_execution_yields_overview_lending_best_apy`
 
     **Legacy endpoint** — GET only, no query parameters, returns the full table.
 
@@ -9249,19 +10882,27 @@ Overview KPI card for total sDAI supply with 7-day change percentage.
 
     | Column | Type | Description |
     |--------|------|-------------|
-    | `value` | `Float64` | Current Savings xDAI (sDAI) APY as a percentage. |
+    | `value` | `Float64` | Best supply APY as a percentage. |
     | `change_pct` | `Nullable(Float64)` | Percent change vs the value 7 days earlier. |
-    | `label` | `Nullable(String)` | Optional display label for the metric. |
+    | `label` | `Nullable(String)` | Token symbol offering the best APY. |
     | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
 
     **Example**
 
     ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview/latest" \
+    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview_lending_best_apy/latest" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
-??? info "`GET /v1/execution/yields_overview/latest`"
+## yields_overview_lending_lenders
+
+Overview KPI card for total distinct Aave V3 lenders on Gnosis with 7-day change percentage.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/yields_overview_lending_lenders/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/yields_overview_lending_lenders/latest`"
     Overview KPI card for total distinct Aave V3 lenders on Gnosis with 7-day change percentage.
 
     Model: `api_execution_yields_overview_lending_lenders` — table `dbt.api_execution_yields_overview_lending_lenders`
@@ -9280,11 +10921,50 @@ Overview KPI card for total sDAI supply with 7-day change percentage.
     **Example**
 
     ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview/latest" \
+    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview_lending_lenders/latest" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 
-??? info "`GET /v1/execution/yields_overview/latest`"
+## yields_overview_lending_tvl
+
+Overview KPI card for total Aave V3 lending TVL with 7-day change percentage.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/yields_overview_lending_tvl/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/yields_overview_lending_tvl/latest`"
+    Overview KPI card for total Aave V3 lending TVL with 7-day change percentage.
+
+    Model: `api_execution_yields_overview_lending_tvl` — table `dbt.api_execution_yields_overview_lending_tvl`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `value` | `Float64` | Total Aave V3 lending TVL in USD (latest). |
+    | `change_pct` | `Float64` | Percent change vs the value 7 days earlier. |
+    | `label` | `String` | Optional display label for the metric. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview_lending_tvl/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## yields_overview_lp_best_apr
+
+Overview KPI card for the best LP fee APR currently available (with the pool name as label) and 7-day change.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/yields_overview_lp_best_apr/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/yields_overview_lp_best_apr/latest`"
     Overview KPI card for the best LP fee APR currently available (with the pool name as label) and 7-day change.
 
     Model: `api_execution_yields_overview_lp_best_apr` — table `dbt.api_execution_yields_overview_lp_best_apr`
@@ -9303,7 +10983,100 @@ Overview KPI card for total sDAI supply with 7-day change percentage.
     **Example**
 
     ```bash
-    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview/latest" \
+    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview_lp_best_apr/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## yields_overview_lp_tvl
+
+Overview KPI card for total LP TVL across Uniswap V3, Swapr V3, Balancer V2/V3 on Gnosis with 7-day change.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/yields_overview_lp_tvl/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/yields_overview_lp_tvl/latest`"
+    Overview KPI card for total LP TVL across Uniswap V3, Swapr V3, Balancer V2/V3 on Gnosis with 7-day change.
+
+    Model: `api_execution_yields_overview_lp_tvl` — table `dbt.api_execution_yields_overview_lp_tvl`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `value` | `Float64` | Total LP TVL in USD across all tracked DEX protocols (latest). |
+    | `change_pct` | `Nullable(Float64)` | Percent change vs the value 7 days earlier. |
+    | `label` | `Nullable(String)` | Optional display label for the metric. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview_lp_tvl/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## yields_overview_sdai_apy
+
+Overview KPI card for Savings xDAI (sDAI) APY with 7-day change percentage.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/yields_overview_sdai_apy/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/yields_overview_sdai_apy/latest`"
+    Overview KPI card for Savings xDAI (sDAI) APY with 7-day change percentage.
+
+    Model: `api_execution_yields_overview_sdai_apy` — table `dbt.api_execution_yields_overview_sdai_apy`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `value` | `Float64` | Current Savings xDAI (sDAI) APY as a percentage. |
+    | `change_pct` | `Nullable(Float64)` | Percent change vs the value 7 days earlier. |
+    | `label` | `Nullable(String)` | Optional display label for the metric. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview_sdai_apy/latest" \
+      -H "X-API-Key: YOUR_API_KEY"
+    ```
+
+## yields_overview_sdai_supply
+
+Overview KPI card for total sDAI supply with 7-day change percentage.
+
+| Path | Methods | Tier | Filters | Pagination | Sort |
+|------|---------|------|---------|------------|------|
+| `/v1/execution/yields_overview_sdai_supply/latest` | GET | tier1 | -- | -- | -- |
+
+??? info "`GET /v1/execution/yields_overview_sdai_supply/latest`"
+    Overview KPI card for total sDAI supply with 7-day change percentage.
+
+    Model: `api_execution_yields_overview_sdai_supply` — table `dbt.api_execution_yields_overview_sdai_supply`
+
+    **Legacy endpoint** — GET only, no query parameters, returns the full table.
+
+    **Columns**
+
+    | Column | Type | Description |
+    |--------|------|-------------|
+    | `value` | `Float64` | Total Savings xDAI (sDAI) supply (latest). |
+    | `change_pct` | `Nullable(Float64)` | Percent change vs the value 7 days earlier. |
+    | `label` | `Nullable(String)` | Optional display label for the metric. |
+    | `as_of_date` | `Date` | Date the snapshot is computed as of (max date in the underlying data). |
+
+    **Example**
+
+    ```bash
+    curl "https://api.analytics.gnosis.io/v1/execution/yields_overview_sdai_supply/latest" \
       -H "X-API-Key: YOUR_API_KEY"
     ```
 

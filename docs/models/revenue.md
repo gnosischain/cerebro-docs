@@ -1,6 +1,7 @@
 # Revenue Module
 
 <!-- BEGIN AUTO-GENERATED: models-revenue -->
+<!-- generated: 2026-07-23 -->
 **Active**
 
 | Model | Layer | Description |

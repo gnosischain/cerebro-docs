@@ -1,6 +1,7 @@
 # ESG API Endpoints
 
 <!-- BEGIN AUTO-GENERATED: api-catalog-esg -->
+<!-- generated: 2026-07-23 -->
 _9 endpoints across 9 resources. Generated from the dbt manifest — edits inside this block will be overwritten. Regenerate with `python scripts/update_docs.py --only api`._
 
 ## carbon_emissions

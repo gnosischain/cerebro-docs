@@ -6,24 +6,25 @@ Cerebro MCP exposes a large static tool surface spanning discovery, governed met
     From any MCP host: `find(query)` is the single front door — one call routes a request to the right tools, metrics, and models with a pre-filled next action (see [Finding Tools](advanced/discovery.md)). `get_help()` returns the top-level navigation; `system_status()` confirms the server is healthy; `list_custom_tools()` enumerates the dynamically registered SQL tools.
 
 <!-- BEGIN AUTO-GENERATED: mcp-tools-summary -->
-**159 static tools** across 8 packages, plus **7 dynamic SQL-templated tools** from `custom_tools.yaml`.
+<!-- generated: 2026-07-23 -->
+**192 static tools** across 8 packages, plus **7 dynamic SQL-templated tools** from `custom_tools.yaml`.
 
 | Package | Tools | Core | Advanced |
 |---------|:-----:|:----:|:--------:|
-| analytics | 47 | 5 | 42 |
+| analytics | 49 | 5 | 44 |
 | governance | 6 | 1 | 5 |
 | research | 15 | 0 | 15 |
-| semantic | 25 | 5 | 20 |
+| semantic | 31 | 5 | 26 |
 | storyteller | 11 | 0 | 11 |
-| visualization | 34 | 7 | 27 |
+| visualization | 59 | 7 | 52 |
 | web3 | 18 | 0 | 18 |
 | workflow | 3 | 0 | 3 |
 
 | Risk class | Tools |
 |------------|:-----:|
-| app_only | 2 |
+| app_only | 29 |
 | external_write | 1 |
-| read_only | 129 |
+| read_only | 135 |
 | server_state_write | 26 |
 | subprocess | 1 |
 
@@ -46,6 +47,14 @@ Cerebro MCP exposes a large static tool surface spanning discovery, governed met
 The raw data-warehouse surface: dbt model discovery (`search_models`, `discover_models`, `get_model_details`), exact schema inspection (`describe_table` — call it before writing SQL), and query execution. Use `execute_query` for synchronous exploration (< 30s) and `start_query` + `get_query_results` for long-running queries; `save_query` / `run_saved_query` persist and replay SQL by name. This package also carries the metadata helpers (docs search, platform constants, token metadata, address resolution), deterministic networkx lineage (`get_upstream_lineage`, `get_downstream_impact`), the DuckDB + Parquet [simulation sandbox](workflows/simulation-sandboxes.md) tools (registered when `SANDBOX_ENABLED=true`), and the [Model Lineage Explorer](mini-apps/model-lineage.md) mini-app.
 
 <!-- BEGIN AUTO-GENERATED: mcp-tools-analytics -->
+<!-- generated: 2026-07-23 -->
+**Agent Knowledge** (`agent_knowledge.py`)
+
+| Tool | Summary | Tier | Risk | Gate |
+|------|---------|------|------|------|
+| `search_dbt_knowledge` | Search the dbt repo's engineering knowledge: lesson records for known | advanced | read_only | -- |
+| `get_dbt_change_context` | Get the engineering change packet for dbt model(s) BEFORE changing, | advanced | read_only | -- |
+
 **Custom query tools** (`custom_queries.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
@@ -156,6 +165,7 @@ The raw data-warehouse surface: dbt model discovery (`search_models`, `discover_
 Governed metrics and semantic-layer routing (registered when `SEMANTIC_ENABLED=true`). Prefer `query_metrics` over raw SQL whenever an approved metric covers the question — it runs the canonical, pre-validated query (see [Semantic Metrics](advanced/semantic-metrics.md)). The `find` router is the recommended first call for almost any analytical question, and `preflight_analytics_request` is the hard gate in front of chart/report generation. The package also hosts the [Data Catalog](mini-apps/data-catalog.md) (search-first browse over models, metrics, and glossary terms, with Elementary-backed run/test health) and the [Graph Explorer](mini-apps/graph-explorer.md) mini-app.
 
 <!-- BEGIN AUTO-GENERATED: mcp-tools-semantic -->
+<!-- generated: 2026-07-23 -->
 **Data Catalog** (`data_catalog.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
@@ -170,24 +180,20 @@ Governed metrics and semantic-layer routing (registered when `SEMANTIC_ENABLED=t
 | `catalog_observability` | Platform observability dashboard: model-run + test health, needs-attention, | advanced | read_only | -- |
 | `open_data_catalog` | Open the Data Catalog mini app. | advanced | read_only | -- |
 
+**Data Tools** (`data_tools.py`)
+
+| Tool | Summary | Tier | Risk | Gate |
+|------|---------|------|------|------|
+| `search_graph_catalog` | Search the knowledge-graph catalog (node types, edge profiles). | advanced | read_only | -- |
+| `explore_neighborhood` | Bounded multi-hop neighborhood traversal around seed node ids. | advanced | read_only | -- |
+| `calculate_flow_efficiency` | Per-node weighted-flow efficiency = outflow / inflow for a profile. | advanced | read_only | -- |
+| `graph_usage_analytics` | Adoption analytics for the graph tools (WS12). | advanced | read_only | -- |
+
 **Discovery router** (`find.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
 |------|---------|------|------|------|
 | `find` | Single front door: one call routes a request to the right tools, | core | read_only | `SEMANTIC_ENABLED` |
-
-**Graph Explorer** (`graph_explorer.py`)
-
-| Tool | Summary | Tier | Risk | Gate |
-|------|---------|------|------|------|
-| `open_graph_explorer` | Open the Graph Explorer mini app. | advanced | read_only | -- |
-| `load_graph_explorer_seed` | Load a bounded 1-hop subgraph around seed_node_id. | advanced | read_only | -- |
-| `expand_graph_explorer_node` | Expand `node_id` by one hop across the selected profiles. | advanced | read_only | -- |
-| `update_graph_explorer_focus` | Mutate view state only (selection, filters, layout). No refetch. | advanced | read_only | -- |
-| `search_graph_catalog` | Search the knowledge-graph catalog (node types, edge profiles). | advanced | read_only | -- |
-| `explore_neighborhood` | Bounded multi-hop neighborhood traversal around seed node ids. | advanced | read_only | -- |
-| `calculate_flow_efficiency` | Per-node weighted-flow efficiency = outflow / inflow for a profile. | advanced | read_only | -- |
-| `graph_usage_analytics` | Adoption analytics for the graph tools (WS12). | advanced | read_only | -- |
 
 **Governed metrics** (`semantic.py`)
 
@@ -200,6 +206,29 @@ Governed metrics and semantic-layer routing (registered when `SEMANTIC_ENABLED=t
 | `query_metrics` | Execute governed metrics through the semantic layer and return result rows. | core | read_only | `SEMANTIC_ENABLED` |
 | `reload_semantic_registry` | Force an immediate refresh of the semantic registry, bypassing | advanced | read_only | `SEMANTIC_ENABLED` |
 | `get_clickhouse_query_rules` | Return the ClickHouse query-writing rules for raw-SQL fallback work. | advanced | read_only | `SEMANTIC_ENABLED` |
+
+**Ui Tools** (`ui_tools.py`)
+
+| Tool | Summary | Tier | Risk | Gate |
+|------|---------|------|------|------|
+| `open_graph_explorer` | Open the Graph Explorer mini app. | advanced | read_only | -- |
+| `load_graph_explorer_seed` | Load a bounded 1-hop subgraph around seed_node_id (INVESTIGATE mode). | advanced | read_only | -- |
+| `expand_graph_explorer_node` | Expand `node_id` by `hops` hops across the active profiles. | advanced | read_only | -- |
+| `update_graph_explorer_focus` | Mutate selection, controls, and mode under one focus lock. | advanced | read_only | -- |
+| `load_graph_atlas_preview` | Load one inspect-only relationship sample without applying it. | advanced | read_only | -- |
+
+<details>
+<summary>App-internal tools (5) — called by mini-app UIs, not meant for direct use</summary>
+
+| Tool | Summary | Tier | Risk | Gate |
+|------|---------|------|------|------|
+| `load_graph_flows` | Trace fund flows from seed addresses (app-only, Flows mode). | advanced | app_only | -- |
+| `load_graph_timeline` | Load a fixed-universe, bucketed Money Trail (app-only). | advanced | app_only | -- |
+| `load_graph_transactions` | Open transactions and return every transfer leg (Transactions mode). | advanced | app_only | -- |
+| `load_graph_atlas_sample` | [App-only] Load top-weight sample subgraphs for the Atlas mode. | advanced | app_only | -- |
+| `set_graph_explorer_view` | [App-only] Bulk view-state sync target for the frontend reducer. | advanced | app_only | -- |
+
+</details>
 <!-- END AUTO-GENERATED: mcp-tools-semantic -->
 
 ---
@@ -209,6 +238,7 @@ Governed metrics and semantic-layer routing (registered when `SEMANTIC_ENABLED=t
 Charts, reports, dashboards, and the mini-app plumbing. `generate_charts` is the batch chart generator (always ≥ 3 charts in one call — required for reports); `generate_chart` / `quick_chart` are for one-off scratch plots; the `*_metric_chart*` variants are driven by metric names instead of raw SQL. Three report layouts exist: dashboard (`generate_report`), research essay (`generate_research_report`), and scrollytelling case study (`generate_case_study_report`) — see [Report Generation](reports.md) and [Quality Gates](advanced/quality-gates.md) for the enforcement rules. The package also carries the [Metric Lab](mini-apps/metric-lab.md) and [Portfolio](mini-apps/portfolio.md) mini-apps, `export_report` (docx / pdf / pptx), and the [Grafana dashboard publishing](advanced/grafana-publishing.md) family (registered when `GRAFANA_TOOLS_ENABLED=true`).
 
 <!-- BEGIN AUTO-GENERATED: mcp-tools-visualization -->
+<!-- generated: 2026-07-23 -->
 **Charts & reports** (`charts.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
@@ -226,12 +256,24 @@ Charts, reports, dashboards, and the mini-app plumbing. `generate_charts` is the
 | `list_reports` | List previously generated reports saved on disk. | advanced | read_only | -- |
 | `export_report` | Export a report as standalone HTML that can be saved and opened in any browser. | advanced | server_state_write | -- |
 
+**Cow Explorer** (`cow_explorer.py`)
+
+| Tool | Summary | Tier | Risk | Gate |
+|------|---------|------|------|------|
+| `open_cow_explorer` | Open the read-only CoW Data Explorer over indexed ``cow_db`` data. | advanced | read_only | -- |
+
 **Dashboard builder** (`dashboard_builder.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
 |------|---------|------|------|------|
 | `discover_dashboard_metrics` | Discover dbt models suitable for dashboard metrics. | advanced | read_only | `DASHBOARD_BUILDER_ENABLED` |
 | `scaffold_dashboard_tab` | Scaffold a dashboard tab from a JSON blueprint. | advanced | subprocess | `DASHBOARD_BUILDER_ENABLED` |
+
+**Governance Explorer** (`governance_explorer.py`)
+
+| Tool | Summary | Tier | Risk | Gate |
+|------|---------|------|------|------|
+| `open_governance` | Open the read-only Governance Explorer over ``governance_db``. | advanced | read_only | -- |
 
 **Grafana publishing** (`grafana.py`)
 
@@ -251,9 +293,7 @@ Charts, reports, dashboards, and the mini-app plumbing. `generate_charts` is the
 | `load_metric_lab_metric` | Load a dbt model (or legacy semantic metric) into an open view. | advanced | read_only | -- |
 | `open_metric_lab_from_sql` | Open the interactive Metric Lab app from a raw SQL query. | advanced | read_only | -- |
 | `open_metric_lab_from_metrics` | Open the interactive Metric Lab app from a semantic metric request. | advanced | read_only | -- |
-| `update_metric_lab_chart` | Patch the chart configuration in an open Metric Lab view. | advanced | read_only | -- |
-| `search_metric_catalog` | [App-only] Search / page the model catalog for the frontend. | advanced | read_only | -- |
-| `get_metric_catalog_entry` | [App-only] Full detail for one catalog entry (metric or model). | advanced | read_only | -- |
+| `update_metric_lab_chart` | Patch one chart panel's configuration in an open Metric Lab view. | advanced | read_only | -- |
 
 **Mini-app infrastructure** (`mini_apps.py`)
 
@@ -271,13 +311,43 @@ Charts, reports, dashboards, and the mini-app plumbing. `generate_charts` is the
 | `load_portfolio_section` | Lazy-load one portfolio section into an existing view. | advanced | read_only | -- |
 | `update_portfolio_focus` | Patch client-side section focus and filters. | advanced | read_only | -- |
 
-<details>
-<summary>App-internal tools (2) — called by mini-app UIs, not meant for direct use</summary>
+**Report Studio** (`report_studio.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
 |------|---------|------|------|------|
+| `open_report_studio` | Open the Report Studio: browse, preview, and manage generated | advanced | read_only | -- |
+| `compose_research_report` | [App-only] Assemble a long-form research essay (Anthropic layout) | advanced | read_only | -- |
+| `compose_case_study_report` | [App-only] Assemble a scrollytelling case study from chart records | advanced | read_only | -- |
+
+<details>
+<summary>App-internal tools (24) — called by mini-app UIs, not meant for direct use</summary>
+
+| Tool | Summary | Tier | Risk | Gate |
+|------|---------|------|------|------|
+| `load_cow_explorer_section` | [App-only] Atomically load one CoW Explorer section. | advanced | app_only | -- |
+| `search_cow_explorer` | [App-only] Resolve a CoW order, transaction, address, auction, or token. | advanced | app_only | -- |
+| `load_cow_entity` | [App-only] Load a resolved CoW entity bundle. | advanced | app_only | -- |
+| `load_cow_explorer_datasets` | [App-only] Load one deferred CoW dataset group (additive). | advanced | app_only | -- |
+| `load_cow_icon_overlay` | [App-only] Resolve CoinGecko icons for tokens visible in the view. | advanced | app_only | -- |
+| `load_governance_section` | [App-only] Atomically load one Governance Explorer section. | advanced | app_only | -- |
+| `load_governance_datasets` | [App-only] Load one deferred governance dataset group (additive). | advanced | app_only | -- |
+| `search_governance` | [App-only] Resolve a proposal, voter, GIP, topic, or contributor. | advanced | app_only | -- |
+| `load_governance_entity` | [App-only] Load a resolved governance entity bundle. | advanced | app_only | -- |
+| `set_metric_lab_charts` | [App-only] Persist the full chart-panel grid for a view. | advanced | app_only | -- |
+| `run_metric_lab_sql` | [App-only] Re-run (possibly edited) SQL for one attached dataset. | advanced | app_only | -- |
+| `search_metric_catalog` | [App-only] Search / page the model catalog for the frontend. | advanced | app_only | -- |
+| `get_metric_catalog_entry` | [App-only] Full detail for one catalog entry (metric or model). | advanced | app_only | -- |
 | `get_mini_app_rows` | [App-only] Fetch the next page of rows for a mini-app dataset. | advanced | app_only | -- |
 | `get_mini_app_state` | [App-only] Return the current view state and dataset metadata. | advanced | app_only | -- |
+| `list_report_archive` | [App-only] Page of the report archive (filename metadata only). | advanced | app_only | -- |
+| `get_report_archive_entry` | [App-only] Full structured payload of one report (native preview: | advanced | app_only | -- |
+| `get_report_export_info` | [App-only] Paths/URLs for exporting a report. Conversion itself | advanced | app_only | -- |
+| `delete_report_archive_entry` | [App-only] Delete a report file — two-step confirm. | advanced | app_only | -- |
+| `rename_report_archive_entry` | [App-only] Retitle a report: rewrites the embedded report-data | advanced | app_only | -- |
+| `list_session_charts` | [App-only] Recent chart records (server-wide registry, 2h TTL), | advanced | app_only | -- |
+| `get_session_chart` | [App-only] One chart record incl. its ECharts option (lazy | advanced | app_only | -- |
+| `create_studio_chart` | [App-only] Run SQL and register a chart record for the composer. | advanced | app_only | -- |
+| `compose_report` | [App-only] Assemble a dashboard report from chart records + | advanced | app_only | -- |
 
 </details>
 <!-- END AUTO-GENERATED: mcp-tools-visualization -->
@@ -289,6 +359,7 @@ Charts, reports, dashboards, and the mini-app plumbing. `generate_charts` is the
 Direct read access to EVM contracts via JSON-RPC. Prefer the single-call tools (`contract_explore`, `contract_call_function`, `contract_decode_transaction_input`, `contract_decode_receipt_logs`) over dbt for **single-address current state** — dbt is for sweeps, historical data, USD conversion, and aggregations. The [Contract Explorer](mini-apps/contract-explorer.md) mini-app wraps the same engine as an interactive surface. For **bulk** work — sweeping logs, batched view calls, storage slots, bytecode classification, or trace scans across thousands of addresses — the `rpc_scan_*` / `rpc_batch_call` family (registered when `RPC_SCAN_ENABLED=true`) streams results into ClickHouse scratch tables for SQL analysis; see [RPC Scans](advanced/rpc-scans.md). Archive reads (non-`latest` blocks) and trace scans require `GNOSIS_ARCHIVE_RPC_URL`.
 
 <!-- BEGIN AUTO-GENERATED: mcp-tools-web3 -->
+<!-- generated: 2026-07-23 -->
 **Contract Explorer mini-app** (`contract_explorer.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
@@ -330,6 +401,7 @@ Direct read access to EVM contracts via JSON-RPC. Prefer the single-call tools (
 Verification, reasoning traces, and the agent-persona loader. `verify_numbers` cross-checks a numerical claim against fresh SQL; `get_agent_persona(role)` loads one of the [28 persona contracts](agents.md) (the `cerebro_dispatcher` persona is the front door for non-trivial requests — see [Dispatcher](dispatcher.md)). The reasoning tools (`set_thinking_mode`, `log_reasoning`, `get_reasoning_log`, `get_performance_stats`) manage the 30-day reasoning trace, and the model-exclusion family (`record_model_exclusion`, `exclude_module`, …) satisfies the discovered-model-coverage gate that `generate_report` enforces.
 
 <!-- BEGIN AUTO-GENERATED: mcp-tools-governance -->
+<!-- generated: 2026-07-23 -->
 **Agent personas** (`agents.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
@@ -359,6 +431,7 @@ Verification, reasoning traces, and the agent-persona loader. `verify_numbers` c
 Multi-phase research projects: plan → execute → verify per phase, with findings, memory notes, evidence bindings, schema snapshots, and a peer-review gate before `publish_research_report` flips the workflow to `complete`. Every step appends to the durable event log, so a crashed project resumes where it stopped. See [Research Projects](workflows/research-projects.md) for the end-to-end recipe.
 
 <!-- BEGIN AUTO-GENERATED: mcp-tools-research -->
+<!-- generated: 2026-07-23 -->
 **Research workflow** (`research.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
@@ -387,6 +460,7 @@ Multi-phase research projects: plan → execute → verify per phase, with findi
 The narrative-first deliverable pipeline (*Storytelling with Data*): context brief → big idea → storyboard → per-scene visual specs → final story, with clarity and accessibility gates before `storyteller_generate_story_report` emits the report. Phase order is enforced in a state machine — skipping a gate raises an error. See [Storyteller](workflows/storyteller.md).
 
 <!-- BEGIN AUTO-GENERATED: mcp-tools-storyteller -->
+<!-- generated: 2026-07-23 -->
 **Storyteller workflow** (`storyteller.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
@@ -411,6 +485,7 @@ The narrative-first deliverable pipeline (*Storytelling with Data*): context bri
 Crash recovery over the SQLite event log (registered when `WORKFLOW_RESUME_TOOLS_ENABLED=true`). `list_resumable_workflows` enumerates running / waiting-gate workflows, and `get_workflow_resume_hint` / `recompute_workflow_resume_hint` return a structured "here is where you stopped, do this next" payload. The underlying event store records workflow state regardless of this flag — it only gates the user-facing tools. See [Resumable Workflows](workflows/resumable-workflows.md) and [Memory & Resume](advanced/memory-and-resume.md).
 
 <!-- BEGIN AUTO-GENERATED: mcp-tools-workflow -->
+<!-- generated: 2026-07-23 -->
 **Workflow resume** (`resume.py`)
 
 | Tool | Summary | Tier | Risk | Gate |
@@ -427,6 +502,7 @@ Crash recovery over the SQLite event log (registered when `WORKFLOW_RESUME_TOOLS
 Beyond the static surface, Cerebro registers SQL-templated tools from a YAML file at startup (the MCP Toolbox pattern). Each entry in `custom_tools.yaml` declares a tool name, description, typed parameters, a target database, and a parameterised read-only `SELECT`; the server registers each one as a first-class MCP tool when `CUSTOM_TOOLS_ENABLED=true` (with `CUSTOM_TOOLS_PATH` pointing at the file). This is how the bridge-flow, validator-history, and Gnosis Pay helpers ship — curated, pre-divided (wei/Gwei-safe) queries that are cheaper and safer than having the model re-derive the SQL. `list_custom_tools()` enumerates the set loaded in the current build; dynamic tools are auto-classified `read_only` in the [security registry](security.md).
 
 <!-- BEGIN AUTO-GENERATED: mcp-tools-custom -->
+<!-- generated: 2026-07-23 -->
 | Tool | Summary | Parameters | Database |
 |------|---------|------------|----------|
 | `get_validator_balance_history` | Get daily balance history for a specific Gnosis Chain validator. | -- | dbt |

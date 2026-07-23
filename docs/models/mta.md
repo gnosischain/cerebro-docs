@@ -1,6 +1,7 @@
 # MTA (Attribution) Module
 
 <!-- BEGIN AUTO-GENERATED: models-mta -->
+<!-- generated: 2026-07-23 -->
 **Gnosis**
 
 | Model | Layer | Description |
@@ -33,6 +34,7 @@ Tier1 endpoint (`api:gnosis_app_attribution_30d... |
 Tier1 endpoint (`api:gnosis_app_attribution_60d... |
 | `api_execution_gnosis_app_attribution_7d` | API | API view passthrough over `fct_execution_gnosis_app_attribution_7d`.
 Tier1 endpoint (`api:gnosis_app_attribution_7d`)... |
+| `api_execution_gnosis_app_funnel_summary` | API | Cumulative conversion funnel per funnel/step: the number of distinct users who reached at least each step. Point-in-t... |
 
 **Gpay**
 

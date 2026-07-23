@@ -17,6 +17,7 @@ Raw data is sourced from the `execution` ClickHouse database, which contains:
 ## Model Categories
 
 <!-- BEGIN AUTO-GENERATED: models-execution -->
+<!-- generated: 2026-07-23 -->
 **Account**
 
 | Model | Layer | Description |
@@ -154,6 +155,7 @@ NameRegistry has ever announced. Built as ... |
 | `int_execution_circles_v2_group_collateral_balances_daily` | Intermediate | Daily end-of-day group collateral balances per token, derived from cumulative collateral diffs. |
 | `int_execution_circles_v2_group_collateral_diffs` | Intermediate | Per-group collateral deltas from StandardTreasury lock, burn, and return events. |
 | `int_execution_circles_v2_group_settings_updates` | Intermediate | Group configuration changes from BaseGroupFactory, CMGroupDeployer, and BaseGroup runtime events. |
+| `int_execution_circles_v2_group_size_daily` | Intermediate | Per-group member count over time (one row per group_address per day). Members are the trustees on the group's outgoin... |
 | `int_execution_circles_v2_groups_overview_daily` | Intermediate | Network-level daily group metrics — new groups + collateral activity. |
 | `int_execution_circles_v2_hub_events_daily` | Intermediate | Daily count of every Circles v2 Hub event, broken down by event_name. Per (date, event_name): n_events, n_tx, n_disti... |
 | `int_execution_circles_v2_hub_transfers` | Intermediate | Circles v2 ERC-1155 TransferSingle and TransferBatch events from the Hub, exploded into individual rows. |
@@ -167,6 +169,7 @@ invitation-at-scale "farm". Hub.RegisterHuman records in... |
 | `int_execution_circles_v2_offer_cycles` | Intermediate | ERC20TokenOfferCycle events capturing configuration, creation, deposits, claims, and withdrawals. |
 | `int_execution_circles_v2_payments` | Intermediate | Payment events from the PaymentGatewayFactory with decoded payer, payee, and amount. |
 | `int_execution_circles_v2_referrers` | Intermediate | "Users who start referring" — one row per inviter, i.e. each address that appears as invited_by on a Circles v2 Human... |
+| `int_execution_circles_v2_score_mints` | Intermediate | Per-mint fact for the OffchainScoreBasedMintPolicy PersonalMinted event — one row per score-based personal mint. `col... |
 | `int_execution_circles_v2_tokens_supply_daily` | Intermediate | Per-token Circles v2 daily supply derived from the zero-address balance in `int_execution_circles_v2_balances_daily`.... |
 | `int_execution_circles_v2_transfers` | Intermediate | Unified Circles v2 transfers combining Hub ERC-1155 and ERC-20 wrapper transfers. Static wrapper amounts are converte... |
 | `int_execution_circles_v2_transfers_categorised` | Intermediate | Per-transfer categorisation of int_execution_circles_v2_transfers into one of mint / burn / wrap / unwrap / p2p. (Mat... |
@@ -245,9 +248,24 @@ One row per directed trust edge from the pers... |
 | `api_execution_circles_v2_backers_current_daily` | API | Time-series of currently-trusted (revocation-aware) backers; latest day excluded. Distinct from api:circles_v2_backer... |
 | `api_execution_circles_v2_backing_depositors_current` | API | Snapshot of distinct depositor addresses. |
 | `api_execution_circles_v2_backing_events_daily` | API | Time-series of Circles v2 backing-lifecycle events, by stage. |
+| `api_execution_circles_v2_balance_cohorts_daily` | API | Daily wealth distribution: distinct CRC holders bucketed by balance tier (0-1 / 1-10 / 10-100 / 100-1k / 1k-10k / 10k... |
 | `api_execution_circles_v2_crc20_prices_daily` | API | Public daily price view for CRC20 wrapper tokens, consolidated across all pools. One row per (date, crc20_token) with... |
 | `api_execution_circles_v2_economically_active_avatars_weekly` | API | Weekly economically active Circles avatars (ecosystem-wide, circles-first definition) by earning_kind, with the in-ap... |
+| `api_execution_circles_v2_gcrc_cashback_cumulative` | API | Cumulative Circles v2 gCRC cashback over time, one row per week: the running total gCRC distributed and the running c... |
+| `api_execution_circles_v2_gcrc_cashback_recipients_ranking` | API | Top 100 lifetime recipients of Circles v2 gCRC cashback, ranked by total amount received, enriched with each recipien... |
+| `api_execution_circles_v2_gcrc_cashback_total` | API | Lifetime (single-row) Circles v2 gCRC cashback totals for KPI tiles: the cumulative cashback amount distributed and t... |
+| `api_execution_circles_v2_gcrc_cashback_weekly` | API | Weekly Circles v2 gCRC cashback distribution: distinct recipient count and total gCRC amount sent from the cashback w... |
+| `api_execution_circles_v2_group_collateral_daily` | API | Per-group daily member-CRC collateral (native units). |
+| `api_execution_circles_v2_group_explorer_profile` | API | One row per Circles v2 group: identity, on-chain handlers, and snapshot KPIs (members, supply, wrapped %, collateral,... |
+| `api_execution_circles_v2_group_holders` | API | Holders of a group's token, resolving both native ERC-1155 and ERC-20 wrapper legs (wrapper mapped back to group via ... |
+| `api_execution_circles_v2_group_member_scores` | API | Latest on-chain score per (score-based group, member), from the OffchainScoreBasedMintPolicy PersonalMinted event. On... |
+| `api_execution_circles_v2_group_members` | API | Members of a group (trustees on its outgoing trust list) with profile and join date; is_mutual flags reciprocal trust. |
+| `api_execution_circles_v2_group_mints_daily` | API | Per-group daily group-token mints vs collateral redemptions (distinct tokens/units, labelled in the kind column). |
+| `api_execution_circles_v2_group_score_distribution` | API | Count of members per score bucket, per score-based group. Buckets carry a bucket_rank for stable ordering in charts. |
+| `api_execution_circles_v2_group_search` | API | (group_address, display_name) lookup backing the Group Explorer global filter. One row per Circles v2 Group avatar. |
+| `api_execution_circles_v2_group_size_daily` | API | Per-group daily member count, from historical trust intervals. |
 | `api_execution_circles_v2_group_size_distribution` | API | Histogram of Circles v2 group sizes (members per group). |
+| `api_execution_circles_v2_group_supply_daily` | API | Per-group daily token supply, split native ERC-1155 vs ERC-20 wrapper (wrapper level = prefix-sum of wrapper supply d... |
 | `api_execution_circles_v2_group_token_supply_daily` | API | Long-format time-series view (one row per (date, label)) over fct_execution_circles_v2_group_token_supply_daily, read... |
 | `api_execution_circles_v2_group_token_supply_top_latest` | API | Top 100 Circles v2 groups by personal-token supply (leaderboard view). |
 | `api_execution_circles_v2_groups_cnt_latest` | API | Latest count of group avatars and 7-day percentage change. |
@@ -274,6 +292,18 @@ One row per directed trust edge from the pers... |
 | `api_execution_circles_v2_mints_daily` | API | Time-series view over int_execution_circles_v2_mints_daily; latest day excluded. One row per (date, mint_kind) — mint... |
 | `api_execution_circles_v2_orgs_cnt_latest` | API | Latest count of organization avatars and 7-day percentage change. |
 | `api_execution_circles_v2_p2p_velocity_daily` | API | Peer-to-peer transfer velocity (mint/burn/wrap/unwrap excluded). |
+| `api_execution_circles_v2_pool_explorer_liquidity_daily` | API | Daily count of liquidity events (Mint = 'Add', Burn = 'Remove') per Uniswap V3 Circles pool, deduped on (transaction_... |
+| `api_execution_circles_v2_pool_explorer_liquidity_events` | API | Individual liquidity events (Mint mapped to Add, Burn to Remove) for the main Uniswap V3 Circles pools, one row per e... |
+| `api_execution_circles_v2_pool_explorer_swaps` | API | Individual recent swaps executed on the main Circles v2 DEX pools, scoped to the curated liquidity pools for the Pool... |
+| `api_execution_circles_v2_pool_explorer_swaps_daily` | API | Daily swap activity per main Circles DEX pool tracked in the Pool Explorer: number of swaps, total USD volume, and di... |
+| `api_execution_circles_v2_pool_search` | API | Point-in-time (pool_address, display_name) lookup of Circles v2 liquidity pools that backs the Pool Explorer filter d... |
+| `api_execution_circles_v2_pools_daily` | API | Daily liquidity/market metrics for the main Circles DEX pools (seed circles_liquidity_pools), one row per (date, pool... |
+| `api_execution_circles_v2_pools_latest` | API | One row per main Circles DEX pool: latest TVL plus trailing-7d volume, trades, distinct traders and fees. Backs the L... |
+| `api_execution_circles_v2_pools_reserves_daily` | API | Daily USD total value locked (TVL) per main Circles DEX pool, computed as the sum of both token legs' USD value. Back... |
+| `api_execution_circles_v2_pools_reserves_latest` | API | Latest per-(pool, token) reserve, token USD price and TVL for the main Circles DEX pools. Emits two rows per pool (on... |
+| `api_execution_circles_v2_pools_reserves_token_daily` | API | Daily per-(pool, token) reserve balance and USD valuation for the main Circles DEX pools (Uniswap V3 and Balancer V3)... |
+| `api_execution_circles_v2_pools_traders_daily` | API | Daily distinct traders and trade count per main Circles DEX pool. A trader is the swap taker (Swap recipient), fallin... |
+| `api_execution_circles_v2_score_mints_daily` | API | Daily score-based mint activity per group: mint count, distinct minters, average member score at mint, and total grou... |
 | `api_execution_circles_v2_stats_current` | API | Snapshot of network-level Circles v2 counts (avatars total + by type, active trusts, tokens, wrappers). One row per m... |
 | `api_execution_circles_v2_supply_by_holder_type_daily` | API | API view of daily CRC supply breakdown by holder type (avatar type or Dune label sector). |
 | `api_execution_circles_v2_total_supply_daily` | API | API view of daily network-wide CRC supply. |
@@ -362,10 +392,14 @@ One row per directed trust edge from the pers... |
 Supersedes the hand-maintained seeds/gnosis_app... |
 | `int_execution_gnosis_app_first_conversion` | Intermediate | One row per Gnosis App user (the onboard cohort) with the date of their
 first event in each conversion kind. Feeds th... |
+| `int_execution_gnosis_app_gp_card_ga_link` | Intermediate | Authoritative, MODULE-AGNOSTIC Gnosis Pay card -> Gnosis App LINK, one row per CANONICAL card.
+Union of the Mixpanel ... |
 | `int_execution_gnosis_app_gpay_topups` | Intermediate | Gnosis App → Gnosis Pay top-ups.
 
 A top-up = a Gnosis Pay "Crypto Deposit" into a GP wallet that is currently
 GA-owne... |
+| `int_execution_gnosis_app_gpay_txns` | Intermediate | Any USER-INITIATED Gnosis Pay card-wallet transaction (Payment = card spend,
+Crypto Withdrawal, Fiat Off-ramp, Fiat T... |
 | `int_execution_gnosis_app_gpay_wallets` | Intermediate | Gnosis Pay wallets (Safes) that have been or currently are controlled
 by a Gnosis App user, via the Safe's Zodiac **D... |
 | `int_execution_gnosis_app_gt_card_owner` | Intermediate | Reusable GP card (Safe) -> Gnosis App account bridge — the UNION of three on-chain signals gated to the envio_ga regi... |
@@ -393,6 +427,8 @@ by any ERC20TokenOfferCycle where the claim ... |
 by the Circles v2 ERC20TokenOfferCycle con... |
 | `int_execution_gnosis_app_user_activity_daily` | Intermediate | Foundation table for all Gnosis App user-activity analytics — one row
 per (date, address, activity_kind). Every downs... |
+| `int_execution_gnosis_app_user_activity_daily_incl_gpay` | Intermediate | The composite Gnosis App activity feed (int_execution_gnosis_app_user_activity_daily)
+EXTENDED with a `gpay_txn` acti... |
 | `int_execution_gnosis_app_user_events` | Intermediate | Long-form heuristic event log for Gnosis App user identification.
 
 Seven rules, all keyed off the same chokepoint: a ... |
@@ -412,6 +448,10 @@ any heuristic, with derived confidence proxy `n... |
 | `fct_execution_gnosis_app_activity_by_action_weekly` | Fact | Weekly activity-by-action. |
 | `fct_execution_gnosis_app_churn_monthly` | Fact | Monthly churn & retention segments. Two scopes — 'Any' (any non-onboard
 activity) and 'Swap' (swap_signed/swap_filled... |
+| `fct_execution_gnosis_app_gp_card_ga_link_daily` | Fact | Daily + cumulative count of Gnosis Pay cards LINKED to a Gnosis App account,
+split by link_source. Backing fact for a... |
+| `fct_execution_gnosis_app_gp_card_ga_volume_daily` | Fact | GA-LINKED Gnosis Pay funding & spend volume, daily, split by link_source. Module-agnostic,
+correctly-timed successor ... |
 | `fct_execution_gnosis_app_gpay_migration_daily` | Fact | Daily Gnosis Pay exploit -> Safe migration recovery time-series (June-2026 incident). One row per calendar date from ... |
 | `fct_execution_gnosis_app_gpay_topups_by_token_daily` | Fact | Daily Gnosis App → Gnosis Pay top-up activity, derived from
 int_execution_gnosis_app_gpay_topups (top-up = a GP "Cryp... |
@@ -467,17 +507,29 @@ int_execution_gnosis_app_token_offer_claims. One row per da... |
 | `fct_execution_gnosis_app_user_profile_latest` | Fact | Account-facing Gnosis App profile fact from production current-user and GPay wallet ownership models. |
 | `fct_execution_gnosis_app_users_daily` | Fact | Daily user counts. new_users = distinct addresses whose first-ever
 activity hit was on this date; active_users = dist... |
+| `fct_execution_gnosis_app_users_daily_incl_gpay` | Fact | "Incl. Gnosis Pay" twin of fct_execution_gnosis_app_users_daily: identical New / Returning /
+Reactivated / Active log... |
 | `fct_execution_gnosis_app_users_distinct` | Fact | One row per Gnosis App on-chain user_pseudonym, with boolean flags
 indicating which identification heuristic(s) fired... |
 | `fct_execution_gnosis_app_users_monthly` | Fact | Monthly cohort of users. Returning = active this month AND previous month. Reactivated = active this month, inactive ... |
+| `fct_execution_gnosis_app_users_monthly_incl_gpay` | Fact | "Incl. Gnosis Pay" twin of fct_execution_gnosis_app_users_monthly: identical New / Returning /
+Reactivated / Active l... |
 | `fct_execution_gnosis_app_users_weekly` | Fact | Weekly cohort of users (ISO Mon-start). Returning = active this week AND previous week. Reactivated = active this wee... |
+| `fct_execution_gnosis_app_users_weekly_incl_gpay` | Fact | "Incl. Gnosis Pay" twin of fct_execution_gnosis_app_users_weekly — identical New/Returning/Reactivated/Active logic, ... |
 | `fct_execution_gnosis_app_weekly_active_users_circles_ecosystem` | Fact | Circles-ecosystem weekly active reach — NOT a Gnosis App growth metric. Distinct addresses active that week across th... |
 | `fct_execution_gnosis_app_weekly_economically_active_users` | Fact | Weekly Economically Active Users — intersection of the Gnosis-App-only (in-app) weekly active users and weekly Circle... |
+| `api_execution_gnosis_app_active_users_incl_gpay_daily` | API | Gnosis App Daily Active Users (DAU), Gnosis-Pay-inclusive variant over fct_execution_gnosis_app_users_daily_incl_gpay... |
+| `api_execution_gnosis_app_active_users_incl_gpay_monthly` | API | Gnosis App Monthly Active Users (MAU), Gnosis-Pay-inclusive variant over fct_execution_gnosis_app_users_monthly_incl_... |
+| `api_execution_gnosis_app_active_users_incl_gpay_weekly` | API | Gnosis App Weekly Active Users (WAU), Gnosis-Pay-inclusive variant over fct_execution_gnosis_app_users_weekly_incl_gp... |
 | `api_execution_gnosis_app_activity_by_action_daily` | API | FastAPI view over fct_execution_gnosis_app_activity_by_action_daily. Params: activity_kind, start_date, end_date. |
 | `api_execution_gnosis_app_activity_by_action_monthly` | API | FastAPI view over fct_execution_gnosis_app_activity_by_action_monthly. |
 | `api_execution_gnosis_app_activity_by_action_weekly` | API | FastAPI view over fct_execution_gnosis_app_activity_by_action_weekly. |
 | `api_execution_gnosis_app_churn_monthly` | API | FastAPI view over fct_execution_gnosis_app_churn_monthly. Params: scope, start_month, end_month. |
 | `api_execution_gnosis_app_circles_ecosystem_weekly_active_users` | API | Whole-Circles-network weekly active reach (NOT Gnosis App growth; that is api:gnosis_app_users weekly / api:gnosis_ap... |
+| `api_execution_gnosis_app_gp_card_ga_link_daily` | API | Dashboard view of fct_execution_gnosis_app_gp_card_ga_link_daily: daily + cumulative
+count of GA-linked Gnosis Pay ca... |
+| `api_execution_gnosis_app_gp_card_ga_volume_daily` | API | Dashboard view of fct_execution_gnosis_app_gp_card_ga_volume_daily: GA-linked GP-card funding &
+spend per day by link... |
 | `api_execution_gnosis_app_gpay_topups_by_token_daily` | API | FastAPI endpoint view of fct_execution_gnosis_app_gpay_topups_by_token_daily.
 Supports query params: token_bought_sym... |
 | `api_execution_gnosis_app_gpay_topups_cohort_monthly` | API | FastAPI view over fct_execution_gnosis_app_gpay_topups_cohort_monthly. Params: start_month, end_month. |
@@ -550,6 +602,7 @@ by onboard-month cohort. Long format: one... |
 | `api_execution_gnosis_app_users_monthly` | API | FastAPI view over fct_execution_gnosis_app_users_monthly. Params: start_month, end_month. |
 | `api_execution_gnosis_app_users_weekly` | API | FastAPI view over fct_execution_gnosis_app_users_weekly. Params: start_date, end_date. |
 | `api_execution_gnosis_app_weekly_active_users` | API | Gnosis App Weekly Active Users (WAU) time-series over fct_execution_gnosis_app_users_weekly.active_users (in-app acti... |
+| `api_execution_gnosis_app_weekly_active_users_incl_gpay` | API | Gnosis App Weekly Active Users (WAU), Gnosis-Pay-inclusive variant of api_execution_gnosis_app_weekly_active_users: '... |
 | `api_execution_gnosis_app_weekly_economically_active_users` | API | Time-series view over fct_execution_gnosis_app_weekly_economically_active_users (latest week excluded). |
 
 **Gpay**
@@ -569,6 +622,8 @@ int_execution_sa... |
 log (issued_at + add_owner + remove_owner) — see... |
 | `int_celo_gpay_wallets` | Intermediate | Canonical Celo GP card Safe list, reconstructed from
 int_celo_gpay_wallet_events (action='issued_at') rather than rea... |
+| `int_execution_gpay_accounts_deployed` | Intermediate | True Gnosis Pay account universe, one row per deployed account. Unlike
+int_execution_gpay_wallets (payment-gated), ac... |
 | `int_execution_gpay_activity` | Intermediate | Incremental model that captures individual Gnosis Pay wallet transactions including payments, deposits, withdrawals, ... |
 | `int_execution_gpay_activity_daily` | Intermediate | Incremental model that aggregates Gnosis Pay wallet activity at the daily level, grouped by wallet, action, direction... |
 | `int_execution_gpay_allowances_current` | Intermediate | Current allowance state per Gnosis Pay Safe.
@@ -638,6 +693,7 @@ has emitted SafeSetup (so it exists on-chain) A... |
 User-holdings semantics: reads int_execution_gpay_b... |
 | `fct_execution_gpay_user_lifetime_metrics` | Fact | Lifetime metrics for each Gnosis Pay wallet, including tenure, activity counts, payment volumes, and cashback totals. |
 | `fct_execution_gpay_users_distinct` | Fact | Deduplicated Gnosis Pay user projection for the semantic layer's cross-sector user-overlap path. One row per user_pse... |
+| `api_execution_gpay_accounts_daily` | API | Daily time series of the cumulative number of deployed Gnosis Pay accounts. |
 | `api_execution_gpay_active_users_7d` | API | 7-day active user count with period-over-period change percentage for Gnosis Pay. |
 | `api_execution_gpay_active_users_weekly` | API | Weekly time series of Gnosis Pay active user counts. |
 | `api_execution_gpay_activity_by_action_daily` | API | Daily Gnosis Pay activity metrics broken down by action type, with counts and volumes. |
@@ -680,6 +736,7 @@ User-holdings semantics: reads int_execution_gpay_b... |
 | `api_execution_gpay_retention_monthly` | API | Monthly cohort user counts over time, formatted for time series visualization. |
 | `api_execution_gpay_retention_pct_monthly` | API | Monthly cohort retention heatmap data for all Gnosis Pay activity. |
 | `api_execution_gpay_retention_volume_monthly` | API | Monthly cohort volume retention over time, formatted for time series visualization. |
+| `api_execution_gpay_total_accounts` | API | All-time total count of deployed Gnosis Pay accounts (Safes that enabled a Gnosis Pay Zodiac module - Delay / Roles /... |
 | `api_execution_gpay_total_balance` | API | Current total balance across all Gnosis Pay wallets in USD. |
 | `api_execution_gpay_total_funded` | API | All-time total count of funded Gnosis Pay wallets (users who made at least one payment). |
 | `api_execution_gpay_total_payments` | API | All-time total count of Gnosis Pay payments. |

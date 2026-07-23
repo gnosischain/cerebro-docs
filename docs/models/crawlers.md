@@ -17,6 +17,7 @@ All data is sourced from the `crawlers_data` ClickHouse database, which is popul
 ## Model Categories
 
 <!-- BEGIN AUTO-GENERATED: models-crawlers -->
+<!-- generated: 2026-07-23 -->
 **Circles**
 
 | Model | Layer | Description |

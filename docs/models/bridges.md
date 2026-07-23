@@ -40,6 +40,7 @@ The module also tracks bridges connecting Gnosis Chain to Layer 2 networks:
 ## Model Categories
 
 <!-- BEGIN AUTO-GENERATED: models-bridges -->
+<!-- generated: 2026-07-23 -->
 **Cum**
 
 | Model | Layer | Description |
