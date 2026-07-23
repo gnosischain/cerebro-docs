@@ -1,15 +1,17 @@
 ---
-title: Platform Tools
-description: APIs, MCP server, and dashboards for accessing Gnosis Analytics data
+title: API & Dashboard
+description: REST API and metrics dashboard for accessing Gnosis Analytics data
 ---
 
-# Platform Tools
+# API & Dashboard
 
-The Gnosis Analytics platform provides three ways to access and explore blockchain data:
+This section covers the two public consumption surfaces of the platform:
 
-- **REST API** -- Programmatic access to 460+ endpoints across 11 categories with tiered authentication
-- **[MCP Server](../mcp/index.md)** -- 160+ tools for AI assistants to query ClickHouse, explore dbt models, and generate visualizations
+- **REST API** -- Programmatic access to 500+ endpoints across 11 categories with tiered authentication
 - **[Dashboard](../dashboard/index.md)** -- Interactive metrics dashboard at [metrics.gnosischain.com](https://metrics.gnosischain.com)
+
+!!! info "Looking for the AI tooling?"
+    The [MCP Server](../mcp/index.md) — 190+ tools for AI assistants to query ClickHouse, explore dbt models, and generate visualizations — has its own section.
 
 ---
 

@@ -3,9 +3,19 @@ title: Gnosis Analytics Documentation
 description: Comprehensive blockchain analytics platform for Gnosis Chain
 ---
 
+<div class="home-hero" markdown>
+
 # Gnosis Analytics Documentation
 
-Gnosis Analytics is a comprehensive blockchain analytics platform for Gnosis Chain providing real-time and historical data through REST APIs, AI-powered tools, and interactive dashboards. The platform ingests data from execution and consensus layer nodes, P2P network crawlers, and external sources, transforming it through a robust dbt modeling pipeline and serving it via multiple interfaces.
+Real-time and historical Gnosis Chain data through REST APIs, AI-powered tools, and interactive dashboards — ingested from chain nodes, network crawlers, and external sources, modeled with dbt, and served through multiple interfaces.
+
+[Quick Start](getting-started/quickstart.md){ .md-button .md-button--primary }
+[API Reference](api/index.md){ .md-button }
+[MCP Server](mcp/index.md){ .md-button }
+
+Want to use the API right away? The [Quick Start](getting-started/quickstart.md) gets you a first call in under a minute — no API key needed for public endpoints. Prefer to understand the platform first? Read the [Platform Overview](getting-started/platform-overview.md) and the [Architecture](getting-started/architecture.md) walkthrough.
+
+</div>
 
 ## Data Flow
 
@@ -28,6 +38,9 @@ flowchart TD
         EXT([External Data]):::source --> IPC[ip-crawler]:::tool
         EXT --> CR[click-runner]:::tool
         P2P([P2P Network]):::source --> NEB[nebula]:::tool
+        COWS([CoW API]):::source --> COWI[cow-indexer]:::tool
+        EL --> COWI
+        ARCS([Archive RPC]):::source --> RPCI[rpc-state-indexer]:::tool
     end
 
     subgraph L2["  DATA STORAGE  "]
@@ -49,6 +62,8 @@ flowchart TD
     IPC --> CH
     CR --> CH
     NEB --> CH
+    COWI --> CH
+    RPCI --> CH
     CH ~~~ DBT
     CH <--> DBT
     CH --> API
@@ -82,6 +97,9 @@ flowchart TD
         EXTD([External Data]):::source --> IPCD[ip-crawler]:::tool
         EXTD --> CRD[click-runner]:::tool
         P2PD([P2P Network]):::source --> NEBD[nebula]:::tool
+        COWSD([CoW API]):::source --> COWID[cow-indexer]:::tool
+        ELD --> COWID
+        ARCSD([Archive RPC]):::source --> RPCID[rpc-state-indexer]:::tool
     end
 
     subgraph D2["  DATA STORAGE  "]
@@ -103,6 +121,8 @@ flowchart TD
     IPCD --> CHD
     CRD --> CHD
     NEBD --> CHD
+    COWID --> CHD
+    RPCID --> CHD
     CHD ~~~ DBTD
     CHD <--> DBTD
     CHD --> APID
@@ -125,48 +145,72 @@ flowchart TD
 
 </div>
 
-## Quick Links
+## Explore the Docs
 
 <div class="grid cards" markdown>
 
--   **API Reference**
+-   :material-database-import:{ .lg .middle } **Data Ingestion**
 
     ---
 
-    REST API documentation including authentication, endpoints, filtering, and error handling.
-
-    [:octicons-arrow-right-24: API Reference](api/index.md)
-
--   **Data Ingestion**
-
-    ---
-
-    Architecture overview, indexers, and crawlers that feed raw blockchain data into ClickHouse.
+    Indexers and crawlers that feed raw chain, protocol, and external data into ClickHouse.
 
     [:octicons-arrow-right-24: Data Ingestion](data-pipeline/ingestion/index.md)
 
--   **Model Catalog**
+-   :material-graph:{ .lg .middle } **Data Modeling**
 
     ---
 
-    Browse the ~1,200 dbt models across 14 modules powering the analytics platform.
+    The dbt-cerebro project, semantic layer, and the ~1,200-model catalog across 14 modules.
 
-    [:octicons-arrow-right-24: Model Catalog](models/index.md)
+    [:octicons-arrow-right-24: Data Modeling](data-pipeline/transformation/index.md)
 
--   **Developer Guide**
+-   :material-api:{ .lg .middle } **API & Dashboard**
 
     ---
 
-    Get started quickly with the API, understand the platform, and integrate with your applications.
+    REST API with 500+ auto-generated endpoints, plus the public metrics dashboard.
+
+    [:octicons-arrow-right-24: API Reference](api/index.md)
+
+-   :material-robot:{ .lg .middle } **MCP Server**
+
+    ---
+
+    190+ AI-assistant tools, ten interactive mini-apps, and multi-phase research workflows.
+
+    [:octicons-arrow-right-24: MCP Server](mcp/index.md)
+
+-   :material-flask:{ .lg .middle } **Research**
+
+    ---
+
+    Measurement methodology (MMM & MTA), protocol deep dives, and ESG reporting.
+
+    [:octicons-arrow-right-24: Research](research/index.md)
+
+-   :material-source-branch:{ .lg .middle } **Developer Guide**
+
+    ---
+
+    Add endpoints, models, scrapers, and protocols to the metadata-driven platform.
 
     [:octicons-arrow-right-24: Developer Guide](developer/index.md)
 
+-   :material-server:{ .lg .middle } **Operations**
+
+    ---
+
+    Infrastructure, deployment, monitoring, and troubleshooting runbooks.
+
+    [:octicons-arrow-right-24: Operations](operations/index.md)
+
+-   :material-book-open-variant:{ .lg .middle } **Reference**
+
+    ---
+
+    Environment variables, glossary, data dictionary, and the Dune query archive.
+
+    [:octicons-arrow-right-24: Reference](reference/index.md)
+
 </div>
-
-## Getting Started
-
-New to Gnosis Analytics? Start here:
-
-- [Quick Start](getting-started/quickstart.md) -- Make your first API call in under a minute
-- [Platform Overview](getting-started/platform-overview.md) -- Understand the 13-repo ecosystem
-- [Architecture](getting-started/architecture.md) -- Deep dive into the 4-layer architecture

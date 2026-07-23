@@ -40,7 +40,7 @@
 .home-data-flow-title {
   margin: 0 0 0.55rem;
   color: #0f2d3d;
-  font-size: 2rem;
+  font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: 0.01em;
   line-height: 1.15;
@@ -78,6 +78,39 @@
   }
 
   .home-data-flow-title {
-    font-size: 1.7rem;
+    font-size: 1.2rem;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Homepage hero                                                       */
+/* ------------------------------------------------------------------ */
+
+.home-hero {
+  text-align: center;
+  margin: 0.5rem 0 2rem;
+}
+
+.home-hero p {
+  max-width: 38rem;
+  margin: 0.6rem auto 1.2rem;
+}
+
+.home-hero .md-button {
+  margin: 0.2rem 0.3rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Grid-card polish (homepage + section indexes)                       */
+/* ------------------------------------------------------------------ */
+
+.md-typeset .grid.cards > ul > li {
+  border-radius: 8px;
+  transition: border-color 125ms, box-shadow 125ms, transform 125ms;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: var(--md-shadow-z2);
+  transform: translateY(-2px);
 }

@@ -9,14 +9,21 @@ theme:
   name: material
   favicon: assets/favicon.png
   logo: assets/gnosis-logo.svg
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
   palette:
-    - scheme: default
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
       primary: teal
       accent: deep orange
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-    - scheme: slate
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
       primary: teal
       accent: deep orange
       toggle:
@@ -29,11 +36,17 @@ theme:
     - navigation.path
     - navigation.top
     - navigation.indexes
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.footer
     - search.suggest
     - search.highlight
     - content.code.copy
     - content.code.annotate
     - content.tabs.link
+    - content.action.edit
+    - content.action.view
     - toc.follow
 
 markdown_extensions:
@@ -67,6 +80,11 @@ markdown_extensions:
 
 plugins:
   - search
+  # Policy: every page move/rename gets a redirect_maps entry in the same PR
+  # so external links never break (static meta-refresh pages, nginx-safe).
+  - redirects:
+      redirect_maps:
+        getting-started/index.md: index.md
   - minify:
       minify_html: true
 
@@ -118,20 +136,11 @@ extra:
         - developer/
 
 nav:
-  - Home: index.md
-  - Developer Guide:
-    - developer/index.md
-    - Getting Started:
-      - getting-started/index.md
-      - Quick Start: getting-started/quickstart.md
-      - Platform Overview: getting-started/platform-overview.md
-      - Architecture: getting-started/architecture.md
-    - Adding API Endpoints: developer/add-endpoint.md
-    - Adding dbt Models: developer/add-model.md
-    - Adding Scrapers: developer/add-scraper.md
-    - Adding a New Protocol: developer/add-protocol.md
-    - meta.api Contract: developer/meta-api-contract.md
-    - Conventions: developer/conventions.md
+  - Getting Started:
+    - index.md
+    - Quick Start: getting-started/quickstart.md
+    - Platform Overview: getting-started/platform-overview.md
+    - Architecture: getting-started/architecture.md
   - Data Ingestion:
     - data-pipeline/ingestion/index.md
     - Pipeline Overview: data-pipeline/overview.md
@@ -140,6 +149,8 @@ nav:
     - Era File Parser: data-pipeline/ingestion/era-parser.md
     - Cryo Base Image: data-pipeline/ingestion/cryo-base.md
     - Click Runner: data-pipeline/ingestion/click-runner.md
+    - CoW Protocol Indexer: data-pipeline/ingestion/cow-indexer.md
+    - RPC State Indexer: data-pipeline/ingestion/rpc-state-indexer.md
     - Network Crawlers:
       - data-pipeline/crawlers/index.md
       - DHT Crawler (Nebula): data-pipeline/crawlers/nebula.md
@@ -182,11 +193,80 @@ nav:
       - MTA (Attribution): models/mta.md
       - Quarterly Data: models/quarterly_data.md
       - Revenue: models/revenue.md
+  - API & Dashboard:
+    - api/index.md
+    - Authentication: api/authentication.md
+    - Endpoints & Routing: api/endpoints.md
+    - Metrics Explorer: api/explorer.md
+    - Endpoint Catalog:
+      - api/catalog/index.md
+      - Bridges: api/catalog/bridges.md
+      - Celo: api/catalog/celo.md
+      - Consensus: api/catalog/consensus.md
+      - Crawlers Data: api/catalog/crawlers_data.md
+      - ESG: api/catalog/esg.md
+      - Execution: api/catalog/execution.md
+      - MMM: api/catalog/mmm.md
+      - MTA: api/catalog/mta.md
+      - P2P: api/catalog/p2p.md
+      - Quarterly Data: api/catalog/quarterly_data.md
+      - Revenue: api/catalog/revenue.md
+    - Filtering & Pagination: api/filtering.md
+    - Rate Limits: api/rate-limits.md
+    - Interactive Docs (Swagger): api/swagger.md
+    - Error Handling: api/errors.md
+    - Changelog: api/changelog.md
+    - Dashboard:
+      - dashboard/index.md
+      - Sectors: dashboard/sectors.md
+      - Configuration: dashboard/configuration.md
+  - MCP Server:
+    - mcp/index.md
+    - Setup: mcp/setup.md
+    - Available Tools: mcp/tools.md
+    - Agent Fleet: mcp/agents.md
+    - Cerebro Dispatcher: mcp/dispatcher.md
+    - Report Generation: mcp/reports.md
+    - Security & Audit: mcp/security.md
+    - Observability: mcp/observability.md
+    - Workflows:
+      - mcp/workflows/index.md
+      - Research Projects: mcp/workflows/research-projects.md
+      - Storyteller: mcp/workflows/storyteller.md
+      - Simulation Sandboxes: mcp/workflows/simulation-sandboxes.md
+      - Resumable Workflows: mcp/workflows/resumable-workflows.md
+    - Mini-Apps:
+      - mcp/mini-apps/index.md
+      - Portfolio: mcp/mini-apps/portfolio.md
+      - Graph Explorer: mcp/mini-apps/graph-explorer.md
+      - Metric Lab: mcp/mini-apps/metric-lab.md
+      - Contract Explorer: mcp/mini-apps/contract-explorer.md
+      - Model Lineage: mcp/mini-apps/model-lineage.md
+      - Data Catalog: mcp/mini-apps/data-catalog.md
+      - CoW Explorer: mcp/mini-apps/cow-explorer.md
+      - Governance Explorer: mcp/mini-apps/governance.md
+      - Report Studio: mcp/mini-apps/report-studio.md
+    - Measurement (MMM & MTA):
+      - Marketing Mix Modeling: mcp/mmm.md
+      - MMM User Guide: mcp/mmm-user-guide.md
+      - Measurement Flow: mcp/measurement-flow.md
+    - Advanced:
+      - mcp/advanced/index.md
+      - Finding Tools (find, list, lean core): mcp/advanced/discovery.md
+      - Hybrid Search: mcp/advanced/hybrid-search.md
+      - Memory & Resume: mcp/advanced/memory-and-resume.md
+      - Quality Gates: mcp/advanced/quality-gates.md
+      - Multi-Tenant: mcp/advanced/multi-tenant.md
+      - Semantic Metrics: mcp/advanced/semantic-metrics.md
+      - RPC Bulk Scans: mcp/advanced/rpc-scans.md
+      - Grafana Publishing: mcp/advanced/grafana-publishing.md
+      - Usage Guide: mcp/advanced/usage-guide.md
   - Research:
     - research/index.md
-    - Marketing Mix Modeling (MMM):
-      - research/mmm/index.md
-    - Multi-Touch Attribution (MTA): research/mta/index.md
+    - Measurement (MMM & MTA):
+      - research/measurement/index.md
+      - MMM Methodology: research/mmm/index.md
+      - MTA Methodology: research/mta/index.md
     - Protocol Analytics:
       - protocols/index.md
       - Lending Protocols:
@@ -195,8 +275,7 @@ nav:
         - Aave V3: protocols/lending/aave-v3.md
         - SparkLend: protocols/lending/spark.md
         - Analytics: protocols/lending/analytics.md
-      - Savings:
-        - protocols/savings/index.md
+      - Savings (sDAI): protocols/savings/index.md
       - DEX Protocols:
         - protocols/dexes/index.md
         - Uniswap V3: protocols/dexes/uniswap-v3.md
@@ -207,13 +286,11 @@ nav:
       - Circles:
         - protocols/circles/index.md
         - Data Models: protocols/circles/data-models.md
-      - Safe (Gnosis Safe):
-        - protocols/safe/index.md
+      - Safe (Gnosis Safe): protocols/safe/index.md
       - Gnosis Pay:
         - protocols/gnosis-pay/index.md
         - Mixpanel Bridge: protocols/gnosis-pay/mixpanel-bridge.md
-      - Gnosis App (heuristic):
-        - protocols/gnosis-app/index.md
+      - Gnosis App (heuristic): protocols/gnosis-app/index.md
     - ESG Reporting:
       - esg-reporting/index.md
       - Node Population: esg-reporting/node-population.md
@@ -223,71 +300,15 @@ nav:
       - Carbon Footprint: esg-reporting/carbon-footprint.md
       - Data Pipeline: esg-reporting/data-pipeline.md
       - Dashboard & API: esg-reporting/dashboard-api.md
-  - Platform Tools:
-    - api/index.md
-    - API Reference:
-      - Authentication: api/authentication.md
-      - Endpoints & Routing: api/endpoints.md
-      - Metrics Explorer: api/explorer.md
-      - Endpoint Catalog:
-        - api/catalog/index.md
-        - Bridges: api/catalog/bridges.md
-        - Celo: api/catalog/celo.md
-        - Consensus: api/catalog/consensus.md
-        - Crawlers Data: api/catalog/crawlers_data.md
-        - ESG: api/catalog/esg.md
-        - Execution: api/catalog/execution.md
-        - MMM: api/catalog/mmm.md
-        - MTA: api/catalog/mta.md
-        - P2P: api/catalog/p2p.md
-        - Quarterly Data: api/catalog/quarterly_data.md
-        - Revenue: api/catalog/revenue.md
-      - Filtering & Pagination: api/filtering.md
-      - Rate Limits: api/rate-limits.md
-      - Interactive Docs (Swagger): api/swagger.md
-      - Error Handling: api/errors.md
-      - Changelog: api/changelog.md
-    - MCP Server:
-      - mcp/index.md
-      - Setup: mcp/setup.md
-      - Available Tools: mcp/tools.md
-      - Agent Fleet: mcp/agents.md
-      - Cerebro Dispatcher: mcp/dispatcher.md
-      - Report Generation: mcp/reports.md
-      - Security & Audit: mcp/security.md
-      - Observability: mcp/observability.md
-      - Workflows:
-        - mcp/workflows/index.md
-        - Research Projects: mcp/workflows/research-projects.md
-        - Storyteller: mcp/workflows/storyteller.md
-        - Simulation Sandboxes: mcp/workflows/simulation-sandboxes.md
-        - Resumable Workflows: mcp/workflows/resumable-workflows.md
-      - Mini-Apps:
-        - mcp/mini-apps/index.md
-        - Portfolio: mcp/mini-apps/portfolio.md
-        - Graph Explorer: mcp/mini-apps/graph-explorer.md
-        - Metric Lab: mcp/mini-apps/metric-lab.md
-        - Contract Explorer: mcp/mini-apps/contract-explorer.md
-        - Model Lineage: mcp/mini-apps/model-lineage.md
-        - Data Catalog: mcp/mini-apps/data-catalog.md
-      - Advanced:
-        - mcp/advanced/index.md
-        - Finding Tools (find, list, lean core): mcp/advanced/discovery.md
-        - Hybrid Search: mcp/advanced/hybrid-search.md
-        - Memory & Resume: mcp/advanced/memory-and-resume.md
-        - Quality Gates: mcp/advanced/quality-gates.md
-        - Multi-Tenant: mcp/advanced/multi-tenant.md
-        - Semantic Metrics: mcp/advanced/semantic-metrics.md
-        - RPC Bulk Scans: mcp/advanced/rpc-scans.md
-        - Grafana Publishing: mcp/advanced/grafana-publishing.md
-        - Usage Guide: mcp/advanced/usage-guide.md
-      - Marketing Mix Modeling (MMM): mcp/mmm.md
-      - MMM User Guide: mcp/mmm-user-guide.md
-      - Measurement Flow (MTA + MMM + Unified): mcp/measurement-flow.md
-    - Dashboard:
-      - dashboard/index.md
-      - Sectors: dashboard/sectors.md
-      - Configuration: dashboard/configuration.md
+  - Developer Guide:
+    - developer/index.md
+    - Adding API Endpoints: developer/add-endpoint.md
+    - Adding dbt Models: developer/add-model.md
+    - Adding Scrapers: developer/add-scraper.md
+    - Adding a New Protocol: developer/add-protocol.md
+    - meta.api Contract: developer/meta-api-contract.md
+    - dbt Agent Knowledge: developer/dbt-agent-knowledge.md
+    - Conventions: developer/conventions.md
   - Operations:
     - operations/index.md
     - Infrastructure: operations/infrastructure.md
