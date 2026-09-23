@@ -18,6 +18,13 @@ A typical `int_*` model accepts the same model SQL but behaves differently depen
 | **Full-refresh month** | `start_month` + `end_month` | `append` | All rows in `[start_month, end_month]` | `scripts/full_refresh/refresh.py` |
 | **Refill recovery** | `start_month` + `end_month` (often single month) followed by `OPTIMIZE PARTITION FINAL` | `append` | One full month, idempotent | `scripts/maintenance/refill_after_price_gap.sh` |
 
+Two further classes matter for reprocessing, because the wrong lever silently duplicates or wipes data:
+
+- **`reprocess_overwrite` models** — exactly five honour `--vars '{start_month: M, end_month: M, reprocess_overwrite: true}'` and replace a month in place (`int_execution_tokens_balances_native_daily`, `int_execution_lending_aave_user_balances_daily`, `int_execution_lending_aave_balance_cohorts_daily`, `int_execution_pools_uniswap_v3_daily`, `int_revenue_fees_weekly_per_user`; confirm with `grep -rl "var('reprocess_overwrite'" models/`). Elsewhere the var is **inert** and the run appends a duplicate month.
+- **Cumulative models** — the ~39 that read `{{ this }}` are wrong from a gap *day* forward, not just inside the gap month, and must be rebuilt history-first, chronologically, through the current month.
+
+Whenever you set month vars, **always pass both `start_month` and `end_month`** — `start_month` alone selects append *plus* the legacy lookback window and duplicates rows.
+
 The four modes share one config expression on the model:
 
 ```python
@@ -116,7 +123,7 @@ SET join_algorithm = 'grace_hash';
 -- post_hook resets all four to defaults
 ```
 
-ClickHouse Cloud has a hard ~10.8 GiB per-query cap. Without spill thresholds, a wide GROUP BY trips OvercommitTracker → `Code: 241 — MEMORY_LIMIT_EXCEEDED`. With them, the hash table spills at 2 GiB and the run completes.
+The warehouse's memory cap is a **total across all concurrent queries**, not a per-query allowance — one unscoped query starves every other job (see [Warehouse out of memory](../../operations/runbooks/warehouse-oom.md)). Without spill thresholds, a wide GROUP BY trips OvercommitTracker → `Code: 241 — MEMORY_LIMIT_EXCEEDED`. With them, the hash table spills at 2 GiB and the run completes.
 
 ## Choosing a mode when you author a model
 
@@ -127,4 +134,4 @@ ClickHouse Cloud has a hard ~10.8 GiB per-query cap. Without spill thresholds, a
 | `int_*` with heavy aggregation (cohorts, supply distributions, distinct counts over a month) | Three-branch strategy + `refill_append` tag + `refill_safe_pre_hook()` / `refill_safe_post_hook()` |
 | `fct_*` table (full rebuild each run) | `materialized='table'` — none of the incremental machinery applies |
 
-See [Running Models](running-models.md) for end-to-end examples of each mode in action, and [Recovering from a Prices Gap](../../operations/prices-gap-recovery.md) for the refill flow.
+See [Running Models](running-models.md) for end-to-end examples of each mode in action, [dbt reprocess after upstream repair](../../operations/runbooks/dbt-reprocess.md) for which lever is safe per materialization, and [Recovering from a Prices Gap](../../operations/prices-gap-recovery.md) for the refill flow.

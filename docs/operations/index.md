@@ -1,49 +1,76 @@
 ---
 title: Operations
-description: Infrastructure, deployment, monitoring, and troubleshooting for the Gnosis Analytics platform
+description: Triage order, the rules that apply to every procedure, and the index of runbooks for the Gnosis Analytics platform
 ---
 
 # Operations
 
-This section covers the operational aspects of the Gnosis Analytics platform: infrastructure architecture, deployment procedures, monitoring and observability, and troubleshooting guides.
+This section is written for the person on call. It answers four questions in order: is everything running, is the data fresh, did the nightly transformation succeed, and — when something is wrong — what to type.
 
-## Overview
+The platform runs on **GKE Autopilot** with all workloads deployed by Terraform, data in **ClickHouse Cloud** reached over a private endpoint, and images built by **GitHub Actions** into GHCR. The procedures here are complete; the cluster-specific commands (resource names, secret names, the copy-pasteable job recipes) live in a private companion repository that every page links to.
 
-The platform runs on **AWS EKS** (Elastic Kubernetes Service) with all workloads containerized and deployed via Kubernetes. Data is stored in **ClickHouse Cloud**, and the CI/CD pipeline uses **GitHub Actions** with images published to **GitHub Container Registry (GHCR)**.
+## Triage order
 
-```mermaid
-flowchart TD
-    subgraph GitHub["GitHub"]
-        REPO[Source Repositories] --> GHA[GitHub Actions]
-        GHA --> GHCR[Container Registry]
-    end
-    subgraph AWS["AWS"]
-        subgraph EKS["EKS Cluster (ARM64)"]
-            API[cerebro-api]
-            IDX[Indexers]
-            CRW[Crawlers]
-        end
-        ALB[Application Load Balancer] --> API
-        SSM[SSM Parameter Store] --> ESO[External Secrets Operator]
-        ESO --> EKS
-    end
-    subgraph External["External"]
-        CH[(ClickHouse Cloud)]
-    end
-    GHCR --> EKS
-    EKS --> CH
-```
+**Raw freshness → coverage → dbt → consumer.** Starting at the model is the most common way to lose an afternoon: a stale dashboard card is usually a stale raw table four steps upstream.
 
-## Sections
+Start at [Morning Check & Triage](troubleshooting.md). It routes you to the right page.
 
-| Section | Description |
-|---------|-------------|
-| [Infrastructure](infrastructure.md) | AWS EKS cluster architecture, node groups, networking, and storage |
-| [Deployment](deployment.md) | Docker builds, CI/CD pipeline, Kubernetes deployment, and secrets management |
-| [Monitoring](monitoring.md) | Metrics, logging, alerting, and health checks |
-| [Troubleshooting](troubleshooting.md) | Common issues and their resolution steps |
+## The five rules
 
-## Key Contacts
+**1. Plan → classify → apply the plan file.** Every deployment change is Terraform. A bare `apply` in a scraper stack can destroy a running backfill Job or re-execute production ingestion. See [Deployment](deployment.md).
+
+**2. One writer per database or chain.** Enforced differently per app, so check the right thing:
+
+| App | Enforcement | What a violation looks like |
+|---|---|---|
+| cryo | Convention only. `maintain` claims **all** non-completed ranges and DELETEs before claiming | Silent duplication or deleted rows |
+| rpc-state | A writer lease with a 120 s stale window and **no override flag** | The new pod exits 1 and crash-loops until the lease goes stale |
+| rpc-log, cow | The checkpoint itself | Checkpoint regression, not row duplication |
+| beacon, envio, dbt live loop | `Recreate` strategy + single replica | Duplicate rows (the targets do not dedupe) |
+
+**3. The warehouse memory cap is a total, not per-query.** One unscoped query starves every other job. Scope every query to one database and a bounded window. See [Warehouse out of memory](runbooks/warehouse-oom.md).
+
+**4. A hand-created Job is invisible to `concurrencyPolicy: Forbid`.** Before creating one, check nothing is already running. See [One-shot jobs](runbooks/one-shot-jobs.md).
+
+**5. A green job is not fresh data.** Several ingesters exit 0 on partial failure. The only real "did data arrive" signal is a freshness query against the warehouse.
+
+## `FINAL`, per database
+
+Four repos give four different answers and all four are right. Generalising any one of them is wrong about the other three.
+
+| Database | Rule |
+|---|---|
+| `consensus` (`load_state_chunks`, `transformer_progress`) | **`FINAL` required** — they keep every status transition |
+| `rpc_state_indexer` (`writer_heartbeats`, `discovery_ranges`) | **`FINAL` required**, and scope by recency — old `failed` rows survive forever |
+| `envio_ga` | **Never `FINAL`** — it OOMs the instance. Use `argMax(col, insert_version) … GROUP BY id HAVING argMax(_deleted, insert_version) = 0` |
+| `execution*` (`indexing_state`) | `FINAL` is fine on the bookkeeping table. **Never `FINAL` + `GROUP BY argMax`** — that deduplicates twice |
+| `cow_db` | Never a bare `FINAL` over a data table. Read the `*_canonical` views, scoped |
+| `dbt` marts | Read as published. Marts read ReplacingMergeTree **without** `FINAL`, which is why a duplicate row counts twice |
+
+## Index
+
+| When | Page |
+|---|---|
+| Daily, and whenever something looks wrong | [Morning Check & Triage](troubleshooting.md) |
+| How changes reach the cluster; pause, resume, scale | [Deployment](deployment.md) |
+| What the signals are, what is absent by design, which workloads have no alerts | [Monitoring & Detection](monitoring.md) |
+| `Code: 241` across unrelated jobs | [Warehouse out of memory](runbooks/warehouse-oom.md) |
+| The 06:00 dbt run failed or stalled | [dbt daily run failed](runbooks/dbt-daily-run-failed.md) |
+| An indexer was repaired; fix dbt without a full refresh | [dbt reprocess](runbooks/dbt-reprocess.md) |
+| The Dune prices source skipped a day | [Recovering from a prices gap](prices-gap-recovery.md) |
+| API, MCP, dashboard or docs showing stale data | [Consumers showing stale data](runbooks/consumers-stale.md) |
+| How to run any repair command on Autopilot | [One-shot jobs](runbooks/one-shot-jobs.md) |
+| Rotating a credential | [Secret rotation](runbooks/secret-rotation.md) |
+
+Each ingestor's own page carries its **Operating and recovering** section — stopped, gap, corrupt range, restart: [cryo-indexer](../data-pipeline/ingestion/cryo-indexer.md), [beacon-indexer](../data-pipeline/ingestion/beacon-indexer.md), [rpc-state-indexer](../data-pipeline/ingestion/rpc-state-indexer.md), [rpc-log-indexer](../data-pipeline/ingestion/rpc-log-indexer.md), [cow-indexer](../data-pipeline/ingestion/cow-indexer.md), [envio-ga-indexer](../data-pipeline/ingestion/envio-ga-indexer.md), [click-runner](../data-pipeline/ingestion/click-runner.md), [nebula](../data-pipeline/crawlers/nebula.md), [ip-crawler](../data-pipeline/crawlers/ip-crawler.md).
+
+## Conventions
+
+- `⟨FILL⟩` marks a value you must supply.
+- **`[drift]`** marks a live change made directly on the cluster that Terraform does not know about. It survives until the next apply, then vanishes silently. If a change must outlive an apply, change the stack instead.
+- Every procedure page ends with a link to its internal runbook, which holds the identifiers and copy-pasteable recipes.
+
+## Key contacts
 
 | Area | Team |
 |------|------|

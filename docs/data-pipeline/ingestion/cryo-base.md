@@ -77,8 +77,7 @@ docker run --rm -v "$(pwd)":/data cryo-base:latest \
 
 ## Build Schedule
 
-- **Automatic builds** -- Every Sunday at 2 AM UTC via CI
-- **Manual builds** -- Triggered on push to main branch or via workflow dispatch
+There is no scheduled build. The image is built by the repository's workflow on **manual dispatch only**; a new Cryo version or patch means someone triggers it.
 
 ## Versioning
 
@@ -86,6 +85,8 @@ docker run --rm -v "$(pwd)":/data cryo-base:latest \
 |-----|-------------|
 | `latest` | Most recent build |
 | `YYYYMMDD` | Date-based tags for pinning specific versions |
+
+What actually runs is whatever the cryo-indexer deployment stacks pin — the `image =` line in each stack's `locals.tf` is authoritative over `latest` and over every prose mention of a tag.
 
 ## Update Process
 

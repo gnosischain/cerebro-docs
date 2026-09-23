@@ -87,7 +87,7 @@ Arguments and results are redacted before hashing using the same redaction engin
 When remote artifacts (dbt manifest, catalog, semantic registry, docs index) are loaded or reloaded, the server emits a structured `artifact_reload` log event with the artifact label, source (`local`/`remote`), content hash (SHA-256), ETag, and Last-Modified header. These events are queryable in Loki:
 
 ```logql
-{namespace="analytics-preview", pod=~"cerebro-mcp-.*"} |= "\"event\":\"artifact_reload\""
+{namespace="analytics", pod=~"cerebro-mcp-.*"} |= "\"event\":\"artifact_reload\""
 ```
 
 ## Report Endpoint Auth Audit

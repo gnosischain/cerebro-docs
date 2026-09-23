@@ -12,7 +12,7 @@ The Gnosis Analytics platform stores all data in a ClickHouse Cloud cluster orga
 | Database | Purpose | Primary Sources | Approx. Tables |
 |----------|---------|-----------------|----------------|
 | `execution` | Raw execution layer data | cryo-indexer | ~15 |
-| `consensus` | Raw consensus layer data | beacon-indexer, era-parser | ~10 |
+| `consensus` | Raw consensus layer data | beacon-indexer | ~10 |
 | `crawlers_data` | External data from third-party sources | click-runner, ip-crawler | ~10 |
 | `nebula` | P2P network crawl data | nebula | ~5 |
 | `dbt` | Transformed and modeled data | dbt-cerebro | ~1,200 |
@@ -214,7 +214,7 @@ Account state changes per transaction.
 
 ## consensus Database
 
-Raw consensus layer data from beacon-indexer and era-parser. Contains validator lifecycle, attestation, and block proposal data.
+Raw consensus layer data from beacon-indexer. Contains validator lifecycle, attestation, and block proposal data.
 
 ### consensus.blocks
 

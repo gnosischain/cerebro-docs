@@ -154,23 +154,23 @@ nebula
 ALB (Application Load Balancer)
 :   An AWS load balancer operating at the HTTP/HTTPS layer (Layer 7). Provides TLS termination, path-based routing, and health checking for the cerebro-api and dashboard.
 
-ARM64 / Graviton
-:   The CPU architecture used by AWS Graviton processors. The platform runs on ARM64 nodes (M6G instances) for better price-performance than equivalent x86 instances.
+ARM64 / multi-arch images
+:   Platform images are built multi-arch (amd64 and arm64). Deployment stacks pin the multi-arch **index** digest; pinning a per-architecture child digest can pull an image the node cannot execute, which fails with `exec format error` rather than a clear message.
 
 CronJob
 :   A Kubernetes resource that creates Jobs on a recurring schedule. Used for periodic data ingestion tasks like click-runner imports.
 
-EKS (Elastic Kubernetes Service)
-:   AWS managed Kubernetes service used to run the platform's containerized workloads.
+GKE Autopilot
+:   Google Kubernetes Engine in its fully managed mode, where the platform's containerized workloads run. Node management is Google's; the operator-visible constraints are a 10 Gi ephemeral-storage ceiling per pod and no node-level metrics.
 
 ESO (External Secrets Operator)
-:   A Kubernetes operator that synchronizes secrets from external secret management systems (like AWS SSM Parameter Store) into Kubernetes Secrets.
+:   A Kubernetes operator that synchronizes secrets from Google Secret Manager into Kubernetes Secrets, on a three-minute cycle.
 
 GHCR (GitHub Container Registry)
 :   GitHub's container image registry where all platform Docker images are stored and pulled from.
 
-SSM Parameter Store
-:   AWS Systems Manager Parameter Store, a service for storing configuration data and secrets. All platform credentials are stored here and synced to Kubernetes via ESO.
+Secret Manager
+:   Google Cloud's service for storing credentials. All platform credentials are stored here and synced to Kubernetes via ESO; rotating one is a new secret version plus a restart of each consumer.
 
 Terraform
-:   An infrastructure-as-code tool used to provision and manage the AWS infrastructure (EKS cluster, networking, IAM, etc.).
+:   An infrastructure-as-code tool. Every platform workload is deployed by Terraform, one root stack per service; there is no CI deploy and no reconcile loop, so a live cluster edit persists only until the next apply.

@@ -6,8 +6,10 @@ The network crawlers collect peer-to-peer topology data from the Gnosis Chain ne
 
 | Crawler | Language | Purpose | Target Database |
 |---------|----------|---------|-----------------|
-| [nebula](nebula.md) | Go | DHT crawling, peer discovery, client metadata collection | `nebula` |
-| [ip-crawler](ip-crawler.md) | Python | IP geolocation enrichment via ipinfo.io | `crawlers_data` |
+| [nebula](nebula.md) | Go | DHT crawling, peer discovery, client metadata collection — one crawler per network (discv5 and discv4) | `nebula`, `nebula_discv4` |
+| [ip-crawler](ip-crawler.md) | Python | IP geolocation enrichment via ipinfo.io, daily; feeds three public-dashboard HOPR marts | `crawlers_data` |
+
+Neither crawler has an alert rule. Health is a data query — see each page's **Operating and recovering** section.
 
 ## Data Flow
 

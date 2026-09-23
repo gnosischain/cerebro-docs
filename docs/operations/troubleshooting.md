@@ -1,80 +1,106 @@
 ---
-title: Troubleshooting
-description: Common issues and resolution steps for the Gnosis Analytics platform
+title: Morning Check & Triage
+description: The five-minute daily check, the freshness baselines that decide whether last night's data is trustworthy, and where each symptom routes
 ---
 
-# Troubleshooting
+# Morning check and triage
 
-This page covers common issues encountered when operating the Gnosis Analytics platform and provides step-by-step resolution procedures.
+Five minutes. Run it daily, and run it first whenever something looks wrong.
 
-## API Not Responding
+## 1. Is everything running?
 
-**Symptoms:** HTTP requests to `api.analytics.gnosis.io` return connection errors, timeouts, or 502/503 status codes.
+Three reads against the cluster: every CronJob's `SUSPEND` flag and last schedule time; every Deployment's ready vs desired replicas; any pod not `Running` or `Succeeded`.
 
-### Step 1: Check Pod Status
+Expected: 17 Deployments at desired replicas. Every CronJob with a last schedule inside its interval. Exactly two suspended by design — `dune-execute-only-daily-ingestor` and `probelab-ingestor-latest`. Any other `SUSPEND=true` is drift or an unfinished pause: check it against the stack before assuming it is intentional.
 
-```bash
-kubectl get pods -n cerebro -l app=cerebro-api
+A pod in `Error` is a finished Job that failed — the name tells you which page.
+
+## 2. Is the data fresh?
+
+One query per source. **The healthy value is not zero for most of them, and the reason matters** — an operator who does not know why `execution.blocks` is an hour behind will chase it.
+
+| Source | Signal | Healthy | Why that number |
+|---|---|---|---|
+| `execution.blocks` | `max(block_timestamp)` | ~66 min | `CONFIRMATION_BLOCKS=720` at 5 s/block |
+| `execution_live.blocks` | `max(block_timestamp)` | ~1 min | `CONFIRMATION_BLOCKS=6` |
+| `consensus.blocks` | `max(slot_timestamp)` | ~67 min | `REALTIME_SLOT_DELAY=700` slots |
+| `rpc_log_indexer` | **checkpoint** age, per chain | < 1 h | data age is meaningless here — the contract is sparse |
+| `cow_db` | **checkpoint** age, **per chain** | ≤ ~6 min | a summed check hides one dead chain |
+| `rpc_state_indexer` | `max(snapshot_date)` per job | yesterday | published overnight, 00:19–03:11 |
+| `crawlers_data` | per-table SLA ratio | < 1 | Dune lands T-2, the rest T-1 |
+
+```sql
+-- chain data
+SELECT 'execution' AS src, dateDiff('minute', max(block_timestamp), now()) AS lag_min FROM execution.blocks
+UNION ALL SELECT 'execution_live', dateDiff('minute', max(block_timestamp), now()) FROM execution_live.blocks
+UNION ALL SELECT 'consensus', dateDiff('minute', max(slot_timestamp), now()) FROM consensus.blocks;
+
+-- rpc-log and cow: checkpoint age, per chain
+SELECT chain_id, dateDiff('minute', max(updated_at), now()) AS lag_min
+FROM rpc_log_indexer.indexing_checkpoints WHERE source = 'rpc' GROUP BY chain_id ORDER BY chain_id;
+
+SELECT chain_id, dateDiff('minute', max(updated_at), now()) AS lag_min
+FROM cow_db.indexing_checkpoints WHERE source = 'rpc' GROUP BY chain_id ORDER BY lag_min DESC;
+
+-- rpc-state: every job should carry yesterday
+SELECT chain_id, job_name, max(snapshot_date) AS latest_day
+FROM rpc_state_indexer.census_publications
+WHERE published_at >= now() - INTERVAL 3 DAY
+GROUP BY chain_id, job_name ORDER BY chain_id, job_name;
+
+-- click-runner outputs, as a ratio against each table's SLA
+SELECT tbl, dateDiff('hour', latest_data, now()) / threshold_h AS staleness_ratio
+FROM (
+  SELECT 'dune_labels' AS tbl, toDateTime(max(introduced_at)) AS latest_data, 60 AS threshold_h FROM crawlers_data.dune_labels
+  UNION ALL SELECT 'dune_prices', toDateTime(max(block_date)), 60 FROM crawlers_data.dune_prices
+  UNION ALL SELECT 'dune_bridge_flows', toDateTime(max(timestamp)), 60 FROM crawlers_data.dune_bridge_flows
+  UNION ALL SELECT 'coingecko_prices', toDateTime(max(ingested_at)), 30 FROM crawlers_data.coingecko_prices
+  UNION ALL SELECT 'defillama_prices', toDateTime(max(ingested_at)), 30 FROM crawlers_data.defillama_prices
+  UNION ALL SELECT 'circles_blacklisted', toDateTime(max(ingested_at)), 30 FROM crawlers_data.circles_blacklisted
+  UNION ALL SELECT 'cow_api_trade_fees', toDateTime(max(ingested_at)), 30 FROM crawlers_data.cow_api_trade_fees
+);
 ```
 
-| Pod Status | Meaning | Action |
-|-----------|---------|--------|
-| `Running` | Pod is running but may be unhealthy | Check logs and probes |
-| `CrashLoopBackOff` | Pod is crashing and restarting repeatedly | Check logs for startup errors |
-| `Pending` | Pod cannot be scheduled | Check node resources and events |
-| `ImagePullBackOff` | Cannot pull Docker image | Check GHCR credentials and image tag |
+`envio_ga` and `celo_execution` are not readable through the MCP allowlist — check those with `maintain check` ([envio](../data-pipeline/ingestion/envio-ga-indexer.md)) and the cryo coverage query ([cryo](../data-pipeline/ingestion/cryo-indexer.md)).
 
-### Step 2: Check Pod Logs
+## 3. Did the 06:00 dbt run succeed?
 
-```bash
-kubectl logs -n cerebro deployment/cerebro-api --tail=100
-```
+List the dbt jobs by start time; grep the newest one's log for `MANDATORY STEP FAILED`, `] Failed:`, `Code: 241`, `REFUSED`. Only three job records are kept per outcome, so a pod older than ~3 runs is gone.
 
-Look for:
+If the run failed → [dbt daily run failed](runbooks/dbt-daily-run-failed.md). If the failures are `Code: 241` across several unrelated steps → [Warehouse out of memory](runbooks/warehouse-oom.md) first.
 
-- ClickHouse connection errors on startup
-- Manifest loading failures
-- Python stack traces indicating application errors
+## 4. Did yesterday land before 06:00?
 
-### Step 3: Check Readiness Probe
+The most frequent daily decision, and the one that decides whether last night's dbt output is trustworthy. The dbt cron rebuilds from whatever the raw layer held at 06:00; **it does not wait**.
 
-```bash
-kubectl describe pod -n cerebro -l app=cerebro-api | grep -A 5 "Readiness"
-```
+- Every `rpc_state_indexer` job shows `snapshot_date = yesterday` (query above)?
+- `execution` / `consensus` past midnight UTC?
+- `crawlers_data` within SLA — remembering Dune is legitimately T-2?
 
-If the readiness probe is failing, the pod is not receiving traffic even though it is running. Common causes:
+**If the rpc-state daemon missed a day**, that day needs a one-day all-jobs recovery Job (~25 min, and it also runs curated balances) → [rpc-state-indexer](../data-pipeline/ingestion/rpc-state-indexer.md).
 
-- Application has not finished starting (increase `initialDelaySeconds`)
-- Application is stuck on a long-running startup task (manifest download)
-- Port mismatch between probe and application
+**If dbt already ran against a stale source**, do not rebuild everything. Get the scoped re-run list from [dbt reprocess](runbooks/dbt-reprocess.md).
 
-### Step 4: Check ClickHouse Connectivity
+## Green but wrong — the four recognisers
 
-From inside the pod:
+**Checkpoint age, not data age, for sparse indexers.** `rpc_log_indexer.decoded_events_canonical` can read weeks stale while the service is perfectly healthy: it watches one Snapshot DelegateRegistry space, which emits a handful of events a month. Judge it by the checkpoint.
 
-```bash
-kubectl exec -n cerebro deployment/cerebro-api -- \
-  curl -s "https://${CLICKHOUSE_URL}:8443/ping"
-```
+**Per chain, not summed.** `cow_db` runs 11 chains in one pod. A single dead chain leaves the pod green and the summed row-rate healthy.
 
-If this fails, check:
+**A uniform ~80 s `cryo-*-auto-maintain` runtime means "nothing in window", not "healthy".**
 
-- ClickHouse Cloud service status
-- Network security group rules
-- ClickHouse credentials in Kubernetes secrets
+**Thousands of nebula restarts are by design** — a max-uptime liveness watchdog, and the only thing that catches a hung crawl.
 
-### Step 5: Check ALB and Ingress
+## Where to go
 
-```bash
-kubectl get ingress -n cerebro
-kubectl describe ingress cerebro-api -n cerebro
-```
-
-Verify:
-
-- ALB is provisioned and has a DNS name
-- Target group health checks are passing
-- TLS certificate is valid and not expired
+| Symptom | Page |
+|---|---|
+| `Code: 241` in several unrelated places | [Warehouse out of memory](runbooks/warehouse-oom.md) |
+| One chain or dataset behind | that ingestor's page, "Operating and recovering" |
+| dbt cron failed or stalled | [dbt daily run failed](runbooks/dbt-daily-run-failed.md) |
+| Upstream was repaired, dbt still wrong | [dbt reprocess](runbooks/dbt-reprocess.md) |
+| Dashboard or API stale, warehouse fine | [Consumers showing stale data](runbooks/consumers-stale.md) |
+| Nothing alerted and you do not trust that | [Monitoring & Detection](monitoring.md) |
 
 ---
 
@@ -86,9 +112,7 @@ Verify:
 
 Look for manifest refresh logs:
 
-```bash
-kubectl logs -n cerebro deployment/cerebro-api --tail=200 | grep -i "manifest"
-```
+Read the API workload's recent logs and filter for `manifest`:
 
 Expected logs when manifest refreshes successfully:
 
@@ -132,9 +156,7 @@ Common tagging mistakes:
 
 If the model has a `meta.api` block with invalid configuration, it will be skipped during manifest loading. Check API logs for validation errors:
 
-```bash
-kubectl logs -n cerebro deployment/cerebro-api | grep -i "error" | grep -i "api"
-```
+Read the API workload's recent logs and filter for `error` lines mentioning the upstream API.
 
 Common validation issues:
 
@@ -154,6 +176,8 @@ dbt run --select api_consensus_blob_commitments_daily
 ```
 
 Check that the manifest was regenerated and published after the latest dbt run.
+
+---
 
 ---
 
@@ -197,261 +221,5 @@ Retry-After: 42
 
 ---
 
-## ClickHouse Connection Errors
-
-**Symptoms:** API returns 500 errors, logs show ClickHouse connection failures.
-
-### Step 1: Verify ClickHouse Cloud Status
-
-Check if ClickHouse Cloud is operational. Connection errors during planned maintenance windows are expected.
-
-### Step 2: Check Credentials
-
-Verify the Kubernetes secret contains correct credentials:
-
-```bash
-kubectl get secret cerebro-api-secrets -n cerebro -o jsonpath='{.data.CLICKHOUSE_URL}' | base64 -d
-kubectl get secret cerebro-api-secrets -n cerebro -o jsonpath='{.data.CLICKHOUSE_USER}' | base64 -d
-```
-
-Compare with the expected values in AWS SSM Parameter Store.
-
-### Step 3: Test Connectivity from Pod
-
-```bash
-kubectl exec -n cerebro deployment/cerebro-api -- \
-  curl -s "https://${CLICKHOUSE_URL}:8443/?query=SELECT+1"
-```
-
-### Step 4: Check Network / Firewall
-
-- Verify the EKS cluster's security group allows outbound HTTPS (443) and ClickHouse (8443)
-- Check if ClickHouse Cloud's IP allowlist includes the cluster's NAT gateway IP
-- Verify DNS resolution of the ClickHouse hostname from within the pod
-
-### Step 5: Check External Secrets Sync
-
-```bash
-kubectl get externalsecret cerebro-api-secrets -n cerebro
-```
-
-If the status shows `SecretSyncedError`, the secret sync from SSM has failed. Check:
-
-- ESO pod logs: `kubectl logs -n external-secrets deployment/external-secrets`
-- IAM permissions for the ESO service account
-- SSM parameter paths in the ExternalSecret resource
-
----
-
-## Indexer Lag
-
-**Symptoms:** Indexed data is behind the current chain head. API shows stale data.
-
-### Step 1: Check Indexer Status
-
-```bash
-# cryo-indexer
-kubectl logs -n indexers deployment/cryo-indexer --tail=50
-
-# beacon-indexer
-kubectl logs -n indexers deployment/beacon-indexer --tail=50
-```
-
-Look for:
-
-- Current block/slot being processed
-- Processing rate (blocks per second)
-- Any error messages
-
-### Step 2: Check RPC Endpoint Health
-
-Indexers depend on blockchain RPC endpoints. If the RPC node is slow or unreachable, indexing stalls.
-
-```bash
-# Check execution layer RPC
-kubectl exec -n indexers deployment/cryo-indexer -- \
-  curl -s -X POST "${RPC_URL}" \
-  -H "Content-Type: application/json" \
-  -d '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
-
-# Check consensus layer API
-kubectl exec -n indexers deployment/beacon-indexer -- \
-  curl -s "${BEACON_API_URL}/eth/v1/node/syncing"
-```
-
-### Step 3: Check for Processing Errors
-
-If the indexer encounters invalid or unexpected data, it may stall on a specific block. Check logs for:
-
-- Parse errors
-- RPC timeout errors
-- ClickHouse write errors
-
-### Step 4: Resume from Last Known Position
-
-If an indexer is stuck, restarting it will typically resume from the last successfully indexed block:
-
-```bash
-kubectl rollout restart deployment/cryo-indexer -n indexers
-```
-
-For beacon-indexer, check the `START_SLOT` environment variable to ensure it is not set to an old value.
-
----
-
-## Data Freshness Issues
-
-**Symptoms:** API returns data that is hours or days behind the current date.
-
-### Step 1: Identify the Bottleneck
-
-Data freshness depends on three stages:
-
-```
-Indexer --> ClickHouse --> dbt run --> API (manifest refresh)
-```
-
-Check each stage:
-
-1. **Indexer** -- Is the indexer caught up to the chain head? (See [Indexer Lag](#indexer-lag))
-2. **dbt run** -- When was the last successful dbt run?
-3. **Manifest refresh** -- When did the API last refresh its manifest?
-
-### Step 2: Check dbt Run Schedule
-
-dbt-cerebro runs on a schedule. Verify the last run:
-
-```bash
-# In the dbt container
-dbt run-results --select api_consensus_blob_commitments_daily
-```
-
-Check for:
-
-- Run failures -- A failed dbt run means models were not updated
-- Incremental model issues -- The `apply_monthly_incremental_filter` may not be picking up the latest data
-- Full refresh needed -- Some models may need a `--full-refresh` to resync
-
-### Step 3: Check Incremental Model Status
-
-If an incremental model is not picking up new data:
-
-```sql
--- Check the latest date in the model
-SELECT max(date) FROM dbt.int_consensus_blob_commitments_daily
-```
-
-Compare with the latest date in the source:
-
-```sql
--- Check the latest date in raw data
-SELECT max(toDate(slot_timestamp)) FROM consensus.blocks
-```
-
-If there is a gap, the incremental filter may need investigation. A `--full-refresh` can resolve state issues:
-
-```bash
-dbt run --select int_consensus_blob_commitments_daily --full-refresh
-```
-
-### Step 4: Check API Manifest
-
-Verify the API is serving the latest manifest:
-
-```bash
-curl -s "https://api.analytics.gnosis.io/" | jq .
-```
-
-If the API is running but serving stale data, the issue is upstream (dbt run or indexer).
-
----
-
-## CronJob Failures
-
-**Symptoms:** click-runner or other scheduled jobs are not completing successfully.
-
-### Step 1: Check CronJob Status
-
-```bash
-kubectl get cronjobs -n crawlers
-kubectl get jobs -n crawlers --sort-by=.metadata.creationTimestamp
-```
-
-### Step 2: Check Failed Job Logs
-
-```bash
-# Find the failed job
-kubectl get jobs -n crawlers | grep -v "1/1"
-
-# Get logs from the failed pod
-kubectl logs -n crawlers job/click-runner-ember-28438400
-```
-
-### Step 3: Common CronJob Issues
-
-| Issue | Cause | Resolution |
-|-------|-------|------------|
-| Job never runs | `schedule` is in UTC, not local time | Adjust cron expression |
-| Job runs but fails | ClickHouse credentials expired | Update SSM parameter and restart ESO |
-| Job stuck as `Active` | Previous job still running | Set `concurrencyPolicy: Forbid` |
-| Job completes but no data | Source URL changed or returned empty | Check external data source |
-| Job exceeds `backoffLimit` | Repeated failures | Fix the root cause and manually trigger |
-
-### Step 4: Manually Trigger a Job
-
-```bash
-kubectl create job --from=cronjob/click-runner-ember manual-ember-run -n crawlers
-```
-
----
-
-## General Debugging Commands
-
-### Pod Inspection
-
-```bash
-# List all pods across namespaces
-kubectl get pods --all-namespaces
-
-# Describe a pod (shows events, conditions, resource usage)
-kubectl describe pod <pod-name> -n <namespace>
-
-# Get pod resource usage
-kubectl top pods -n cerebro
-
-# Execute a shell in a running pod
-kubectl exec -it <pod-name> -n <namespace> -- /bin/bash
-```
-
-### Log Inspection
-
-```bash
-# Recent logs from a deployment
-kubectl logs -n cerebro deployment/cerebro-api --tail=200
-
-# Follow logs in real-time
-kubectl logs -n cerebro deployment/cerebro-api -f
-
-# Logs from a previous (crashed) container
-kubectl logs -n cerebro <pod-name> --previous
-```
-
-### Secret Inspection
-
-```bash
-# List secrets
-kubectl get secrets -n cerebro
-
-# Check ExternalSecret sync status
-kubectl get externalsecrets -n cerebro
-
-# Decode a secret value
-kubectl get secret cerebro-api-secrets -n cerebro \
-  -o jsonpath='{.data.CLICKHOUSE_URL}' | base64 -d
-```
-
-## Next Steps
-
-- [Monitoring](monitoring.md) -- Set up proactive alerting to catch issues early
-- [Deployment](deployment.md) -- Review deployment procedures
-- [Infrastructure](infrastructure.md) -- Understand the platform architecture
+!!! info "Internal runbook"
+    [runbooks/00-morning-check.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/00-morning-check.md) — private repository; carries the exact cluster commands and the cron-log grep.

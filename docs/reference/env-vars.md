@@ -23,7 +23,7 @@ The REST API server built with FastAPI.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CLICKHOUSE_URL` | -- | ClickHouse Cloud hostname (e.g., `host.eu-central-1.aws.clickhouse.cloud`). Takes precedence over `CLICKHOUSE_HOST` when set. |
+| `CLICKHOUSE_URL` | -- | ClickHouse Cloud hostname (e.g., `⟨service⟩.clickhouse.cloud`; in the cluster this is the private-endpoint hostname). Takes precedence over `CLICKHOUSE_HOST` when set. |
 | `CLICKHOUSE_HOST` | `localhost` | ClickHouse server hostname. Used when `CLICKHOUSE_URL` is not set. |
 | `CLICKHOUSE_PORT` | `8443` | ClickHouse HTTP(S) port |
 | `CLICKHOUSE_USER` | `default` | ClickHouse authentication username |

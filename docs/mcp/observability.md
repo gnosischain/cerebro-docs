@@ -76,7 +76,7 @@ Structured log exploration from Loki:
 | `$prometheus` | Datasource | `thanos-gnosisanalytics` | Prometheus datasource |
 | `$loki` | Datasource | `loki-gnosisanalytics` | Loki datasource |
 | `$cluster` | Query | *(auto)* | Kubernetes cluster |
-| `$namespace` | Query | `analytics-preview` | Kubernetes namespace |
+| `$namespace` | Query | `analytics` | Kubernetes namespace |
 | `$workload` | Custom | `cerebro-mcp` | Deployment name |
 | `$pod` | Query | All | Pod selector |
 

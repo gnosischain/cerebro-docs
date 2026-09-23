@@ -14,19 +14,20 @@ flowchart TD
     subgraph L1["Data Acquisition Layer"]
         EL[Gnosis Chain EL Nodes] --> CRYO[cryo-indexer]
         CL[Gnosis Chain CL Nodes] --> BI[beacon-indexer]
-        ERA_SRC[Era File Archives] --> ERA[era-parser]
         P2P_NET[P2P Network] --> NEB[nebula]
-        EXT["External Sources\nEmber · ProbeLab · Dune\nSnapshot · Discourse · Mixpanel"] --> CR[click-runner]
+        EXT["External Sources\nDune · CoinGecko · DefiLlama\nSnapshot · Discourse · Mixpanel · HOPR"] --> CR[click-runner]
         NEB --> IPC[ip-crawler]
         COW_API[CoW Protocol API] --> COWIDX[cow-indexer]
         EL --> COWIDX
         ARC[Archive EL Nodes] --> RPCSI[rpc-state-indexer]
+        ARC --> RPCL[rpc-log-indexer]
+        GQL[Envio GraphQL API] --> ENV[envio_ga-indexer]
     end
     subgraph L2["Data Storage Layer"]
         CH[(ClickHouse Cloud)]
     end
     subgraph L3["Data Analysis & Modeling Layer"]
-        DBT["dbt-cerebro\n~1,200 models"]
+        DBT["dbt-cerebro\n~1,370 models"]
         DSG[dbt-schema-gen]
     end
     subgraph L4["Data Serving Layer"]
@@ -36,11 +37,12 @@ flowchart TD
     end
     CRYO --> CH
     BI --> CH
-    ERA --> CH
     IPC --> CH
     CR --> CH
     COWIDX --> CH
     RPCSI --> CH
+    RPCL --> CH
+    ENV --> CH
     CH <--> DBT
     DSG -.-> DBT
     DBT --> API
@@ -52,17 +54,21 @@ flowchart TD
 
 The data acquisition layer is responsible for extracting raw blockchain data from multiple sources and loading it into ClickHouse. Each indexer operates independently and is designed to be idempotent, meaning it can safely re-run without creating duplicate data.
 
-**Execution layer data** is indexed by `cryo-indexer`, which uses the [Cryo](https://github.com/paradigmxyz/cryo) framework to extract blocks, transactions, logs, traces, and contract state from Gnosis Chain execution layer nodes. The indexer runs as a containerized workload built on top of the `cryo-base` Docker image, optimized for ARM64 architecture.
+**Execution layer data** is indexed by `cryo-indexer`, which uses the [Cryo](https://github.com/paradigmxyz/cryo) framework to extract blocks, transactions, logs, traces, and contract state from Gnosis Chain execution layer nodes. The indexer runs as a containerized workload built on top of the `cryo-base` Docker image, with three writers: Gnosis (`execution`), a low-latency Gnosis twin (`execution_live`) and Celo (`celo_execution`).
 
-**Consensus layer data** comes from two sources. The `beacon-indexer` connects to Gnosis Chain beacon nodes via the standard Beacon API and captures real-time validator activity, attestations, sync committee participation, blob sidecars, and epoch-level summaries. For historical data, `era-parser` processes `.era` archive files that contain beacon chain state snapshots, enabling efficient backfilling of consensus data.
+**Consensus layer data** comes from the `beacon-indexer`, which connects to Gnosis Chain beacon nodes via the standard Beacon API and captures blocks, rewards and data-column sidecars in real time plus a daily validators snapshot, then transforms the raw payloads into structured tables. Historical ranges are loaded with the same `load backfill` command.
 
 **P2P network data** is gathered by `nebula`, a DHT crawler that discovers and monitors peers on the Gnosis Chain network. It records peer sessions, agent strings, supported protocols, and connection metadata. The `ip-crawler` service then enriches this peer data with geolocation information, mapping IP addresses to geographic coordinates, ISP names, and autonomous system numbers.
 
-**External data** is ingested by `click-runner`, which runs scheduled import jobs pulling data from third-party providers such as Ember (energy and carbon data), ProbeLab (network performance metrics), and Dune Analytics (cross-chain metrics). Recent additions cover governance data (Snapshot proposals and votes, Discourse forum activity), Mixpanel product-analytics events and profiles, Google Drive CSV imports, CoW Protocol open orders, and Gnosis Pay activity on Celo.
+**External data** is ingested by `click-runner`, which runs scheduled import jobs pulling data from third-party providers such as Ember (energy and carbon data), ProbeLab (network performance metrics), and Dune Analytics (cross-chain metrics). It also covers governance data (Snapshot proposals and votes, Discourse forum activity), Mixpanel product-analytics events and profiles, CoinGecko and DefiLlama prices, CoW trade fees, HOPR network snapshots and the Circles blacklist.
 
 **CoW Protocol data** is indexed by `cow-indexer`, a standalone multi-chain indexer that reads canonical CoW contract events directly from execution-layer JSON-RPC, enriches discovered orders and settlements through the public CoW API, and can import authoritative off-chain order-book history from export bundles. It writes canonical tables to the `cow_db` database with reorg reconciliation, independent of the dbt pipeline. See [CoW Protocol Indexer](../data-pipeline/ingestion/cow-indexer.md).
 
-**Verified historical state** is captured by `rpc-state-indexer`, which reads contract state (ERC-20 balances and supply, Aave/Spark aToken scaled balances, pool reserves) at exact UTC day-end anchor blocks via archive JSON-RPC and publishes only verified, complete snapshots through views in the `rpc_indexer` database. It deliberately takes no input from dbt so it can serve as an independent cross-check of warehouse balances. See [RPC State Indexer](../data-pipeline/ingestion/rpc-state-indexer.md).
+**Verified historical state** is captured by `rpc-state-indexer`, which reads contract state (ERC-20 balances and supply, Aave/Spark aToken scaled balances, pool reserves) at exact UTC day-end anchor blocks via archive JSON-RPC and publishes only verified, complete snapshots into the `rpc_state_indexer` database. It deliberately takes no input from dbt so it can serve as an independent cross-check of warehouse balances. See [RPC State Indexer](../data-pipeline/ingestion/rpc-state-indexer.md).
+
+**Governance events** are captured by `rpc-log-indexer`, a small durable `eth_getLogs` indexer that decodes the Snapshot DelegateRegistry on Ethereum and Gnosis into `rpc_log_indexer` with per-chain checkpoints and reorg-safe canonical views. See [RPC Log Indexer](../data-pipeline/ingestion/rpc-log-indexer.md).
+
+**Circles, Metri and Gnosis Pay entities** are mirrored by `envio_ga-indexer` from a Hasura/Envio GraphQL API into `envio_ga`, with delete detection via a daily reconcile. See [Envio GA Indexer](../data-pipeline/ingestion/envio-ga-indexer.md).
 
 ## Layer 2: Data Storage
 
@@ -72,20 +78,23 @@ The cluster is organized into databases, each corresponding to a data domain:
 
 | Database | Contents | Primary Sources |
 |----------|----------|-----------------|
-| `execution` | Blocks, transactions, logs, traces, contracts | cryo-indexer |
-| `consensus` | Validators, attestations, proposals, slots, epochs, blobs | beacon-indexer, era-parser |
-| `crawlers_data` | Energy data, network metrics, cross-chain analytics | click-runner |
+| `execution`, `execution_live`, `celo_execution` | Blocks, transactions, logs, traces, contracts, native transfers | cryo-indexer |
+| `consensus` | Blocks, validators, rewards, sidecars and their transformed tables | beacon-indexer |
+| `crawlers_data` | Prices, Dune exports, IP geolocation, CoW fees, energy data | click-runner, ip-crawler |
 | `governance_db` | Snapshot proposals/votes, Discourse forum topics/posts | click-runner |
-| `nebula` | Peer sessions, DHT crawl results, agent strings | nebula, ip-crawler |
+| `mixpanel_ga`, `hopr_db` | Product analytics; HOPR network snapshots | click-runner |
+| `nebula`, `nebula_discv4` | Peer sessions, DHT crawl results, agent strings | nebula |
 | `cow_db` | CoW Protocol trades, settlements, order-book history | cow-indexer |
-| `rpc_indexer` | Verified day-end contract state (published views only) | rpc-state-indexer |
+| `rpc_state_indexer` | Verified day-end contract state | rpc-state-indexer |
+| `rpc_log_indexer` | Decoded DelegateRegistry events, canonical views | rpc-log-indexer |
+| `envio_ga` | Circles / Metri / Gnosis Pay entities | envio_ga-indexer |
 | `dbt` | Transformed models, materialized views, API-facing tables | dbt-cerebro |
 
-Raw data lands in the source databases (`execution`, `consensus`, `crawlers_data`, `governance_db`, `nebula`, `cow_db`) and is transformed by dbt into the `dbt` database where it becomes available for serving. The `rpc_indexer` database is the exception: it is written only by rpc-state-indexer and consumed read-only as an independent cross-check.
+Raw data lands in the source databases and is transformed by dbt into the `dbt` database where it becomes available for serving. Two exceptions: `rpc_state_indexer` is consumed as an independent cross-check, and `cow_db` is not read by dbt at all — the CoW models read the on-chain decode from `execution`.
 
 ## Layer 3: Data Analysis & Modeling
 
-The modeling layer uses **dbt-cerebro**, a dbt project containing approximately 1,200 SQL models organized into 14 modules:
+The modeling layer uses **dbt-cerebro**, a dbt project containing about 1,370 SQL models (roughly 1,250 tagged `production`) organized into 15 modules, including:
 
 | Module | Description |
 |--------|-------------|
@@ -120,13 +129,16 @@ The serving layer provides three complementary interfaces for consuming analytic
 
 ## Infrastructure
 
-The platform runs on **AWS EKS** (Elastic Kubernetes Service) with the following infrastructure characteristics:
+The platform runs on **GKE Autopilot** on Google Cloud, with every workload deployed by Terraform — one root stack per service, no CI deploy and no GitOps reconcile loop:
 
-- **Compute**: ARM64 (Graviton) node groups for cost-efficient workload execution
-- **Networking**: Application Load Balancer (ALB) with TLS termination for API and dashboard traffic
-- **Storage**: ClickHouse Cloud managed service (external to the EKS cluster)
-- **CI/CD**: Automated deployments triggered by manifest updates; the API auto-refreshes routes when the dbt manifest changes
-- **Containerization**: All services are containerized with multi-stage Docker builds optimized for ARM64
+- **Compute**: Autopilot-managed nodes; ephemeral storage is capped at 10 Gi per pod, which shapes how backfills are chunked
+- **Warehouse**: ClickHouse Cloud, reached over a Private Service Connect endpoint, never the public hostname
+- **Secrets**: Google Secret Manager, synced into Kubernetes by the External Secrets Operator
+- **Images**: multi-arch builds in GHCR on every push to `main`, pinned by index digest in each stack
+- **Ingress**: one shared external gateway for the API and these docs; the MCP server sits on an internal gateway behind the VPN
+- **Serving**: the API auto-refreshes its routes when the dbt manifest changes, so a dbt deploy needs no API deploy
+
+Operating detail — deployment ritual, monitoring, the per-ingestor recovery procedures — is under [Operations](../operations/index.md).
 
 ## Next Steps
 

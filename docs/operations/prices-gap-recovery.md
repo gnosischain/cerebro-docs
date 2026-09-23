@@ -12,11 +12,18 @@ This page walks through the recovery flow end-to-end using the 2026-04-17 incide
 ## TL;DR
 
 ```bash
-docker exec dbt /app/scripts/maintenance/refill_after_price_gap.sh \
+/app/scripts/maintenance/refill_after_price_gap.sh \
   --from-date 2026-04-17
 ```
 
 That single command triggers the two-phase flow described below. The rest of this page explains what's happening and how to handle the edge cases.
+
+!!! warning "Before you run it"
+    - **Where it runs.** In production, inside a one-shot clone of the daily dbt CronJob ([how](runbooks/one-shot-jobs.md)), in a quiet window. **There is no lock against the 06:00 cron or the 45-second live loop.** `docker exec dbt …` is only the local Compose form.
+    - **Fix the source first.** If `crawlers_data.dune_prices` still lacks the day, every phase below faithfully reproduces the gap. Dune lands T-1 to T-2, so one missing day is usually not a gap yet — see [click-runner](../data-pipeline/ingestion/click-runner.md).
+    - **Pre-flight.** `python /app/scripts/agent_context/context.py --select ⟨model⟩ --task backfill` for any model you intend to touch outside the script, and check `/app/target/refresh_state/` for a pending run that must be resumed or cleared, never deleted.
+    - **Capture a baseline.** `REPLACE PARTITION` has no undo. Record per-month `count()` and `uniqExact(⟨grain⟩)` for the affected tables before, and compare after: a shrunk date span is a wipe, an exact doubling is a duplicate — marts read without `FINAL`, so both copies count.
+    - The general decision tree for repairing dbt after any upstream fix is [dbt reprocess after upstream repair](runbooks/dbt-reprocess.md); this page is the prices-specific instance of it.
 
 ## Why three phases
 
@@ -117,7 +124,7 @@ The `+` operator is "all descendants". This refreshes:
 ### Step 1 — Compute the lookback
 
 ```bash
-docker exec dbt /app/scripts/maintenance/refill_after_price_gap.sh \
+/app/scripts/maintenance/refill_after_price_gap.sh \
   --from-date 2026-04-17 --dry-run
 ```
 
@@ -138,7 +145,7 @@ Lookback is `(today − from-date) + 1 (inclusive) + buffer (default 1) = 10 + 1
 ### Step 2 — Run the recovery
 
 ```bash
-docker exec dbt /app/scripts/maintenance/refill_after_price_gap.sh \
+/app/scripts/maintenance/refill_after_price_gap.sh \
   --from-date 2026-04-17
 ```
 
@@ -195,7 +202,7 @@ Expected: non-zero `value` for each token symbol.
 If you don't have a clean from-date (e.g. you just want to widen the window):
 
 ```bash
-docker exec dbt /app/scripts/maintenance/refill_after_price_gap.sh \
+/app/scripts/maintenance/refill_after_price_gap.sh \
   --lookback-days 14
 ```
 
@@ -228,7 +235,7 @@ The buffer covers cases where the gap window has soft edges — partial data on 
 ### Several-week-old gaps
 
 ```bash
-docker exec dbt /app/scripts/maintenance/refill_after_price_gap.sh \
+/app/scripts/maintenance/refill_after_price_gap.sh \
   --from-date 2026-03-30
 ```
 
@@ -275,7 +282,7 @@ Symptom: `Code: 341 referencing dropped temporary table __dbt_new_data_*`. A pre
 Fix:
 
 ```bash
-docker exec dbt dbt run-operation kill_failed_mutations \
+dbt run-operation kill_failed_mutations \
   --project-dir /app --profiles-dir /app
 ```
 
@@ -336,6 +343,7 @@ The current design fixes all three:
 
 ## Related
 
-- [Incremental Strategies](../data-pipeline/transformation/incremental-strategies.md) — the four invocation modes and how the strategy expression routes between them
-- [Running Models](../data-pipeline/transformation/running-models.md) — the four runners
-- [Troubleshooting](troubleshooting.md) — broader incident response
+- [Incremental Strategies](../data-pipeline/transformation/incremental-strategies.md) — the invocation modes and how the strategy expression routes between them
+- [Running Models](../data-pipeline/transformation/running-models.md) — every production lever, including the one this script wraps
+- [dbt reprocess after upstream repair](runbooks/dbt-reprocess.md) — the general decision tree
+- [Morning Check & Triage](troubleshooting.md) — how a prices gap is usually noticed

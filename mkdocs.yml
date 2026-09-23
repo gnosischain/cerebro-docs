@@ -85,11 +85,18 @@ plugins:
   - redirects:
       redirect_maps:
         getting-started/index.md: index.md
+        data-pipeline/ingestion/era-parser.md: data-pipeline/ingestion/beacon-indexer.md
+        operations/infrastructure.md: operations/deployment.md
   - minify:
       minify_html: true
 
 hooks:
   - hooks/llms_txt.py
+
+# Unresolved #anchors in internal links are warnings, which --strict turns into
+# build failures (the default only logs them at info).
+validation:
+  anchors: warn
 
 extra_css:
   - stylesheets/extra.css
@@ -125,13 +132,13 @@ extra:
         - data-pipeline/
         - models/
         - mcp/
+        - operations/
       Research:
         - research/
         - protocols/
         - esg-reporting/
       Optional:
         - dashboard/
-        - operations/
         - reference/
         - developer/
 
@@ -146,11 +153,12 @@ nav:
     - Pipeline Overview: data-pipeline/overview.md
     - Execution Layer (cryo-indexer): data-pipeline/ingestion/cryo-indexer.md
     - Consensus Layer (beacon-indexer): data-pipeline/ingestion/beacon-indexer.md
-    - Era File Parser: data-pipeline/ingestion/era-parser.md
     - Cryo Base Image: data-pipeline/ingestion/cryo-base.md
     - Click Runner: data-pipeline/ingestion/click-runner.md
     - CoW Protocol Indexer: data-pipeline/ingestion/cow-indexer.md
     - RPC State Indexer: data-pipeline/ingestion/rpc-state-indexer.md
+    - RPC Log Indexer: data-pipeline/ingestion/rpc-log-indexer.md
+    - Envio GA Indexer: data-pipeline/ingestion/envio-ga-indexer.md
     - Network Crawlers:
       - data-pipeline/crawlers/index.md
       - DHT Crawler (Nebula): data-pipeline/crawlers/nebula.md
@@ -311,11 +319,17 @@ nav:
     - Conventions: developer/conventions.md
   - Operations:
     - operations/index.md
-    - Infrastructure: operations/infrastructure.md
     - Deployment: operations/deployment.md
-    - Monitoring: operations/monitoring.md
-    - Troubleshooting: operations/troubleshooting.md
-    - Recovering from a Prices Gap: operations/prices-gap-recovery.md
+    - Monitoring & Detection: operations/monitoring.md
+    - Morning Check & Triage: operations/troubleshooting.md
+    - Runbooks:
+      - Warehouse Out of Memory: operations/runbooks/warehouse-oom.md
+      - dbt Daily Run Failed: operations/runbooks/dbt-daily-run-failed.md
+      - dbt Reprocess After Upstream Repair: operations/runbooks/dbt-reprocess.md
+      - Recovering from a Prices Gap: operations/prices-gap-recovery.md
+      - Consumers Showing Stale Data: operations/runbooks/consumers-stale.md
+      - One-Shot Jobs: operations/runbooks/one-shot-jobs.md
+      - Secret Rotation: operations/runbooks/secret-rotation.md
   - Reference:
     - reference/index.md
     - Environment Variables: reference/env-vars.md

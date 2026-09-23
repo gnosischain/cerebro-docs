@@ -1,6 +1,6 @@
 # dbt-cerebro
 
-dbt-cerebro is the core data transformation project for the Gnosis Analytics platform. It is a [dbt](https://www.getdbt.com/) project containing approximately 1,200 SQL models that transform raw blockchain data from ClickHouse into analytics-ready datasets.
+dbt-cerebro is the core data transformation project for the Gnosis Analytics platform. It is a [dbt](https://www.getdbt.com/) project containing about 1,370 SQL models (roughly 1,250 tagged `production`) across 15 modules that transform raw blockchain data from ClickHouse into analytics-ready datasets.
 
 ## Overview
 
@@ -108,8 +108,10 @@ Key building blocks:
 
 For the full picture see:
 
-- [Incremental Strategies](incremental-strategies.md) — the four invocation modes, the macro routing logic, and the `refill_append` tag for heavy aggregates
-- [Running Models](running-models.md) — the four production runners with end-to-end examples
+- [Incremental Strategies](incremental-strategies.md) — the invocation modes, the macro routing logic, and the `refill_append` tag for heavy aggregates
+- [Running Models](running-models.md) — the production runners with end-to-end examples
+- [The dbt daily run failed](../../operations/runbooks/dbt-daily-run-failed.md) — reading last night's failure and rerunning only what failed
+- [dbt reprocess after upstream repair](../../operations/runbooks/dbt-reprocess.md) — the decision tree for fixing dbt after an indexer repair, without a full refresh
 - [Recovering from a Prices Gap](../../operations/prices-gap-recovery.md) — incident response when a prices source skips a day
 
 ## Contract ABI Decoding
@@ -139,6 +141,9 @@ Static reference data is loaded via dbt seeds:
 | `event_signatures.csv` | Event topic signatures generated from ABIs |
 | `function_signatures.csv` | Function selector signatures generated from ABIs |
 
+!!! warning "Deploy seeds only from the merged tip, and verify the `chain` column"
+    A `dbt seed` run from a stale checkout once wiped the `chain` column on the signature and ABI seeds. Because `decode_logs` filters `WHERE chain = 'gnosis'`, the entire decode fleet appended zero rows for days while every run stayed green. After any seed deploy, check row counts **and** the `chain` distribution; the symptom to recognise is decode models appending 0 rows with no error.
+
 ## Configuration
 
 ### Environment Variables
@@ -157,48 +162,35 @@ Static reference data is loaded via dbt seeds:
 - ClickHouse version 24.1 or later
 - Permissions to create/drop tables, read source schemas, and write to target schemas
 
-## Docker Deployment
+## Running in production
 
-dbt-cerebro ships as a Docker container with all dependencies pre-installed:
+dbt-cerebro runs on the platform's Kubernetes cluster as three workloads from one image:
+
+| Workload | What | Notes |
+|---|---|---|
+| Daily CronJob, **06:00 UTC** | `cron_preview.sh` → `scripts/run_dbt_observability.sh` | ~3h40m. `concurrencyPolicy: Forbid`, one attempt, no Kubernetes retries; the orchestrator retries transients internally. Only `dbt-run` is mandatory — `source-freshness` failing nightly is expected |
+| Live-loop Deployment | `dbt run --select tag:live` every 45 s | 19 models. One replica, `Recreate`, never scaled |
+| Static-server Deployment | serves `/logs/`, `/reports/`, `/health`, `/metrics` | The route to last night's published artifacts, via a port-forward. Its data volume is a read-only bucket mount, so dbt cannot run there |
+
+The published artifacts (`dbt.log`, run results, reports) go to a bucket only the cron and server service accounts can read; the orchestrator's step summary and its `TRANSIENT=` / `PERMANENT=` classification go to the pod's **stdout only**. Three job records are kept per outcome.
+
+Repairs and backfills run inside a one-shot clone of the daily CronJob — see [One-shot jobs](../../operations/runbooks/one-shot-jobs.md). Overriding the Job's `args` drops the publish step, so the pod log is the only record of such a run.
+
+Elementary is switched off; nothing writes `elementary.*`, and `dbt docs generate` writing a catalog with 0 model nodes is known dbt-clickhouse behaviour.
+
+For the full set of runners (daily cron, live loop, microbatch catch-up, full-refresh batched, gap-window refresh, refill recovery) see [Running Models](running-models.md).
+
+### Local development
+
+The repository ships a Compose file with the same image:
 
 ```bash
-# Start the container (includes documentation server on port 8080)
-docker-compose up -d
-
-# Enter the container
-docker exec -it dbt /bin/bash
-
-# Test the connection
-dbt debug
-
-# Run all models
-dbt run
-
-# Run specific module
-dbt run --select execution
-
-# Run specific model with upstream dependencies
+docker-compose up -d           # start the container (documentation server on port 8080)
+docker exec -it dbt /bin/bash  # enter it
+dbt debug                      # test the connection
+dbt run --select execution     # run a module
 dbt build --select +api_execution_transactions_daily
-
-# Full refresh of an incremental model
-dbt run --select int_execution_blocks_clients_version_daily --full-refresh
-
-# Generate and serve documentation
-dbt docs generate
-# Documentation is automatically served on port 8080
 ```
-
-### Production Runs
-
-```bash
-# Run all models and tests
-docker exec dbt bash -c "dbt run && dbt test"
-
-# Or use the production cron script
-docker exec dbt /app/cron.sh
-```
-
-For the full set of runners (daily cron, microbatch catch-up, full-refresh batched, refill recovery) see [Running Models](running-models.md).
 
 ## Development Workflow
 

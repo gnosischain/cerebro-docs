@@ -159,6 +159,72 @@ All configuration is environment-based. Key variables:
 
 See the [repository README](https://github.com/gnosischain/cow-indexer) for the full variable reference, export-bundle tooling, and failure-recovery runbook.
 
+## Operating and recovering
+
+### How it runs
+
+One continuous Deployment running `continuous --chain all` — **11 chains in one process**, each with six independent loops — plus a 6-hourly sweep CronJob running `backfill-orderbook seed-orders` then `drain`. Kill-safe: checkpoints are durable, writes are idempotent by key, and commit order is raw logs → block headers → decoded events → checkpoint. `Recreate`, one replica, **never two even for a second**; run only one enrichment worker per chain — ClickHouse has no transactional competing-consumer lease.
+
+### Health — per chain, never summed
+
+```sql
+SELECT chain_id, argMax(block_number, updated_at) AS checkpoint_block,
+       dateDiff('minute', max(updated_at), now()) AS lag_min
+FROM cow_db.indexing_checkpoints WHERE source = 'rpc'
+GROUP BY chain_id ORDER BY lag_min DESC;
+```
+
+!!! warning "One dead chain leaves the pod green and the summed row-rate healthy"
+    Verified 2026-09-22: one chain frozen for six weeks, another ~2 h behind, the other nine ≤ 6 min — and the stalled-rows alert, which sums `cow_rows_written_total` across chains, saw nothing. Alert on "no rows written in an hour" per chain and on pod health, never on lag: `cow_chain_lag_blocks` is legitimately enormous during any catch-up.
+
+!!! warning "Do not aggregate `trades_canonical` unscoped"
+    The block-hash join hits the **4 GiB per-query** limit. Read the checkpoint table instead. And never a bare `FINAL` over a data table — read the `*_canonical` views, scoped.
+
+If you query `settlements`, drop any `environment='production'` filter or `GROUP BY environment, chain_id`: sepolia is `environment='testnet'` and invisible otherwise.
+
+### Detecting a gap and repairing
+
+```bash
+cow-indexer status                      # takes no --chain
+cow-indexer coverage --chain all
+cow-indexer validate --chain all
+cow-indexer repair --chain ⟨one⟩ --from-block ⟨lo⟩ --to-block ⟨hi⟩
+```
+
+`repair` never moves the forward checkpoint backward and is explicitly the deep-reorg and gap fix — safe alongside the tailing loop. Holes in `indexing_ranges` are **not** proof of missing data: its inserts ack at the async buffer and are lost on an abrupt kill. Cross-check `raw_rpc_logs` / `settlements`. A "gap" from block 1 to each chain's pinned `from_block` is normal.
+
+!!! warning "Never delete or rewind `indexing_checkpoints` to force a rescan"
+    The chain then restarts at its pinned deployment block and rescans years. `cow_db` tables are Shared\*MergeTree and **do not dedupe re-inserted rows** unless the ORDER BY key matches exactly — a re-insert is not automatically idempotent.
+
+### Orderbook history
+
+Off-chain orders that predate live capture: `backfill-orderbook seed-orders --chain ⟨c⟩ --limit 2000`, then `drain`, then `status`. The 6-hourly sweep is the live lane's **designed complement**, not a backfill hack — it closes the 1 h–24 h enrichment leak. A failed slot self-heals at the next slot; only act if two consecutive fail.
+
+!!! warning "Two things never to do with the sweep"
+    Never `seed-orders` without `--limit` as a way to "reprocess everything": the pre-2022-Q3 epoch is unserved by the API and the sweep is a ~900K-call operation. Never start a manual drain inside the scheduled sweep window — a hand-created Job is invisible to `concurrencyPolicy: Forbid`, and two drains race `work_items`.
+
+### Code 241 on the lease
+
+The `work_items` lease uses `FINAL`; too many parts pushes it over its per-query cap. It fails in isolation — RPC ingestion keeps running. `OPTIMIZE TABLE cow_db.work_items FINAL`, then lower `COW_ENRICH_BATCH` and/or raise `CLICKHOUSE_FINAL_MEMORY_MB` in the stack. Never force `lightweight_delete_mode='lightweight_update_force'` on any `cow_db` table — `work_items` has no block-number column and ClickHouse Cloud rejects the statement.
+
+`purge-work --chain ⟨c⟩ --grace-hours 24` requires the scheduled purge **disabled** and the continuous pod **down** — never run it inside the live pod, where the purge loop is already running. Never hand-edit `work_items` rows to clear a lease: attempts are the retry budget, and burning them dead-letters work nothing ever processed.
+
+### The shared egress identity
+
+cow-indexer and click-runner's `cow-fees` leave the cluster from **one** NAT address, which is CoW's rate-limit identity. A 403 storm on one affects the other. **Never retry inside the cooldown** (~1 h): retrying prolongs it for everything sharing the address. Re-allowlisting is a conversation with CoW. Never move the indexer to a public node to get off the shared address — an Autopilot public node's IP is ephemeral and can never be allowlisted.
+
+### Then dbt
+
+**Nothing to rebuild.** dbt does not read `cow_db` at all — the CoW models read the on-chain decode from `execution`, so a `cow_db` repair has no dbt consequence. The canonical views are computed at read time, so consumers see corrected data immediately.
+
+!!! note "Expected noise"
+    - `rpc_range_reduced` warnings — the scanner starts at 5,000 blocks, grows to 50,000, and halves to 50 on the provider's result cap.
+    - "No Jobs listed" for the sweep — finished Jobs are deleted after 24 h and only three of each outcome are kept.
+    - Huge `cow_chain_lag_blocks` during catch-up.
+
+!!! info "Internal runbook"
+    [runbooks/24-cow-indexer.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/24-cow-indexer.md) — private repository; carries the cluster-specific commands for this page.
+
 ## Downstream consumers
 
 The indexed database backs the [CoW Explorer](../../mcp/mini-apps/cow-explorer.md) MCP mini-app, a read-only data explorer over the canonical order, trade, and competition tables. Because the indexer is independent of dbt, its tables are also available as an upstream source for dbt models in the transformation layer.

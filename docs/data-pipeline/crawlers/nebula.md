@@ -24,7 +24,7 @@ This data provides visibility into the health, diversity, and topology of the Gn
 
 ## Data Output
 
-nebula writes to the `nebula` database in ClickHouse. The primary tables are:
+Two crawlers run: the consensus-layer (discv5) crawler writes the `nebula` database and the execution-layer (discv4) crawler writes `nebula_discv4`. Together they write ~3.3 TB/month and feed 16 dbt p2p models. The primary tables in each are:
 
 ### `nebula.visits`
 
@@ -43,43 +43,38 @@ Records each peer visit with metadata:
 
 Aggregated peer records with the latest known state.
 
-## Deployment
+## Operating and recovering
 
-nebula is deployed as a Docker container built from a pinned commit of the upstream repository:
+### How it runs
 
-```dockerfile
-FROM golang:1.23-alpine AS builder
-# Builds from dennis-tra/nebula at a specific commit
-# Produces the nebula binary at /usr/local/bin/nebula
+Two Deployments, one per network — discv5 → `nebula`, discv4 → `nebula_discv4` — `Recreate`, one crawler each. The repository is a three-file build wrapper around upstream `dennis-tra/nebula`, pinned to a commit; all Gnosis configuration lives in the deployment stack, not in the repo.
+
+These are the only pods in the estate on **public nodes** with an ephemeral IP — deliberate, because the traffic is almost entirely peer-to-peer and needs no inbound. They do **not** egress via the shared NAT address.
+
+### Health — a data query, nothing else
+
+**There are zero alert rules for either crawler.** Nothing will tell you they stopped.
+
+```sql
+SELECT max(visit_started_at) FROM nebula.visits;
+SELECT max(visit_started_at) FROM nebula_discv4.visits;
 ```
 
-### Docker Compose
+!!! warning "Restart counts in the thousands are by design"
+    A liveness probe fails past a maximum uptime, deliberately restarting the crawler. It is also the only thing that catches a *hung* crawl, which otherwise looks `Running` and keeps serving metrics. So a high restart count is not an incident, and a *low* one after a long uptime might be.
 
-```bash
-# Start the crawler
-docker-compose up -d nebula
+### Restart
 
-# Check health
-docker-compose exec nebula nebula health
+Each crawl is an independent sweep with nothing to resume, so restarting is always safe. Killing mid-crawl loses that sweep's remaining peers and nothing else. There is no gap-repair procedure: a missed sweep is simply a missed sample.
 
-# View logs
-docker-compose logs -f nebula
-```
+Schema is owned entirely by upstream. The consensus crawler has `APPLY_MIGRATIONS=false` and the execution one does not — which of the two owns schema changes is unresolved; do not "normalise" it without deciding.
 
-### Health Checks
+### Then dbt
 
-The container includes a built-in health check that runs `nebula health` every 15 seconds.
+The p2p models read `nebula.visits` incrementally; a plain scoped `dbt run` after the crawler is back is enough. See [dbt reprocess](../../operations/runbooks/dbt-reprocess.md) for the general rules.
 
-## Crawl Scheduling
-
-nebula runs as a continuous service. Crawl frequency depends on the network size and configuration. Each crawl cycle:
-
-1. Starts from the bootstrap node list
-2. Discovers and visits all reachable peers
-3. Records results in ClickHouse
-4. Waits for the configured interval before the next cycle
-
-For the Gnosis Chain network, a full crawl typically takes a few minutes depending on network size.
+!!! info "Internal runbook"
+    [runbooks/27-nebula-and-ip-crawler.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/27-nebula-and-ip-crawler.md) — private repository; carries the cluster-specific commands for this page.
 
 ## Relationship to ip-crawler
 

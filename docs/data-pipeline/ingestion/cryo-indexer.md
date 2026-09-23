@@ -65,59 +65,138 @@ cryo-indexer supports 11 datasets organized into four indexing modes:
 !!! note
     The `withdrawals` dataset is automatically populated whenever blocks are processed. It does not require a separate extraction step.
 
-## Operation Modes
+## Operating and recovering
 
-### Continuous (Default)
+### How it runs
 
-Real-time blockchain following for production deployments.
+One image and **no `command`**: the entrypoint dispatches on `OPERATION` ∈ `continuous | historical | maintain | auto-maintain | validate`. `DATASETS` is honoured **only when `MODE=custom`**; `MODE=minimal` silently ignores it and gives you blocks, transactions, logs. All state is `<db>.indexing_state`; the pod holds nothing.
 
-- Polls the chain tip every 10 seconds (configurable via `POLL_INTERVAL`)
-- Waits for 12 block confirmations before indexing (configurable via `CONFIRMATION_BLOCKS`) to avoid reorg issues
-- Processes in small batches (default 100 blocks) for low latency
-- Single-threaded for stability
-- Automatically resumes from the last indexed block on restart
-- Resets stale processing jobs on startup
+Three continuous writers, one per database: Gnosis (`execution`, `CONFIRMATION_BLOCKS=720`, `MODE=custom` with six datasets — blocks, transactions, logs, contracts, native_transfers, traces), Gnosis live (`execution_live`, `CONFIRMATION_BLOCKS=6`, two-day TTL) and Celo (`celo_execution`, `MODE=minimal`). Each chain also has an `auto-maintain` CronJob, seven times a day, that re-extracts recent failed or missing ranges. Cryo itself and its two patches live in [cryo-base](cryo-base.md); odd Cryo behaviour starts there.
 
-```bash
-make continuous
-# Or with custom settings:
-make continuous MODE=full START_BLOCK=18000000
+**Single writer per database**, `Recreate`, one replica — enforced by convention only. The target tables do not dedupe re-inserted rows, and `maintain` DELETEs a range before it claims it.
+
+### Health
+
+Config failures are narrow: the entrypoint exits 1 if `ETH_RPC_URL` or `CLICKHOUSE_HOST` is empty. A failed secret sync shows as a container-config error, not a crash loop.
+
+The authoritative liveness check needs only warehouse access:
+
+```sql
+SELECT dataset, max(end_block) AS highest_completed, max(created_at) AS last_write
+FROM execution.indexing_state WHERE status = 'completed' GROUP BY dataset ORDER BY dataset;
 ```
 
-### Historical
+`last_write` older than a few minutes means the writer is gone (`POLL_INTERVAL=60`, `BATCH_SIZE=100`). Repeat for `execution_live` and `celo_execution`. Head lag is **~66 minutes on `execution`** (720 confirmations at 5 s) and ~1 minute on `execution_live`; neither is a stall.
 
-Fast bulk indexing for initial sync or backfilling specific block ranges.
+A pod that is alive but wedged: restart the workload. Never above one replica and never a rolling update.
 
-- Supports parallel processing with multiple workers
-- Automatically divides work into 1000-block chunks
-- Built-in progress tracking with ETA calculations
-- Strict timestamp validation at each step
+### Detecting a gap
 
-```bash
-make historical START_BLOCK=1000000 END_BLOCK=2000000 WORKERS=8
+!!! warning "Never judge completeness from `blocks` row counts"
+    On Celo, `count()` and `max - min` read 99.98% complete while ~993,000 blocks had a `blocks` row, no `transactions` or `logs` rows, and **no `indexing_state` row at all** — so nothing retried them and no alert fired. Nothing alerts on "has a `blocks` row but no `transactions` row"; only this check finds it.
+
+Per-dataset batch coverage, run **once per dataset**:
+
+```sql
+WITH expected AS (SELECT toUInt32(⟨first_block⟩ + number * 100) AS s FROM numbers(⟨n_batches⟩))
+SELECT s AS missing_start_block FROM expected
+WHERE s NOT IN (SELECT DISTINCT start_block FROM execution.indexing_state WHERE dataset = 'transactions')
+ORDER BY s;
 ```
 
-### Maintain
+Repeat for `blocks`, `logs`, and on `execution` also `contracts`, `native_transfers`, `traces`. Derive the bounds from the chain; do not copy numbers. A hole in one dataset does not imply a hole in the others.
 
-Processes failed and pending ranges from the state table.
+Is a transaction-less batch a real hole or a quiet chain? Gas burned means transactions existed:
 
-- Scans `indexing_state` for ranges marked as `failed` or `pending`
-- Re-attempts each range with proper error handling
-- Reports what was fixed and any remaining issues
-
-```bash
-make maintain
-# Or for a specific range:
-make maintain START_BLOCK=1000000 END_BLOCK=2000000 WORKERS=4
+```sql
+SELECT intDiv(block_number,100)*100 AS batch, count() AS blocks, sum(gas_used) AS gas
+FROM execution.blocks WHERE block_number >= ⟨lo⟩ AND block_number < ⟨hi⟩
+GROUP BY batch HAVING gas > 0 ORDER BY batch;
 ```
 
-### Validate (Read-Only)
+`OPERATION=validate` with a block range writes nothing and exits non-zero when gaps exist, so it can run inside the live pod. Also read the continuous log for `max retries`, `All datasets exhausted`, `Moving to next range` — the loop gives up on a dataset after `MAX_RETRIES` and **moves the pointer forward**, leaving a hole behind.
 
-Checks indexing progress and data integrity without modifying data.
+### Repairing
 
-```bash
-make status
+**Recent gaps: `auto-maintain`.** Its reach is `AUTO_MAINTAIN_LOOKBACK_HOURS × 720` blocks, and **720 blocks/hour is hardcoded for Gnosis' 5 s blocks** — so 48 h is real on Gnosis and only **~9.6 h on Celo**. Anything older is permanently out of its range. Trigger an extra run by cloning its CronJob ([one-shot jobs](../../operations/runbooks/one-shot-jobs.md)).
+
+!!! warning "`auto-maintain` is not read-only beside the live indexer"
+    It DELETEs a range and *then* attempts the claim, so a claim conflict is reported as "Skipped" after the delete has already run. Prefer it for recent gaps, but know what it does.
+
+**Older gaps: a scoped `maintain`.** It claims **all** non-completed ranges and DELETEs before re-extracting, so the live writer for that database must be stopped first — the stop sequence and the one-shot recipe are on the [one-shot jobs](../../operations/runbooks/one-shot-jobs.md) page. Chunk to a few hundred thousand blocks per job.
+
+!!! warning "Two absolute limits, neither guarded in code"
+    **Never `MODE=full`** — it expands to all ten datasets and starts a 41.9M-block backfill. **Never `0/0` bounds** — the unscoped range query self-joins ~1.3M rows and OOMs the warehouse.
+
+Gnosis needs `MODE=custom` with all six live datasets — `MODE=minimal` repairs three of six and leaves the rest holed. Celo runs `MODE=minimal` live, so there minimal *is* the whole set; its RPC settings are 20× more aggressive than Gnosis' — keep them.
+
+### Corrupt range
+
+!!! warning "Bookkeeping first — this is the step everyone misses"
+    A range whose latest status is `completed` is invisible to every repair path. Re-open it by hand, using the **exact stored bounds** (a different start/end creates a phantom range):
+
+```sql
+SELECT dataset, start_block, end_block, argMax(status, created_at) AS st
+FROM execution.indexing_state
+WHERE start_block >= ⟨lo⟩ AND end_block <= ⟨hi⟩
+GROUP BY dataset, start_block, end_block ORDER BY dataset, start_block;
+
+INSERT INTO execution.indexing_state
+  (dataset, start_block, end_block, status, error_message, attempt_count)
+VALUES
+  ('blocks',       ⟨lo⟩, ⟨hi⟩, 'failed', 'manual re-open: bad RPC data', 1),
+  ('transactions', ⟨lo⟩, ⟨hi⟩, 'failed', 'manual re-open: bad RPC data', 1),
+  ('logs',         ⟨lo⟩, ⟨hi⟩, 'failed', 'manual re-open: bad RPC data', 1);
 ```
+
+Then the scoped `maintain` above.
+
+**Order matters:** `blocks` must be correct before `transactions` / `logs`. The other datasets derive `block_timestamp` by joining `blocks` and hard-fail if any block has an invalid timestamp. That failure logs as `CRITICAL: Cannot add timestamps for <table>! ... Process blocks first!` on *transactions*, which points diagnosis at the wrong dataset. Garbage timestamps, with the indexer's own predicate:
+
+```sql
+SELECT count() FROM execution.blocks FINAL
+WHERE block_number >= ⟨lo⟩ AND block_number < ⟨hi⟩
+  AND (timestamp IS NULL OR timestamp = 0 OR toDateTime(timestamp) <= toDateTime('1971-01-01'));
+```
+
+**Cold partitions need image `19e81f5` or later.** Before that, the delete removed the rows but not the Keeper dedup block-id, so the re-insert was silently refused while the client saw `written_rows=N`. The only trace is `system.part_log.error = 389`.
+
+!!! warning "Never hand-`DELETE` from a data table"
+    `maintain`'s own delete is what keeps the `withdrawals` side-table in step with `blocks`.
+
+**Verify:**
+
+```sql
+SELECT count() raw, countDistinct(block_number) d, max(block_number)-min(block_number)+1 span
+FROM execution.blocks WHERE block_number >= ⟨lo⟩ AND block_number < ⟨hi⟩;   -- want raw = d = span
+
+SELECT status, rows_indexed FROM execution.indexing_state
+WHERE dataset='transactions' AND start_block=⟨lo⟩ AND end_block=⟨hi⟩
+ORDER BY created_at DESC LIMIT 1;   -- want 'completed' with rows_indexed > 0
+```
+
+A `completed` with `rows_indexed = 0` is the silent-failure shape `auto-maintain` hunts.
+
+### Restart
+
+Killing mid-range is safe for correctness, but `SIGTERM` exits immediately without finishing or failing the in-flight range — it stays `processing` until `STUCK_RANGE_TIMEOUT_HOURS` (2). Until then it is invisible to gap detection, and `find_gaps` deliberately clamps below anything still `processing` so a repair cannot stomp a live range. If you cannot wait two hours before a scoped repair over that range, re-open it as `failed` with the INSERT above.
+
+A durable stop or start is a replica change in the stack, applied ([Deployment](../../operations/deployment.md)); a live scale is `[drift]`. Restart resumes from the **minimum** across datasets of `max(end_block) WHERE status='completed'`, aligned up to a batch boundary. On `celo_execution`, `START_BLOCK` is a **floor**, not a resume point.
+
+### Then dbt
+
+A raw repair does not fix the decode layer — decode models are `append` with an embedded watermark and cannot see anything backfilled below it. Go to [dbt reprocess](../../operations/runbooks/dbt-reprocess.md). Do **not** run the daily microbatch runner: it only advances watermarks and produces a completely green run that fixes nothing.
+
+!!! note "Expected noise"
+    - A uniform ~80 s `auto-maintain` runtime means "nothing in window", **not** "healthy".
+    - `No data found for <dataset> in blocks X-Y` — legitimately empty ranges for contracts, native_transfers and traces.
+    - `blocks ... not fully visible yet (0/100 valid)` then succeeding on retry — read-after-write lag on SharedMergeTree, not bad data. Only `reason='invalid'` is a real fault.
+    - **`find_gaps` skips any gap smaller than 100 blocks.** "No gaps found" does not mean no missing blocks.
+    - `Skipped: N (being processed by another worker)` from auto-maintain — a claim conflict, benign.
+    - The Celo chain-lag alert cannot fire during an RPC outage; the metric goes stale rather than growing. Absence of that alert is not evidence of health.
+
+!!! info "Internal runbook"
+    [runbooks/20-cryo-indexer.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/20-cryo-indexer.md) — private repository; carries the cluster-specific commands for this page.
 
 ## Configuration
 
@@ -143,24 +222,28 @@ make status
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OPERATION` | `continuous` | Operation mode: `continuous`, `historical`, `maintain`, `validate` |
-| `MODE` | `minimal` | Indexing mode: `minimal`, `extra`, `diffs`, `full`, `custom` |
-| `DATASETS` | (derived from MODE) | Comma-separated dataset list (for custom mode) |
-| `START_BLOCK` | `0` | Starting block number |
-| `END_BLOCK` | `0` | Ending block number (0 = chain tip) |
+| `OPERATION` | `continuous` | `continuous`, `historical`, `maintain`, `auto-maintain`, `validate` |
+| `MODE` | `minimal` | `minimal`, `extra`, `diffs`, `full`, `custom`. **Never `full` in production** |
+| `DATASETS` | (derived from MODE) | Comma-separated dataset list — honoured only with `MODE=custom` |
+| `START_BLOCK` | `0` | Starting block number (a floor for `continuous`) |
+| `END_BLOCK` | `0` | Ending block number (0 = chain tip). **Never `0/0` for `maintain`** |
+| `AUTO_MAINTAIN_LOOKBACK_HOURS` | — | Reach of `auto-maintain`, converted at 720 blocks/hour regardless of chain |
+| `STUCK_RANGE_TIMEOUT_HOURS` | `2` | Age at which a `processing` range becomes eligible for repair |
 
 ### Performance Settings
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `WORKERS` | `1` | Number of parallel workers (use 4-16 for historical) |
-| `BATCH_SIZE` | `100` | Blocks per processing batch |
-| `MAX_RETRIES` | `3` | Maximum retry attempts with exponential backoff |
-| `REQUESTS_PER_SECOND` | `20` | RPC request rate limit |
-| `MAX_CONCURRENT_REQUESTS` | `2` | Maximum concurrent RPC requests |
-| `CRYO_TIMEOUT` | `600` | Cryo command timeout in seconds |
-| `CONFIRMATION_BLOCKS` | `12` | Blocks to wait before indexing (reorg safety) |
-| `POLL_INTERVAL` | `10` | Seconds between chain tip polls |
+The production deployment overrides several code defaults; the values that explain healthy numbers are listed.
+
+| Variable | Code default | Production | Description |
+|----------|---------|---------|-------------|
+| `WORKERS` | `1` | `1` | Parallel workers (use 4–16 for `historical`) |
+| `BATCH_SIZE` | `100` | `100` | Blocks per processing batch and per `indexing_state` range |
+| `MAX_RETRIES` | `3` | — | Retries before the continuous loop moves past a range |
+| `REQUESTS_PER_SECOND` | `20` | per chain | RPC request rate limit (Celo is set ~20× higher) |
+| `MAX_CONCURRENT_REQUESTS` | `2` | per chain | Maximum concurrent RPC requests |
+| `CRYO_TIMEOUT` | `600` | — | Cryo command timeout in seconds |
+| `CONFIRMATION_BLOCKS` | `12` | `720` / `6` | Blocks behind head (`execution` / `execution_live`) |
+| `POLL_INTERVAL` | `10` | `60` | Seconds between chain tip polls |
 
 ## State Management
 
@@ -182,32 +265,7 @@ All indexing state is tracked in the `indexing_state` table:
 | `rows_indexed` | Number of rows inserted |
 | `error_message` | Error details if status is `failed` |
 
-On startup, all ranges stuck in `processing` state are automatically reset to `pending`, enabling self-healing after crashes.
-
-## Docker Deployment
-
-```bash
-# Build
-docker-compose build
-
-# Run migrations
-docker-compose --profile migrations up migrations
-
-# Start continuous indexing (minimal mode)
-docker-compose up cryo-indexer-minimal
-
-# Historical backfill
-OPERATION=historical START_BLOCK=18000000 END_BLOCK=18100000 \
-  docker-compose --profile historical up historical-job
-```
-
-## Typical Deployment Workflow
-
-1. **Initial setup** -- Build the image and run database migrations
-2. **Historical sync** -- Bulk-load the desired block range with multiple workers
-3. **Maintenance pass** -- Run `maintain` to retry any failed ranges
-4. **Switch to continuous** -- Start following the chain tip in real time
-5. **Periodic maintenance** -- Occasionally run `maintain` to clear any accumulated failures
+The table is append-only: the current status of a range is its **latest** row (`argMax(status, created_at)`). A range left in `processing` by an unclean stop becomes eligible for repair only after `STUCK_RANGE_TIMEOUT_HOURS`; it is not reset on startup.
 
 ## ClickHouse Table Schemas
 

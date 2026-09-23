@@ -34,7 +34,6 @@ flowchart TD
         direction LR
         EL([Gnosis Chain EL]):::source --> CRYO[cryo-indexer]:::tool
         CL([Gnosis Chain CL]):::source --> BI[beacon-indexer]:::tool
-        CL --> ERA[era-parser]:::tool
         EXT([External Data]):::source --> IPC[ip-crawler]:::tool
         EXT --> CR[click-runner]:::tool
         P2P([P2P Network]):::source --> NEB[nebula]:::tool
@@ -58,7 +57,6 @@ flowchart TD
 
     CRYO --> CH
     BI --> CH
-    ERA --> CH
     IPC --> CH
     CR --> CH
     NEB --> CH
@@ -93,7 +91,6 @@ flowchart TD
         direction LR
         ELD([Gnosis Chain EL]):::source --> CRYOD[cryo-indexer]:::tool
         CLD([Gnosis Chain CL]):::source --> BID[beacon-indexer]:::tool
-        CLD --> ERAD[era-parser]:::tool
         EXTD([External Data]):::source --> IPCD[ip-crawler]:::tool
         EXTD --> CRD[click-runner]:::tool
         P2PD([P2P Network]):::source --> NEBD[nebula]:::tool
@@ -117,7 +114,6 @@ flowchart TD
 
     CRYOD --> CHD
     BID --> CHD
-    ERAD --> CHD
     IPCD --> CHD
     CRD --> CHD
     NEBD --> CHD
