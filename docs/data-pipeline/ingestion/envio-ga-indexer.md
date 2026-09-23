@@ -34,7 +34,7 @@ Database `envio_ga`.
 
 A realtime Deployment (`load realtime`, one replica, `Recreate`, no lease — **never scale it**: a second instance permanently duplicates `raw_entities` versions and doubles the upstream load) and a daily reconcile CronJob at **03:00 UTC** (`reconcile`) that diffs the live id set to find upstream deletes. All checkpoints are durable and every write is id-keyed ReplacingMergeTree, so kill, restart and rollout are safe at any moment.
 
-`envio_ga` is not on the MCP allowlist, so its checks run from a pod or the console.
+`envio_ga` is on the Cerebro MCP allowlist since 2026-09-23; its checks also run from a pod or the console when the MCP is unavailable.
 
 ### Health — is it us, or is the source halted?
 
@@ -101,3 +101,8 @@ Fix the mirror first with `maintain reprocess`, then use the scoped dbt lever fr
 
 !!! info "Internal runbook"
     [runbooks/25-envio-ga-indexer.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/25-envio-ga-indexer.md) — private repository; carries the cluster-specific commands for this page.
+
+### Redeploying
+
+On an image roll realtime restarts; reconcile changes at its 03:00 slot. Apply outside 02:50-03:15 and 05:30-06:30 UTC. The decisive proof is watermarks continue past the baseline with no duplicate raw versions. Procedure: [Redeploying a service](../../operations/deployment.md#redeploying-a-service).
+

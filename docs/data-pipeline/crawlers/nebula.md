@@ -76,6 +76,10 @@ The p2p models read `nebula.visits` incrementally; a plain scoped `dbt run` afte
 !!! info "Internal runbook"
     [runbooks/27-nebula-and-ip-crawler.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/27-nebula-and-ip-crawler.md) — private repository; carries the cluster-specific commands for this page.
 
+### Redeploying
+
+On an image roll both crawlers restart. Apply outside 01:50-02:10 UTC, right after both crawlers have restarted at their own sweep boundaries. The decisive proof is interrupted crawls sealed `cancelled` and the first new sweeps sealed `succeeded` inside the normal size band. Procedure: [Redeploying a service](../../operations/deployment.md#redeploying-a-service).
+
 ## Relationship to ip-crawler
 
 nebula discovers peer IP addresses and stores them in the `nebula.visits` table. The [ip-crawler](ip-crawler.md) reads these IPs and enriches them with geolocation data from ipinfo.io. Together they provide a complete picture of the network's geographic and organizational distribution.

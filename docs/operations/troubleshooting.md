@@ -61,7 +61,7 @@ FROM (
 );
 ```
 
-`envio_ga` and `celo_execution` are not readable through the MCP allowlist — check those with `maintain check` ([envio](../data-pipeline/ingestion/envio-ga-indexer.md)) and the cryo coverage query ([cryo](../data-pipeline/ingestion/cryo-indexer.md)).
+`envio_ga` and `celo_execution` are readable through the Cerebro MCP since 2026-09-23; the same checks are `maintain check` ([envio](../data-pipeline/ingestion/envio-ga-indexer.md)) and the cryo coverage query ([cryo](../data-pipeline/ingestion/cryo-indexer.md)) when the MCP is unavailable.
 
 ## 3. Did the 06:00 dbt run succeed?
 

@@ -225,6 +225,10 @@ cow-indexer and click-runner's `cow-fees` leave the cluster from **one** NAT add
 !!! info "Internal runbook"
     [runbooks/24-cow-indexer.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/24-cow-indexer.md) — private repository; carries the cluster-specific commands for this page.
 
+### Redeploying
+
+On an image roll the scanner restarts; the sweep CronJob changes at its next slot. Apply outside 00:15-00:45 and 02:45-05:00 UTC and never during an API 403 storm. The decisive proof is every live chain advances, no unexplained empty log bucket, no new dead letters. Procedure: [Redeploying a service](../../operations/deployment.md#redeploying-a-service).
+
 ## Downstream consumers
 
 The indexed database backs the [CoW Explorer](../../mcp/mini-apps/cow-explorer.md) MCP mini-app, a read-only data explorer over the canonical order, trade, and competition tables. Because the indexer is independent of dbt, its tables are also available as an upstream source for dbt models in the transformation layer.

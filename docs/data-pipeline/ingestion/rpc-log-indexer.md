@@ -93,3 +93,8 @@ Kill and restart at any moment. The checkpoint advances only after a window's lo
 
 !!! info "Internal runbook"
     [runbooks/23-rpc-log-indexer.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/23-rpc-log-indexer.md) — private repository; carries the fresh-pod spec and the cluster-specific commands for this page.
+
+### Redeploying
+
+On an image roll the scanner restarts. Apply any time, never while a repair pod exists. The decisive proof is both checkpoints continue from checkpoint+1 with no range gap. Procedure: [Redeploying a service](../../operations/deployment.md#redeploying-a-service).
+

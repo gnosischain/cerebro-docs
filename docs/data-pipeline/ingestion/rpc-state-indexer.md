@@ -228,3 +228,8 @@ After a re-census there is nothing to flip — dbt selects the published attempt
 
 !!! info "Internal runbook"
     [runbooks/22-rpc-state-indexer.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/22-rpc-state-indexer.md) — private repository; carries the cluster-specific commands, the stack variables and the apply sequence for this page.
+
+### Redeploying
+
+On an image roll the census daemon restarts (3-5 lease-refusal exits before Ready are normal); the CronJobs change at their next slot. Apply outside 00:00-03:30 UTC with the archive endpoint healthy for an hour. The decisive proof is one active lease, publications for the last three days identical, yesterday published before 06:00. Procedure: [Redeploying a service](../../operations/deployment.md#redeploying-a-service).
+

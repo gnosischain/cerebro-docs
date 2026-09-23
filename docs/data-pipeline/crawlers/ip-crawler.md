@@ -120,6 +120,10 @@ The three HOPR marts are rebuilt by the nightly run; nothing to do by hand unles
 !!! info "Internal runbook"
     [runbooks/27-nebula-and-ip-crawler.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/27-nebula-and-ip-crawler.md) — private repository; carries the cluster-specific commands for this page.
 
+### Redeploying
+
+On an image roll nothing; the CronJob template changes and the 02:00 UTC run is the first on the new image. Apply outside 01:55-02:10 UTC and never while a Job is active. The decisive proof is the next run succeeds (morning check). Procedure: [Redeploying a service](../../operations/deployment.md#redeploying-a-service).
+
 ## ClickHouse Table Schemas
 
 ??? note "Table: `crawlers_data.ipinfo`"

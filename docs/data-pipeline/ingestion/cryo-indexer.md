@@ -198,6 +198,10 @@ A raw repair does not fix the decode layer — decode models are `append` with a
 !!! info "Internal runbook"
     [runbooks/20-cryo-indexer.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/20-cryo-indexer.md) — private repository; carries the cluster-specific commands for this page.
 
+### Redeploying
+
+On an image roll the continuous writers restart (the auto-maintain CronJob picks the image up at its next slot). Apply outside the two hours before an auto-maintain slot, in an idle gap between ranges. The decisive proof is grid coverage over the restart window whole and no orphan range. Procedure: [Redeploying a service](../../operations/deployment.md#redeploying-a-service).
+
 ## Configuration
 
 ### Required Settings

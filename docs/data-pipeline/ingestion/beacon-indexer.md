@@ -230,6 +230,10 @@ python -m src.main maintain reset --start-slot 0 --end-slot 999999999 --status c
 !!! info "Internal runbook"
     [runbooks/21-beacon-indexer.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/21-beacon-indexer.md) — private repository; carries the cluster-specific commands for this page.
 
+### Redeploying
+
+On an image roll realtime and transform restart. Apply outside 02:00-06:15 UTC, in the idle gap between chunks. The decisive proof is no chunk hole across the restart and the transform caught up. Procedure: [Redeploying a service](../../operations/deployment.md#redeploying-a-service).
+
 ## Configuration
 
 ### Required Settings

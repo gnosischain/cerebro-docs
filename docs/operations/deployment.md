@@ -56,6 +56,41 @@ Exit 0 = nothing destroys running work. Exit 2 = something does. Nothing blocks 
 
 Two plan-time gotchas: Kubernetes-manifest resources server-side dry-run, so a plan needs cluster connectivity and the CRDs already installed; and **never init with `-upgrade`** — it rewrites the tracked provider lockfile.
 
+## Redeploying a service
+
+A redeploy is an image pin change on one stack, applied with the ritual above, plus a **baseline before** and a **proof after** that nothing was lost. It is done one service at a time: two services may sit in their verification windows together, but only one apply runs at a time.
+
+1. **Check the window.** Every service has slots to avoid (table below) and an idle-gap rule: apply between two units of work, never in the middle of one.
+2. **Baseline, read-only, within 10 minutes of the apply.** Record the workload's generation and image, the writer's frontier or checkpoint, a fixed window of already-final rows, and the app's own coverage or backlog query. For a crawler, record the visit counts of the sweeps that are open, not only the sealed ones.
+3. **Validate and apply the saved plan file.** Expected: an in-place update of the image on the workloads that share the pin, nothing added, nothing destroyed, verdict `WORKLOAD_WILL_RESTART` (a CronJob-only stack carries the same label even though nothing restarts).
+4. **Verify immediately.** One pod per workload on the new digest with 0 restarts (the state daemons are the exception: 3-5 lease-refusal exits before Ready are normal, more or a different exit reason is not), the resume line at the baseline frontier, the first unit of work completed.
+5. **Verify the data** after 10 to 30 minutes: frontier past the baseline, the coverage query clean across the restart window, the fixed window unchanged, no duplicates, no new dead letters or orphaned ranges.
+6. **Nothing-lost checklist**, then commit the one pinned file. The next [morning check](troubleshooting.md) is the final confirmation for anything rolled the day before.
+
+Rollback always has the same shape: restore the previous image line, plan to a file, classify, apply that file, then repeat steps 4 and 5 on the old image. Only an image or runtime fault justifies it; a rollback is a second restart with the same timing rules.
+
+| Service | What restarts | Avoid | Decisive proof |
+|---|---|---|---|
+| cryo indexer (Gnosis and Celo) | the continuous writers; auto-maintain picks the image up at its next slot | the two hours before an auto-maintain slot, and the slot itself | grid coverage over the restart window whole, no orphan range |
+| beacon indexer | realtime and transform | 02:00-06:15 UTC; apply in the idle gap between chunks (about 8.5 minutes apart) | no chunk hole across the restart, transform caught up |
+| rpc-state indexer (both chains) | the census daemon; the CronJobs at their next slot | 00:00-03:30 UTC; the archive endpoint healthy for an hour, proven from inside the cluster | one active lease, the last three days' publications identical, yesterday published before 06:00 |
+| rpc-log indexer | the scanner | none, but never while a repair pod exists | both checkpoints continue from checkpoint+1, no range gap |
+| cow indexer | the scanner; the sweep CronJob at its next slot | 00:15-00:45 and 02:45-05:00 UTC, and during an API 403 storm | every live chain's checkpoint advances, no unexplained empty log bucket, no new dead letters |
+| envio-ga indexer | realtime; reconcile at its 03:00 slot | 02:50-03:15 and 05:30-06:30 UTC | watermarks continue past the baseline, no duplicate raw versions |
+| nebula | both crawlers | 01:50-02:10 UTC; apply right after both crawlers have restarted at their own sweep boundaries | interrupted crawls sealed `cancelled`, the first new sweeps sealed `succeeded` inside the normal size band |
+| ip-crawler and click-runner | nothing; only the CronJob templates change | 01:55-02:10 UTC for ip-crawler, 03:00-05:10 UTC for click-runner, never while a Job is active | the first run on the new image succeeds at its next slot |
+
+What a full pass over every service taught:
+
+- Verification queries share the warehouse memory cap with the writers. Run them one statement at a time and bounded; one "memory limit exceeded" retry inside a writer during verification is noise, a repeating one means stop querying.
+- A graceful stop seals an interrupted nebula crawl as `cancelled`; only an out-of-memory or watchdog kill leaves it `started`. Judge sweeps by visits counted per crawl id, not by the crawl's own peer counter.
+- The CoW chain-1 "leak band" (fills without an order row) grows between the six-hourly sweeps by design; read it by fill age and re-check after the next sweep instead of expecting it flat.
+- Envio's state table keeps only merged rows, so the pre-roll watermark comes from the raw entity table.
+- An empty log bucket after a cow restart is checked against the execution indexer's independent copy of the same blocks before it is called a hole.
+
+!!! info "Internal runbook"
+    The deployments repository's `runbooks/80-redeploy-a-service.md` holds the full procedure per service: the exact commands, baseline and verification queries, timing rules, rollback and the abort-versus-noise lists.
+
 ## Pause, resume, scale
 
 The on/off levers are per-stack `locals.tf` values — `replicas`, `cron_suspended`, and for a few stacks a single `cutover_complete` line that drives both. There is no root kill switch.

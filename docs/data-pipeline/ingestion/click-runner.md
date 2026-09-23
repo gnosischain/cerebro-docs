@@ -267,6 +267,10 @@ Find the consumers and rerun scoped — `dbt ls -s source:crawlers_data.⟨table
 !!! info "Internal runbook"
     [runbooks/26-click-runner.md](https://github.com/gnosisdevops/infrastructure-gnosis-analytics/blob/main/runbooks/26-click-runner.md) — private repository; carries the cluster-specific commands for this page.
 
+### Redeploying
+
+On an image roll nothing; the 14 CronJob templates change and each cron first runs the new image at its next slot. Apply outside 03:00-05:10 UTC and never while a Job is active. The decisive proof is the first runs succeed at their next slots (morning check). Procedure: [Redeploying a service](../../operations/deployment.md#redeploying-a-service).
+
 ## Adding New Data Sources
 
 ### New CSV Source
