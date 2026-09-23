@@ -123,7 +123,7 @@ GROUP BY batch HAVING gas > 0 ORDER BY batch;
 !!! warning "`auto-maintain` is not read-only beside the live indexer"
     It DELETEs a range and *then* attempts the claim, so a claim conflict is reported as "Skipped" after the delete has already run. Prefer it for recent gaps, but know what it does.
 
-**Older gaps: a scoped `maintain`.** It claims **all** non-completed ranges and DELETEs before re-extracting, so the live writer for that database must be stopped first — the stop sequence and the one-shot recipe are on the [one-shot jobs](../../operations/runbooks/one-shot-jobs.md) page. Chunk to a few hundred thousand blocks per job.
+**Older gaps: a scoped `maintain`.** It selects **every** non-completed range (`processing` included) and DELETEs it before re-extracting, with no claim, so the live writer for that database must be stopped first — the stop sequence and the one-shot recipe are on the [one-shot jobs](../../operations/runbooks/one-shot-jobs.md) page. Chunk to a few hundred thousand blocks per job.
 
 !!! warning "Two absolute limits, neither guarded in code"
     **Never `MODE=full`** — it expands to all ten datasets and starts a 41.9M-block backfill. **Never `0/0` bounds** — the unscoped range query self-joins ~1.3M rows and OOMs the warehouse.

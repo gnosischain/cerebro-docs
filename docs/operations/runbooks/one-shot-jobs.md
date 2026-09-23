@@ -31,7 +31,7 @@ Two universal caveats:
 
 ## Per-app preconditions
 
-**cryo `maintain`** claims all non-completed ranges and DELETEs each range *before* it claims it. The stop sequence first: scale the continuous writer to zero, suspend the auto-maintain cron, wait for the pod to be gone, **and confirm no auto-maintain pod is still running** — suspending a cron does not stop an in-flight Job. All of that is `[drift]` that the next apply reverts. Chunk to a few hundred thousand blocks per Job: ephemeral storage is capped at **10 Gi**, an Autopilot hard ceiling. Cloning the auto-maintain cron inherits its `MODE=custom` + explicit `DATASETS`, which is what keeps `MODE=full` from expanding to a 41.9M-block backfill; a hand-rolled pod would not.
+**cryo `maintain`** selects every non-completed range (`processing` included) and DELETEs each one before re-extracting it, with no claim — nothing stops a live writer from working the same range. The stop sequence first: scale the continuous writer to zero, suspend the auto-maintain cron, wait for the pod to be gone, **and confirm no auto-maintain pod is still running** — suspending a cron does not stop an in-flight Job. All of that is `[drift]` that the next apply reverts. Chunk to a few hundred thousand blocks per Job: ephemeral storage is capped at **10 Gi**, an Autopilot hard ceiling. Cloning the auto-maintain cron inherits its `MODE=custom` + explicit `DATASETS`, which is what keeps `MODE=full` from expanding to a 41.9M-block backfill; a hand-rolled pod would not.
 
 **cryo `validate`** writes nothing, so it can simply be exec'd in the running continuous pod with `OPERATION=validate` and a block range. It exits non-zero when gaps exist.
 

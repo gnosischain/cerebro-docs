@@ -32,7 +32,7 @@ Database `envio_ga`.
 
 ### How it runs
 
-A realtime Deployment (`load realtime`, one replica, `Recreate`, entity-sharded — **never scale it**) and a daily reconcile CronJob at **03:00 UTC** (`reconcile`) that diffs the live id set to find upstream deletes. All checkpoints are durable and every write is id-keyed ReplacingMergeTree, so kill, restart and rollout are safe at any moment.
+A realtime Deployment (`load realtime`, one replica, `Recreate`, no lease — **never scale it**: a second instance permanently duplicates `raw_entities` versions and doubles the upstream load) and a daily reconcile CronJob at **03:00 UTC** (`reconcile`) that diffs the live id set to find upstream deletes. All checkpoints are durable and every write is id-keyed ReplacingMergeTree, so kill, restart and rollout are safe at any moment.
 
 `envio_ga` is not on the MCP allowlist, so its checks run from a pod or the console.
 

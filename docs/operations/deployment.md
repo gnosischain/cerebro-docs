@@ -61,7 +61,7 @@ Two plan-time gotchas: Kubernetes-manifest resources server-side dry-run, so a p
 The on/off levers are per-stack `locals.tf` values — `replicas`, `cron_suspended`, and for a few stacks a single `cutover_complete` line that drives both. There is no root kill switch.
 
 !!! warning "Three workloads are correctness-bound to one replica"
-    The MCP server (module-level session singleton, no session affinity), the dbt live loop (`Recreate`, and two pods would run the same incremental models against the same tables), and the envio realtime loop (entity-sharded). Never scale them, including "temporarily".
+    The MCP server (module-level session singleton, no session affinity), the dbt live loop (`Recreate`, and two pods would run the same incremental models against the same tables), and the envio realtime loop (no lease: a second instance permanently duplicates `raw_entities` versions and doubles the upstream load). Never scale them, including "temporarily".
 
 Every indexer uses `strategy = Recreate`, not `RollingUpdate`. The target tables are SharedMergeTree and **do not dedupe re-inserted rows**, so a two-pod overlap duplicates data rather than resolving it. For rpc-state a rolling update also deadlocks: the new pod cannot take the writer lease while the old one holds it.
 

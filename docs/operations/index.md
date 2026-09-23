@@ -23,7 +23,7 @@ Start at [Morning Check & Triage](troubleshooting.md). It routes you to the righ
 
 | App | Enforcement | What a violation looks like |
 |---|---|---|
-| cryo | Convention only. `maintain` claims **all** non-completed ranges and DELETEs before claiming | Silent duplication or deleted rows |
+| cryo | Convention only. `maintain` selects **every** non-completed range (`processing` included), DELETEs it and re-extracts with **no claim** — stop the writer first. Only `auto-maintain` claims | Silent duplication or deleted rows |
 | rpc-state | A writer lease with a 120 s stale window and **no override flag** | The new pod exits 1 and crash-loops until the lease goes stale |
 | rpc-log, cow | The checkpoint itself | Checkpoint regression, not row duplication |
 | beacon, envio, dbt live loop | `Recreate` strategy + single replica | Duplicate rows (the targets do not dedupe) |
@@ -43,7 +43,7 @@ Four repos give four different answers and all four are right. Generalising any 
 | `consensus` (`load_state_chunks`, `transformer_progress`) | **`FINAL` required** — they keep every status transition |
 | `rpc_state_indexer` (`writer_heartbeats`, `discovery_ranges`) | **`FINAL` required**, and scope by recency — old `failed` rows survive forever |
 | `envio_ga` | **Never `FINAL`** — it OOMs the instance. Use `argMax(col, insert_version) … GROUP BY id HAVING argMax(_deleted, insert_version) = 0` |
-| `execution*` (`indexing_state`) | `FINAL` is fine on the bookkeeping table. **Never `FINAL` + `GROUP BY argMax`** — that deduplicates twice |
+| `execution*` (`indexing_state`) | **`FINAL` does not collapse across months** — the table is partitioned by `toYYYYMM(created_at)`, so a range that failed in one month and completed in the next keeps both rows. Resolve a range with `argMax(status, (created_at, insert_version)) … GROUP BY dataset, start_block, end_block`; never `FINAL` + `GROUP BY argMax` |
 | `cow_db` | Never a bare `FINAL` over a data table. Read the `*_canonical` views, scoped |
 | `dbt` marts | Read as published. Marts read ReplacingMergeTree **without** `FINAL`, which is why a duplicate row counts twice |
 
